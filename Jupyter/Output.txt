@@ -12,3 +12,18 @@ Method 3:
 Method 4:
 	Accuracy: 0.67
 	Runtime: 4.02s
+
+Name: LastFM Asia Social Networks
+Link: https://snap.stanford.edu/data/feather-lastfm-social.html
+Method 1:
+	Accuracy: 0.44
+	Runtime: 112.53s
+Method 2:
+	Accuracy: 0.26
+	Runtime: 2.77s
+Method 3: 
+	Accuracy: 0.47
+	Runtime: 9.26s
+Method 4:
+	Accuracy: 0.47
+	Runtime: 4.03s
