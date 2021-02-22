@@ -1,0 +1,14 @@
+Name: email-Eu-core network
+Link: https://snap.stanford.edu/data/email-Eu-core.html
+Method 1:
+	Accuracy: 0.24
+	Runtime: 1.58s
+Method 2:
+	Accuracy: 0.57
+	Runtime: 2.3s
+Method 3: 
+	Accuracy: 0.73
+	Runtime: 5.94s
+Method 4:
+	Accuracy: 0.67
+	Runtime: 4.02s
