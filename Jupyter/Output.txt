@@ -27,3 +27,18 @@ Method 3:
 Method 4:
 	Accuracy: 0.47
 	Runtime: 4.03s
+
+Name: internet-industry-partnerships
+Link: http://networkrepository.com/internet-industry-partnerships.php
+Method 1:
+	Accuracy: 0.44
+	Runtime: 1.02s
+Method 2:
+	Accuracy: 0.62
+	Runtime: 2.05s
+Method 3: 
+	Accuracy: 0.44
+	Runtime: 3.86s
+Method 4:
+	Accuracy: 0.51
+	Runtime: 4.11s
