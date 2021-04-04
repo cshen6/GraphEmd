@@ -57,3 +57,18 @@ Method 3:
 Method 4:
 	Accuracy: 0.02
 	Runtime: 4.02s
+
+Name: Simulated Graph Data 1
+Size: n=200
+Method 1:
+	Accuracy: 0.425
+	Runtime: 1.04s
+Method 2:
+	Accuracy: 0.925
+	Runtime: 2.08s
+Method 3: 
+	Accuracy: 0.95
+	Runtime: 3.46s
+Method 4:
+	Accuracy: 0.95
+	Runtime: 4.01s
