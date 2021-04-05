@@ -57,17 +57,17 @@ switch option
         A=X*X';
         Dis=double(rand(n,n)<A);
 %         X=Dis;
-    case 10 % RDPG
+    case 3 % RDPG
         fileName='RDPG';
         pp=0.5;
         d=1;
         Label=(rand(n,1)>pp);
         ind=(Label==1);
-        X = betarnd(3,6,n,d);
-        X(ind,:)= betarnd(6,3,sum(ind),d);
+        X = unifrnd(0,1,n,1);
+        X(ind,:)=unifrnd(0,0.2,sum(ind),1);
         A=X*X';
         Dis=double(rand(n,n)<A);
-        Dis=diag(sum(Dis))-Dis;
+%         Dis=diag(sum(Dis))-Dis;
     case 11 % RDPG
         fileName='RDPG';
         pp=0.5;

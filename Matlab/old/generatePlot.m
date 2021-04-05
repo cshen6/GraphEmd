@@ -1,8 +1,25 @@
 function []=generatePlot
 
+% theorem 1: SBM
+n=300;fs=15;
+[Adj,Y]=generateSims(1,n,2);
+[Z,filter]=GraphFilter(Adj,Y);
+
+% theorem 3: RDPG
+n=300;fs=15;
+[Adj,Y]=generateSims(3,n,2);
+[Z,filter]=GraphFilter(Adj,Y);
+
 % fig 1a
 n=300;fs=15;
 [Adj,Y]=generateSims(2,n,2);
+[Z,filter]=GraphFilter(Adj,Y);
+figure
+hold on
+plot(Z(Y==0,1),Z(Y==0,2),'ro');
+plot(Z(Y==1,1),Z(Y==1,2),'bo');
+hold off
+title('AEE Embedding for RDPG Graph','FontSize',fs)
 % [mdl1,filter]=GraphNN(Adj,Y,0,1);
 [mdl2,filter]=GraphNN(Adj,Y,0,2);
 
