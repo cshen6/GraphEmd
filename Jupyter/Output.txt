@@ -17,45 +17,60 @@ Name: LastFM Asia Social Networks
 Link: https://snap.stanford.edu/data/feather-lastfm-social.html
 Method 1:
 	Accuracy: 0.44
-	Runtime: 112.53s
+	Runtime: 142.88s
 Method 2:
-	Accuracy: 0.26
-	Runtime: 2.77s
+	Accuracy: 0.24
+	Runtime: 201.73s
 Method 3: 
 	Accuracy: 0.47
-	Runtime: 9.26s
+	Runtime: 10.75s
 Method 4:
 	Accuracy: 0.47
-	Runtime: 4.03s
+	Runtime: 4.04s
 
 Name: internet-industry-partnerships
 Link: http://networkrepository.com/internet-industry-partnerships.php
 Method 1:
-	Accuracy: 0.47
+	Accuracy: 0.51
 	Runtime: 1.02s
 Method 2:
 	Accuracy: 0.62
-	Runtime: 2.04s
+	Runtime: 2.03s
 Method 3: 
-	Accuracy: 0.40
-	Runtime: 4.08s
+	Accuracy: 0.53
+	Runtime: 3.61s
 Method 4:
-	Accuracy: 0.51
+	Accuracy: 0.53
 	Runtime: 4.01s
 
 Name: DD244
 Link:http://networkrepository.com/DD244.php
 Method 1:
 	Accuracy: 0.05
-	Runtime: 1.02s
+	Runtime: 1.06s
 Method 2:
 	Accuracy: 0.15
-	Runtime: 2.04s
+	Runtime: 2.09s
 Method 3: 
 	Accuracy: 0.07
-	Runtime: 4.52s
+	Runtime: 4.83s
 Method 4:
 	Accuracy: 0.02
+	Runtime: 4.02s
+
+Name: Cora
+Link:http://networkrepository.com/cora.php
+Method 1:
+	Accuracy: 0.62
+	Runtime: 7.22s
+Method 2:
+	Accuracy: 0.31
+	Runtime: 12.89s
+Method 3: 
+	Accuracy: 0.75
+	Runtime: 9.60s
+Method 4:
+	Accuracy: 0.75
 	Runtime: 4.02s
 
 Name: Simulated Graph Data 1
