@@ -52,9 +52,9 @@ switch option
         pp=[0.2,0.3,0.5];
         Bl=zeros(clas,clas);
         %             Bl=rand(clas,clas);
-        Bl(:,1)=[0.8,0.1,0.1];
-        Bl(:,2)=[0.1,0.5,0.1];
-        Bl(:,3)=[0.1,0.1,0.2];
+        Bl(:,1)=[0.9,0.1,0.1];
+        Bl(:,2)=[0.1,0.6,0.1];
+        Bl(:,3)=[0.1,0.1,0.3];
         Dis=zeros(n,n);
         tt=rand([n,1]);
         Label=ones(n,1);
@@ -114,16 +114,42 @@ switch option
 %         X=Dis;
     case 4 % RDPG
         fileName='RDPG';
-        pp=0.5;
         d=1;
-        Label=(rand(n,1)>pp);
-        ind=(Label==1);
-        X = unifrnd(0,1,n,1);
-        X(ind,:)=unifrnd(0,0.2,sum(ind),1);
-        A=X*X';
+        pp=[0.2,0.3,0.5];
+        tt=rand([n,1]);
+        Label=ones(n,1);
+        thres=0;
+        for i=1:size(pp,2)
+            thres=thres+pp(i);
+            Label=Label+(tt>thres); %determine the block of each data
+        end
+        X = betarnd(1,3,n,d);
+        ind=(Label==2);
+        X(ind,:)= betarnd(3,3,sum(ind),d);
+        ind=(Label==3);
+        X(ind,:)= betarnd(3,1,sum(ind),d);
+        A=exp(-squareform(pdist(X)))/4;
+        Dis=double(rand(n,n)<A);
+    case 5 % RDPG
+        fileName='RDPG';
+        d=1;
+        pp=[0.2,0.3,0.5];
+        tt=rand([n,1]);
+        Label=ones(n,1);
+        thres=0;
+        for i=1:size(pp,2)
+            thres=thres+pp(i);
+            Label=Label+(tt>thres); %determine the block of each data
+        end
+        X = betarnd(1,3,n,d);
+        ind=(Label==2);
+        X(ind,:)= betarnd(3,3,sum(ind),d);
+        ind=(Label==3);
+        X(ind,:)= betarnd(3,1,sum(ind),d);
+        A=exp(-squareform(pdist(X)))/4;
         Dis=double(rand(n,n)<A);
 %         Dis=diag(sum(Dis))-Dis;
-    case 5 % RDPG
+    case 6 % RDPG
         fileName='RDPG';
         pp=0.5;
         d=1;

@@ -12,7 +12,7 @@
 %%
 %% @export
 %% 
-function [ind,Z,W]=GraphClustering(X,k,opts)
+function [ind,Z,W]=GraphClusteringNN(X,k,opts)
 
 %%% if necessary, use the following code to remove any zero row and column from X:
 %tmp=vecnorm(X); idx=(tmp>0); X=X(idx,idx);
@@ -22,16 +22,22 @@ if nargin<2
     k=2;
 end
 if nargin < 3
-    opts = struct('Dist','sqeuclidean','maxIter',100,'normalize',0); % default parameters
+    opts = struct('maxIter',100,'neuron',10,'epoch',100,'normalize',0); % default parameters
 end
-if ~isfield(opts,'Dist'); opts.Dist='sqeuclidean'; end
 if ~isfield(opts,'maxIter'); opts.maxIter=100; end
+if ~isfield(opts,'neuron'); opts.neuron=10; end
+if ~isfield(opts,'epoch'); opts.epoch=100; end
 if ~isfield(opts,'normalize'); opts.normalize=0; end
 if opts.normalize==1
     deg=diag(sum(X));
     %X=deg^-1*X;
     X=deg^-0.5*X*deg^-0.5;
 end
+dimension1 = k;
+dimension2 = 1;
+net = selforgmap([dimension1 dimension2],3,3,'gridtop','linkdist');
+net.trainParam.showWindow = false;
+net.trainParam.epochs=opts.epoch;
 
 if size(X,2)==2
 %     X=X-min(X)+1;
@@ -44,12 +50,15 @@ warning ('off','all');
 reseed=0;
 for r=1:opts.maxIter
     Z=GraphEncoder(X,ind);
-    try 
-       indNew = kmeans(Z, k,'Distance',opts.Dist,'MaxIter',3);
+    try
+        [net,~] = train(net,Z');
+        indNew = net(Z');
+        indNew = vec2ind(indNew)';
+%         [~,~,indNew]=unique(indNew);
     catch
-       %%% when a graph is very sparse, sometimes Z can have many repeated entries from a random initialization, and kmeans will fail
-       %warning('Re-initialize index due to graph being too sparse')
-       reseed=1;
+        %%% when a graph is very sparse, sometimes Z can have many repeated entries from a random initialization, and kmeans will fail
+        %warning('Re-initialize index due to graph being too sparse')
+        reseed=1;
     end
     
     if reseed==1 %|| sum(isnan(indNew))>0

@@ -1,10 +1,10 @@
 function [t_AEE,RI_AEE,t_ASE,RI_ASE,ind_AEE,ind_ASE,Y,RI]=simClusteringSimu(n, opts)
 
-% n=10000;opts = struct('model','SBM','AEE',1,'ASE',1,'edgeV',1); % default parameters
+% n=10000;opts = struct('model','SBM','AEE',1,'ASE',1,'edgeV',1,'Dist','sqeuclidean'); % default parameters
 % [t_AEE,RI_AEE,t_ASE,RI_ASE,ind_AEE,ind_ASE,Y,RI]=simClusteringSimu(n, opts)
-% n=10000;opts = struct('model','DCSBM','AEE',1,'ASE',1,'edgeV',1); % default parameters
+% n=10000;opts = struct('model','DCSBM','AEE',1,'ASE',1,'edgeV',1,'Dist','cosine'); % default parameters
 % [t_AEE,RI_AEE,t_ASE,RI_ASE,ind_AEE,ind_ASE,Y,RI]=simClusteringSimu(n, opts)
-% n=10000;opts = struct('model','RDPG','AEE',1,'ASE',1,'edgeV',1); % default parameters
+% n=10000;opts = struct('model','RDPG','AEE',1,'ASE',1,'edgeV',1,'Dist','sqeuclidean'); % default parameters
 % [t_AEE,RI_AEE,t_ASE,RI_ASE,ind_AEE,ind_ASE,Y,RI]=simClusteringSimu(n, opts)
 
 fpath = mfilename('fullpath');
@@ -15,13 +15,14 @@ pre=strcat(rootDir,'Matlab/results/');% The folder to save figures
 fs=15;
 
 if nargin < 2
-    opts = struct('model','RDPG','AEE',1,'ASE',1,'plot',0,'edgeV',1); % default parameters
+    opts = struct('model','RDPG','AEE',1,'ASE',1,'plot',0,'edgeV',1,'Dist','sqeuclidean'); % default parameters
 end
 if ~isfield(opts,'model'); opts.model='SBM'; end
 if ~isfield(opts,'AEE'); opts.ASE=1; end
 if ~isfield(opts,'ASE'); opts.AEE=1; end
 if ~isfield(opts,'plot'); opts.plot=0; end
 if ~isfield(opts,'edgeV'); opts.edgeV=0; end
+if ~isfield(opts,'Dist'); opts.Dist='sqeuclidean'; end
 fs=15; K=3; d=3;
 t_AEE=0;RI_AEE=0;t_ASE=0;RI_ASE=0;RI=0; 
 
@@ -51,9 +52,9 @@ end
 if opts.AEE==1
     tic
     if opts.edgeV==1
-       [ind_AEE,Z_AEE]=GraphClustering(Edge,K);
+       [ind_AEE,Z_AEE]=GraphClustering(Edge,K,opts.Dist);
     else
-       [ind_AEE,Z_AEE]=GraphClustering(Adj,K);
+       [ind_AEE,Z_AEE]=GraphClustering(Adj,K,opts.Dist);
     end
     t_AEE=toc;
     RI_AEE=RandIndex(Y,ind_AEE);
