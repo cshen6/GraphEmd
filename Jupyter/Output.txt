@@ -2,13 +2,13 @@ Name: email-Eu-core network
 Link: https://snap.stanford.edu/data/email-Eu-core.html
 ASE*LDA:
 	Accuracy: 0.597
-	Runtime: 0.498s
+	Runtime: 0.529s
 AEE*KNN:
 	Accuracy: 0.632
-	Runtime: 0.022s
+	Runtime: 0.030s
 AEE*LDA: 
 	Accuracy: 0.667
-	Runtime: 0.011s
+	Runtime: 0.015s
 
 Name: LastFM Asia Social Networks
 Link: https://snap.stanford.edu/data/feather-lastfm-social.html
