@@ -63,3 +63,15 @@ AEE*KNN:
 AEE*LDA: 
 	Accuracy: 0.749
 	Runtime: 0.036s
+
+Name: Citeseer
+Link: http://networkrepository.com/citeseer.php
+ASE*LDA:
+	Accuracy: 0.325
+	Runtime: 19.026s
+AEE*KNN:
+	Accuracy: 0.495
+	Runtime: 0.068s
+AEE*LDA: 
+	Accuracy: 0.474
+	Runtime: 0.024s
