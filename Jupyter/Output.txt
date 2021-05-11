@@ -54,15 +54,12 @@ Method 4:
 
 Name: Cora
 Link:http://networkrepository.com/cora.php
-Method 1:
-	Accuracy: 0.62
-	Runtime: 7.22s
-Method 2:
-	Accuracy: 0.31
-	Runtime: 12.89s
-Method 3: 
-	Accuracy: 0.75
-	Runtime: 9.60s
-Method 4:
-	Accuracy: 0.75
-	Runtime: 4.02s
+ASE*LDA:
+	Accuracy: 0.375
+	Runtime: 14.826s
+AEE*KNN:
+	Accuracy: 0.699
+	Runtime: 0.096s
+AEE*LDA: 
+	Accuracy: 0.749
+	Runtime: 0.036s
