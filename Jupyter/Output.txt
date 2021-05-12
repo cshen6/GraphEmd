@@ -93,3 +93,15 @@ AEE*KNN:
 AEE*LDA: 
 	Accuracy: 0.324
 	Runtime: 0.116s
+
+Name: Peking-1
+Link: http://networkrepository.com/Peking-1.php
+ASE*LDA:
+	Accuracy: 0.012
+	Runtime: 20.308s
+AEE*KNN:
+	Accuracy: 0.231
+	Runtime: 0.435s
+AEE*LDA: 
+	Accuracy: 0.383
+	Runtime: 0.178s
