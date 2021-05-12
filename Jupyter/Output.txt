@@ -81,3 +81,15 @@ AEE*KNN:
 AEE*LDA: 
 	Accuracy: 0.714
 	Runtime: 0.006s
+
+Name: KKI
+Link: http://networkrepository.com/KKI.php
+ASE*LDA:
+	Accuracy: 0.011
+	Runtime: 5.725s
+AEE*KNN:
+	Accuracy: 0.224
+	Runtime: 0.209s
+AEE*LDA: 
+	Accuracy: 0.324
+	Runtime: 0.116s
