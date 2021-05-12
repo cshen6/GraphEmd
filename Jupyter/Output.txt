@@ -105,3 +105,15 @@ AEE*KNN:
 AEE*LDA: 
 	Accuracy: 0.383
 	Runtime: 0.178s
+
+Name: OHSU
+Link: http://networkrepository.com/OHSU.php
+ASE*LDA:
+	Accuracy: 0.006
+	Runtime: 105.375s
+AEE*KNN:
+	Accuracy: 0.152
+	Runtime: 1.684s
+AEE*LDA: 
+	Accuracy: 0.280
+	Runtime: 0.493s
