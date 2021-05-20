@@ -73,14 +73,14 @@ AEE*LDA:
 Name: Gene
 Link: http://networkrepository.com/gene.php
 ASE*LDA:
-	Accuracy: 0.686
-	Runtime: 0.748s
+	Accuracy: 0.695
+	Runtime: 0.701s
 AEE*KNN:
-	Accuracy: 0.718
-	Runtime: 0.015s
+	Accuracy: 0.709
+	Runtime: 0.016s
 AEE*LDA: 
-	Accuracy: 0.714
-	Runtime: 0.006s
+	Accuracy: 0.702
+	Runtime: 0.007s
 
 Name: KKI
 Link: http://networkrepository.com/KKI.php
