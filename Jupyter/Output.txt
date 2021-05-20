@@ -49,14 +49,14 @@ AEE*LDA:
 Name: Cora
 Link:http://networkrepository.com/cora.php
 ASE*LDA:
-	Accuracy: 0.375
-	Runtime: 14.826s
+	Accuracy: 0.400
+	Runtime: 12.100s
 AEE*KNN:
-	Accuracy: 0.699
-	Runtime: 0.096s
+	Accuracy: 0.697
+	Runtime: 0.067s
 AEE*LDA: 
-	Accuracy: 0.749
-	Runtime: 0.036s
+	Accuracy: 0.725
+	Runtime: 0.035s
 
 Name: Citeseer
 Link: http://networkrepository.com/citeseer.php
