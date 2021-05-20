@@ -1,27 +1,46 @@
-function [error_AEE,error_AEE2,error_AEN,error_ASE,t_AEE,t_AEE2,t_AEN,t_ASE]=GraphEncoderEvaluate(X,Y,opts)
+function [acc,time]=GraphEncoderEvaluate(X,Y,indices,opts)
 
-if nargin < 3
-    opts = struct('kfold',10,'knn',5,'dim',30,'neuron',10,'epoch',100,'training',0.8,'activation','purelin'); % default parameters
+if nargin<3
+    indices = crossvalind('Kfold',Y,10);
 end
-if ~isfield(opts,'kfold'); opts.kfold=10; end
-if ~isfield(opts,'knn'); opts.knn=5; end
+if nargin < 4
+    opts = struct('ASE',1,'knn',5,'dim',30,'neuron',10,'epoch',100,'training',0.8,'activation','poslin'); % default parameters
+end
+if ~isfield(opts,'ASE'); opts.ASE=1; end
+if ~isfield(opts,'knn'); opts.knn=9; end
 if ~isfield(opts,'dim'); opts.dim=30; end
 if ~isfield(opts,'neuron'); opts.neuron=10; end
 if ~isfield(opts,'epoch'); opts.epoch=100; end
 if ~isfield(opts,'training'); opts.training=0.8; end
-if ~isfield(opts,'activation'); opts.activation='purelin'; end
+if ~isfield(opts,'activation'); opts.activation='poslin'; end
 warning('off','all');
-d=opts.dim; 
+met=[1,1,1,1,0,0]; %AEE, LDA, GFN, ASE
 
+kfold=max(indices);
 [~,~,Y]=unique(Y);
 n=length(Y);
+d=min(opts.dim,n-1);
 k=max(Y);
 Y2=zeros(n,k);
 for i=1:n
     Y2(i,Y(i))=1;
 end
-indices = crossvalind('Kfold',Y,opts.kfold);
 num=size(X,3);
+ide=eye(n);
+klim=10;
+opts.knn=min(opts.knn,ceil(n/k/3));
+discrimType='pseudoLinear';
+% if k>10
+%     discrimType='diagLinear';
+% end
+%%Edge to Adj
+if size(X,2)==2
+    Adj=zeros(n,n);
+    for i=1:size(X,1)
+        Adj(X(i,1),X(i,2))=1;
+    end
+    X=Adj+Adj';
+end
 
 % initialize NN
 net = patternnet(opts.neuron,'trainscg','crossentropy'); % number of neurons, Scaled Conjugate Gradient, cross entropy
@@ -32,20 +51,38 @@ net.divideParam.trainRatio = opts.training;
 net.divideParam.valRatio   = 1-opts.training;
 net.divideParam.testRatio  = 0/100;
 
-error_AEE=zeros(opts.kfold,1);error_AEE2=zeros(opts.kfold,1);error_AEN=zeros(opts.kfold,1);t_AEE=zeros(opts.kfold,1);t_AEE2=zeros(opts.kfold,1);t_AEN=zeros(opts.kfold,1);error_ASE=zeros(opts.kfold,d);t_ASE=zeros(opts.kfold,d);
-for i = 1:opts.kfold
+%% GCN paramers
+num_epoch = 100;        % Number of epochs
+d2 = 10;               % Number of hidden units
+learning_rate = 1e-4;  % The alpha parameter in the ADAM optimizer
+l2_reg = 0;            % L2 regularization weight
+batch_size = [];      % Batch size. If empty, equivalent to GCN w/o batching
+sample_size = [];     % Sample size. If empty, equivalent to batched GCN
+szW0 = [n,d2];       % Size of parameter matrix W0
+szW1 = [d2,k];       % Size of parameter matrix W1
+num_var = prod(szW0) + prod(szW1);
+adam_param = adam_init(num_var, learning_rate);
+
+
+acc_AEE_NNE=zeros(kfold,1);acc_AEE_NNC=zeros(kfold,1);acc_AEE_LDA=zeros(kfold,1);acc_GFN=zeros(kfold,1);acc_GNN=zeros(kfold,1);t_AEE_NNE=zeros(kfold,1);t_AEE_NNC=zeros(kfold,1);t_AEE_LDA=zeros(kfold,1);t_GFN=zeros(kfold,1);t_GNN=zeros(kfold,1);acc_ASE_NNE=zeros(kfold,d);t_ASE_NNE=zeros(kfold,d);acc_ASE_LDA=zeros(kfold,d);t_ASE_LDA=zeros(kfold,d);
+acc_GCN=zeros(kfold,1);t_GCN=zeros(kfold,1);
+for i = 1:kfold
     %     tst = (indices == i); % tst indices
     %     trn = ~tst; % trning indices
     
     tsn = (indices == i); % tst indices
     trn = ~tsn; % trning indices
+    val = (indices == max(mod(i+1,kfold+1),1));
+    trn2= ~(tsn+val);
     
     tic
     [Z,W]=GraphEncoder(X(trn,trn,:),Y(trn));
-    tmp=toc;
-    
+    if k>klim
+       [ind,~,~] = DCorScreening(Z,Y(trn));
+       Z=Z(:,ind);
+    end
+    tmp1=toc;
     tic
-    mdl=fitcdiscr(Z,Y(trn),'discrimType','pseudoLinear');
     if num>1
         XTsn=zeros(sum(tsn),k,num);
         for r=1:num
@@ -55,49 +92,114 @@ for i = 1:opts.kfold
     else
         XTsn=X(tsn,trn)*W;
     end
-    tt=predict(mdl,XTsn);
-    t_AEE(i)=tmp+toc;
-    error_AEE(i)=error_AEE(i)+mean(Y(tsn)~=tt);
-    
-    tic
-    mdl=fitcknn(Z,Y(trn),'Distance','cosine','NumNeighbors',opts.knn);
-    tt=predict(mdl,XTsn);
-    t_AEE2(i)=tmp+toc;
-    error_AEE2(i)=error_AEE2(i)+mean(Y(tsn)~=tt);
-    
-    tic
-%     rep=100;
-%     [Z,W]=GraphEncoders(X(trn,trn),Y(trn),rep);
-%     Z=reshape(Z,sum(trn),k*rep);
-%     W=reshape(W,sum(trn),k*rep);
-    Y2Trn=Y2(trn,:);  
-    mdl3 = train(net,Z',Y2Trn');
-    classes = mdl3(XTsn'); % class-wise probability for tsting data
-    %error_NN = perform(mdl3,Y2Tsn',classes);
-    tt = vec2ind(classes)'; % this gives the actual class for each observation
-    t_AEN(i)=tmp+toc;
-    error_AEN(i)=error_AEN(i)+mean(Y(tsn)~=tt);
-    
-    if num==1
-    tic
-    [U,S,~]=svds(X,d);
-    t1=toc;
-    for j=1:d
-        tic
-        Z=U(:,1:j)*S(1:j,1:j)^0.5;
-        mdl=fitcdiscr(Z(trn,:),Y(trn));
-        tt=predict(mdl,Z(tsn,:));
-        t_ASE(i,j)=t1+toc;
-        error_ASE(i,j)=error_ASE(i,j)+mean(Y(tsn)~=tt);
+    if k>klim
+        XTsn=XTsn(:,ind);
     end
+    tmp2=toc;
+    
+    if met(1)==1
+        tic
+        %mdl=fitcdiscr(Z,Y(trn),'discrimType','pseudoLinear');
+        mdl=fitcknn(Z,Y(trn),'Distance','euclidean','NumNeighbors',opts.knn);
+        tt=predict(mdl,XTsn);
+        t_AEE_NNE(i)=tmp1+tmp2+toc;
+        acc_AEE_NNE(i)=acc_AEE_NNE(i)+mean(Y(tsn)~=tt);
+        
+        tic
+        mdl=fitcknn(Z,Y(trn),'Distance','cosine','NumNeighbors',opts.knn);
+        tt=predict(mdl,XTsn);
+        t_AEE_NNC(i)=tmp1+tmp2+toc;
+        acc_AEE_NNC(i)=acc_AEE_NNC(i)+mean(Y(tsn)~=tt);
+    end
+    
+    if met(2)==1
+        tic
+        mdl=fitcdiscr(Z,Y(trn),'discrimType',discrimType);
+        tt=predict(mdl,XTsn);
+        t_AEE_LDA(i)=tmp1+tmp2+toc;
+        acc_AEE_LDA(i)=acc_AEE_LDA(i)+mean(Y(tsn)~=tt);
+    end
+    
+    if met(3)==1
+        tic
+        %     rep=100;
+        %     [Z,W]=GraphEncoders(X(trn,trn),Y(trn),rep);
+        %     Z=reshape(Z,sum(trn),k*rep);
+        %     W=reshape(W,sum(trn),k*rep);
+        Y2Trn=Y2(trn,:);
+        mdl3 = train(net,Z',Y2Trn');
+        classes = mdl3(XTsn'); % class-wise probability for tsting data
+        %acc_NN = perform(mdl3,Y2Tsn',classes);
+        tt = vec2ind(classes)'; % this gives the actual class for each observation
+        t_GFN(i)=tmp1+tmp2+toc;
+        acc_GFN(i)=acc_GFN(i)+mean(Y(tsn)~=tt);
+    end
+    
+    if met(4)==1
+        % ASE
+        tic
+        Adj=mean(X,3);
+        [U,S,~]=svds(Adj,d);
+        t1=toc;
+        for j=1:d
+            tic
+            Z=U(:,1:j)*S(1:j,1:j)^0.5;
+            t2=toc;
+            if met(2)==1
+                tic
+                mdl=fitcdiscr(Z(trn,:),Y(trn),'discrimType',discrimType);
+                tt=predict(mdl,Z(tsn,:));
+                t_ASE_LDA(i,j)=t1+t2+toc;
+                acc_ASE_LDA(i,j)=acc_ASE_LDA(i,j)+mean(Y(tsn)~=tt);
+            end
+            tic
+            mdl=fitcknn(Z(trn,:),Y(trn),'Distance','euclidean','NumNeighbors',opts.knn);
+            tt=predict(mdl,Z(tsn,:));
+            t_ASE_NNE(i,j)=t1+t2+toc;
+            acc_ASE_NNE(i,j)=acc_ASE_NNE(i,j)+mean(Y(tsn)~=tt);
+        end
+    end
+    % kipf GCN
+    
+    if met(5)==1
+        tic
+        acc_GCN(i)=model_fastgcn_train_and_test(Adj, ide, Y2, trn2, val, tsn, ...
+            szW0, szW1, l2_reg, num_epoch, batch_size, ...
+            sample_size, adam_param);
+        t_GCN(i)=toc;
+    end
+    
+    %  Direct NN
+    if met(6)==1
+        tic
+        X1=reshape(X(trn,trn,:),sum(trn),num*sum(trn));
+        X2=reshape(X(tsn,trn,:),sum(tsn),num*sum(trn));
+        mdl3 = train(net,X1',Y2Trn');
+        classes = mdl3(X2'); % class-wise probability for tsting data
+        tt = vec2ind(classes)'; % this gives the actual class for each observation
+        t_GNN(i)=tmp2+toc;
+        acc_GNN(i)=acc_GNN(i)+mean(Y(tsn)~=tt);
     end
 end
 
-error_AEE=mean(error_AEE);
-t_AEE=mean(t_AEE);
-error_AEN=mean(error_AEN);
-t_AEN=mean(t_AEN);
-error_AEE2=mean(error_AEE2);
-t_AEE2=mean(t_AEE2);
-[error_ASE,ind]=min(mean(error_ASE,1));
-t_ASE=mean(t_ASE,1); t_ASE=t_ASE(ind);
+acc_AEE_NNE=1-mean(acc_AEE_NNE);
+t_AEE_NNE=mean(t_AEE_NNE);
+acc_AEE_LDA=1-mean(acc_AEE_LDA);
+t_AEE_LDA=mean(t_AEE_LDA);
+acc_GFN=1-mean(acc_GFN);
+t_GFN=mean(t_GFN);
+acc_AEE_NNC=1-mean(acc_AEE_NNC);
+t_AEE_NNC=mean(t_AEE_NNC);
+[acc_ASE_NNE,ind]=min(mean(acc_ASE_NNE,1));
+acc_ASE_NNE=1-acc_ASE_NNE;
+t_ASE_NNE=mean(t_ASE_NNE,1); t_ASE_NNE=t_ASE_NNE(ind);
+[acc_ASE_LDA,ind]=min(mean(acc_ASE_LDA,1));
+acc_ASE_LDA=1-acc_ASE_LDA;
+t_ASE_LDA=mean(t_ASE_LDA,1); t_ASE_LDA=t_ASE_LDA(ind);
+acc_GNN=1-mean(acc_GNN);
+t_GNN=mean(t_GNN);
+acc_GCN=mean(acc_GCN);
+t_GCN=mean(t_GCN);
+
+acc=table(acc_AEE_NNE,acc_AEE_NNC,acc_AEE_LDA,acc_ASE_NNE,acc_ASE_LDA,acc_GFN,acc_GCN,acc_GNN);
+time=table(t_AEE_NNE,t_AEE_NNC,t_AEE_LDA,t_ASE_NNE,t_ASE_LDA,t_GFN,t_GCN,t_GNN);

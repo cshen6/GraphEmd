@@ -22,10 +22,10 @@ if nargin<2
     k=2;
 end
 if nargin < 3
-    opts = struct('Dist','sqeuclidean','maxIter',100,'normalize',0); % default parameters
+    opts = struct('Dist','sqeuclidean','maxIter',20,'normalize',0); % default parameters
 end
 if ~isfield(opts,'Dist'); opts.Dist='sqeuclidean'; end
-if ~isfield(opts,'maxIter'); opts.maxIter=100; end
+if ~isfield(opts,'maxIter'); opts.maxIter=20; end
 if ~isfield(opts,'normalize'); opts.normalize=0; end
 if opts.normalize==1
     deg=diag(sum(X));
@@ -45,7 +45,7 @@ reseed=0;
 for r=1:opts.maxIter
     Z=GraphEncoder(X,ind);
     try 
-       indNew = kmeans(Z, k,'Distance',opts.Dist,'MaxIter',3);
+       indNew = kmeans(Z, k,'Distance',opts.Dist,'MaxIter',10);
     catch
        %%% when a graph is very sparse, sometimes Z can have many repeated entries from a random initialization, and kmeans will fail
        %warning('Re-initialize index due to graph being too sparse')
