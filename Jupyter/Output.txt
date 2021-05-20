@@ -1,26 +1,26 @@
 Name: email-Eu-core network
 Link: https://snap.stanford.edu/data/email-Eu-core.html
 ASE*LDA:
-	Accuracy: 0.597
-	Runtime: 0.529s
+	Accuracy: 0.548
+	Runtime: 0.516s
 AEE*KNN:
-	Accuracy: 0.632
-	Runtime: 0.030s
+	Accuracy: 0.617
+	Runtime: 0.034s
 AEE*LDA: 
-	Accuracy: 0.667
-	Runtime: 0.015s
+	Accuracy: 0.612
+	Runtime: 0.022s
 
 Name: LastFM Asia Social Networks
 Link: https://snap.stanford.edu/data/feather-lastfm-social.html
 ASE*LDA:
-	Accuracy: 0.45
-	Runtime: 267.614s
+	Accuracy: 0.461
+	Runtime: 286.687s
 AEE*KNN:
-	Accuracy: 0.518
-	Runtime: 0.533s
+	Accuracy: 0.539
+	Runtime: 0.589s
 AEE*LDA: 
-	Accuracy: 0.445
-	Runtime: 0.234s
+	Accuracy: 0.448
+	Runtime: 0.311s
 
 Name: internet-industry-partnerships
 Link: http://networkrepository.com/internet-industry-partnerships.php
@@ -37,14 +37,14 @@ AEE*LDA:
 Name: DD244
 Link:http://networkrepository.com/DD244.php
 ASE*LDA:
-	Accuracy: 0.121
-	Runtime: 0.060s
+	Accuracy: 0.096
+	Runtime: 0.023s
 AEE*KNN:
-	Accuracy: 0.103
-	Runtime: 0.011s
-AEE*LDA: 
-	Accuracy: 0.052
+	Accuracy: 0.058
 	Runtime: 0.006s
+AEE*LDA: 
+	Accuracy: 0.059
+	Runtime: 0.004s
 
 Name: Cora
 Link:http://networkrepository.com/cora.php
@@ -61,14 +61,14 @@ AEE*LDA:
 Name: Citeseer
 Link: http://networkrepository.com/citeseer.php
 ASE*LDA:
-	Accuracy: 0.325
-	Runtime: 19.026s
+	Accuracy: 0.332
+	Runtime: 19.463s
 AEE*KNN:
-	Accuracy: 0.495
-	Runtime: 0.068s
+	Accuracy: 0.472
+	Runtime: 0.080s
 AEE*LDA: 
-	Accuracy: 0.474
-	Runtime: 0.024s
+	Accuracy: 0.480
+	Runtime: 0.042s
 
 Name: Gene
 Link: http://networkrepository.com/gene.php
