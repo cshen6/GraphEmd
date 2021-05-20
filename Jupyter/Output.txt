@@ -25,14 +25,14 @@ AEE*LDA:
 Name: internet-industry-partnerships
 Link: http://networkrepository.com/internet-industry-partnerships.php
 ASE*LDA:
-	Accuracy: 0.535
-	Runtime: 0.021s
+	Accuracy: 0.611
+	Runtime: 0.012s
 AEE*KNN:
-	Accuracy: 0.535
-	Runtime: 0.008s
-AEE*LDA: 
-	Accuracy: 0.535
+	Accuracy: 0.558
 	Runtime: 0.004s
+AEE*LDA: 
+	Accuracy: 0.625
+	Runtime: 0.002s
 
 Name: DD244
 Link:http://networkrepository.com/DD244.php
