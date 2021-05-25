@@ -117,3 +117,15 @@ AEE*KNN:
 AEE*LDA: 
 	Accuracy: 0.298
 	Runtime: 8.368s
+
+Name: PubMed
+Link: http://networkrepository.com/PubMed.php
+ASE*LDA:
+	Accuracy: 0.399
+	Runtime: 2787.45s
+AEE*KNN:
+	Accuracy: 0.36
+	Runtime: 2.046s
+AEE*LDA: 
+	Accuracy: 0.395
+	Runtime: 1.749s
