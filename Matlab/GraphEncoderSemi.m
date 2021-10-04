@@ -1,4 +1,4 @@
-function [result]=GraphEncoderEvaluate(X,Y,opts)
+function [result]=GraphEncoderSemi(X,Y,opts)
 
 if nargin < 3
     opts = struct('indices',crossvalind('Kfold',Y,10),'Adjacency',1,'Laplacian',1,'Spectral',1,'LDA',1,'GFN',1,'GCN',0,'GNN',0,'knn',5,'dim',30,'neuron',10,'epoch',100,'training',0.8,'activation','poslin'); % default parameters
@@ -101,10 +101,10 @@ for i = 1:kfold
     %     tst = (indices == i); % tst indices
     %     trn = ~tst; % trning indices
         
-    tsn = (indices == i); % tst indices
-    trn = ~tsn; % trning indices
+    trn = (indices == i); % tst indices
+    tsn = ~trn; % trning indices
     val = (indices == max(mod(i+1,kfold+1),1));
-    trn2= ~(tsn+val);
+    tsn2= ~(trn+val);
     
     if opts.Adjacency==1
     tic
@@ -141,35 +141,35 @@ for i = 1:kfold
     
     if opts.knn>0
         tic
-        mdl=fitcknn(ZTrn,YTrn,'Distance','euclidean','NumNeighbors',opts.knn);
-        tt=predict(mdl,ZTsn);
+        mdl=fitsemiself(ZTrn,YTrn, ZTsn);
+        tt=mdl.FittedLabels;
         t_AEE_NN(i)=tmp1+tmp2+toc;
         acc_AEE_NN(i)=acc_AEE_NN(i)+mean(Y(tsn)~=tt);
     end
     
     if opts.LDA==1
         tic
-        mdl=fitcdiscr(ZTrn,YTrn,'discrimType',discrimType);
-        tt=predict(mdl,ZTsn);
+        mdl=fitsemiself(ZTrn,YTrn, ZTsn,'Learner','discriminant','IterationLimit',100);
+        tt=mdl.FittedLabels;
         t_AEE_LDA(i)=tmp1+tmp2+toc;
         acc_AEE_LDA(i)=acc_AEE_LDA(i)+mean(YTsn~=tt);
     end
     
     
-    if opts.GFN==1
-        tic
-        Y2=zeros(length(YTrn),K);
-        for j=1:length(YTrn)
-            Y2(j,YTrn(j))=1;
-        end
-%         Y2Trn=Y2(trn,:);
-        mdl3 = train(netGFN,ZTrn',Y2');
-        classes = mdl3(ZTsn'); % class-wise probability for tsting data
-        %acc_NN = perform(mdl3,Y2Tsn',classes);
-        tt = vec2ind(classes)'; % this gives the actual class for each observation
-        t_GFN(i)=tmp1+tmp2+toc;
-        acc_GFN(i)=acc_GFN(i)+mean(YTsn~=tt);
-    end
+%     if opts.GFN==1
+%         tic
+%         Y2=zeros(length(YTrn),K);
+%         for j=1:length(YTrn)
+%             Y2(j,YTrn(j))=1;
+%         end
+% %         Y2Trn=Y2(trn,:);
+%         mdl3 = train(netGFN,ZTrn',Y2');
+%         classes = mdl3(ZTsn'); % class-wise probability for tsting data
+%         %acc_NN = perform(mdl3,Y2Tsn',classes);
+%         tt = vec2ind(classes)'; % this gives the actual class for each observation
+%         t_GFN(i)=tmp1+tmp2+toc;
+%         acc_GFN(i)=acc_GFN(i)+mean(YTsn~=tt);
+%     end
     
     if opts.Spectral==1
         % ASE
@@ -189,15 +189,15 @@ for i = 1:kfold
             t2=toc;
             if opts.LDA==1
                 tic
-                mdl=fitcdiscr(Z(trn,:),YA(trn),'discrimType',discrimType);
-                tt=predict(mdl,Z(tsn,:));
+                mdl=fitsemiself(Z(trn,:),YA(trn),Z(tsn,:),'Learner','discriminant','IterationLimit',100);
+                tt=mdl.FittedLabels;
                 t_ASE_LDA(i,j)=t1+t2+toc;
                 acc_ASE_LDA(i,j)=acc_ASE_LDA(i,j)+mean(YTsn~=tt);
             end
             if opts.knn>0
             tic
-            mdl=fitcknn(Z(trn,:),YA(trn),'Distance','euclidean','NumNeighbors',opts.knn);
-            tt=predict(mdl,Z(tsn,:));
+            mdl=fitsemiself(Z(trn,:),YA(trn),Z(tsn,:),'Learner','knn','IterationLimit',100);
+            tt=mdl.FittedLabels;
             t_ASE_NN(i,j)=t1+t2+toc;
             acc_ASE_NN(i,j)=acc_ASE_NN(i,j)+mean(YTsn~=tt);
             end
@@ -207,7 +207,7 @@ for i = 1:kfold
     
     if opts.Laplacian==1
         tic
-        oot=struct('Laplacian',true);
+        oot=struct('Laplacian',1);
         [Z,~,~,indT]=GraphEncoder(X,YT,oot);
         %     else
         %         [Z,indT]=GraphEncoder(X,YT,opts);
@@ -227,16 +227,16 @@ for i = 1:kfold
         tmp2=toc;
         if opts.knn>0
             tic
-            mdl=fitcknn(ZTrn,YTrn,'Distance','euclidean','NumNeighbors',opts.knn);
-            tt=predict(mdl,ZTsn);
+            mdl=fitsemiself(ZTrn,YTrn, ZTsn);
+            tt=mdl.FittedLabels;
             t_LEE_NN(i)=tmp1+tmp2+toc;
             acc_LEE_NN(i)=acc_LEE_NN(i)+mean(Y(tsn)~=tt);
         end
         
         if opts.LDA==1
             tic
-            mdl=fitcdiscr(ZTrn,YTrn,'discrimType',discrimType);
-            tt=predict(mdl,ZTsn);
+            mdl=fitsemiself(ZTrn,YTrn, ZTsn,'Learner','discriminant','IterationLimit',100);
+            tt=mdl.FittedLabels;
             t_LEE_LDA(i)=tmp1+tmp2+toc;
             acc_LEE_LDA(i)=acc_LEE_LDA(i)+mean(YTsn~=tt);
         end
@@ -255,15 +255,15 @@ for i = 1:kfold
             t2=toc;
             if opts.LDA==1
                 tic
-                mdl=fitcdiscr(Z(trn,:),Y(trn),'discrimType',discrimType);
-                tt=predict(mdl,Z(tsn,:));
+                mdl=fitsemiself(Z(trn,:),YA(trn),Z(tsn,:),'Learner','discriminant','IterationLimit',100);
+                tt=mdl.FittedLabels;
                 t_LSE_LDA(i,j)=t1+t2+toc;
                 acc_LSE_LDA(i,j)=acc_LSE_LDA(i,j)+mean(Y(tsn)~=tt);
             end
             if opts.knn>0
             tic
-            mdl=fitcknn(Z(trn,:),Y(trn),'Distance','euclidean','NumNeighbors',opts.knn);
-            tt=predict(mdl,Z(tsn,:));
+            mdl=fitsemiself(Z(trn,:),YA(trn),Z(tsn,:),'Learner','knn','IterationLimit',100);
+                tt=mdl.FittedLabels;
             t_LSE_NN(i,j)=t1+t2+toc;
             acc_LSE_NN(i,j)=acc_LSE_NN(i,j)+mean(Y(tsn)~=tt);
             end
@@ -274,7 +274,7 @@ for i = 1:kfold
     
     if opts.GCN==1
         tic
-        acc_GCN(i)=model_fastgcn_train_and_test(X, ide, Y2, trn2, val, tsn, ...
+        acc_GCN(i)=model_fastgcn_train_and_test(X, ide, Y2, trn, val, tsn2, ...
             szW0, szW1, l2_reg, num_epoch, batch_size, ...
             sample_size, adam_param);
         t_GCN(i)=toc;

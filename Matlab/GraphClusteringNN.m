@@ -12,7 +12,7 @@
 %%
 %% @export
 %% 
-function [ind,Z,W]=GraphClusteringNN(X,k,opts)
+function [ind,Z]=GraphClusteringNN(X,k,opts)
 
 %%% if necessary, use the following code to remove any zero row and column from X:
 %tmp=vecnorm(X); idx=(tmp>0); X=X(idx,idx);
@@ -73,4 +73,4 @@ for r=1:opts.maxIter
         ind=indNew;
     end
 end
-[Z,W]=GraphEncoder(X,indNew);
+% [Z,W]=GraphEncoder(X,indNew);
