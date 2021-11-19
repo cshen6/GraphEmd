@@ -264,9 +264,9 @@ AN=GraphEncoderEvaluate(Adj,Label,opts);
 %%% AEN only:
 load('polblogs.mat') 
 % GraphEncoder(Adj,Label,knum); %8
-indices = crossvalind('Kfold',Label,10);
+indices = crossvalind('Kfold',Y,10);
 opts.indices=indices;
-PB=GraphEncoderEvaluate(Adj,Label,opts);
+PB=GraphEncoderEvaluate(Adj,Y,opts);
 % opts2=opts;
 % opts2.deg=1;opts2.ASE=0;opts2.LSE=0;opts2.GCN=0;opts2.GNN=0; opts2.LDA=0;opts2.GFN=0;
 % PB2=GraphEncoderEvaluate(Adj,Label,opts2);
@@ -355,7 +355,7 @@ LFM=GraphEncoderEvaluate(Adj,Y,opts);
 % % GraphEncoder(Adj,Y,knum); %3341
 % Pek=GraphEncoderEvaluate(Adj,Y,opts);
 
-load('pubmed.mat')
+load('pubmedAdj.mat')
 % GraphEncoder(Adj,Y,knum); %7 
 indices = crossvalind('Kfold',Y,10);
 opts.indices=indices;

@@ -1,26 +1,28 @@
-function [Edge]=adj2edge(Adj,directed)
 
-if nargin<2
-    directed=0;
-end
+function [Edge]=adj2edge(Adj)
 n=size(Adj,1);
-tmp=1;
-if directed==0
-    tmp=2;
-end
-Edge=zeros(sum(sum(Adj~=0))/tmp,3);
+Adj=Adj+Adj';
+ss=sum(diag(Adj)>0);
+Edge=zeros((sum(sum(Adj>0))-ss)/2,2);
+% symc=issymmetric(Adj);
+% if symc==true
+%     Edge=zeros(sum(sum(Adj>0))/2,2);
+% else
+%     Edge=zeros(sum(sum(Adj>0)),2);
+% end
 s=1;
 for i=1:n
-    tmp=1;
-    if directed==0
-       tmp=i+1;
-    end
-    for j=tmp:n
-        if Adj(i,j)~=0
+%     if symc==true
+%         st=i+1;
+%     else
+%         st=1;
+%     end
+    for j=i+1:n
+        if Adj(i,j)>0
             Edge(s,1)=i;
             Edge(s,2)=j;
-            Edge(s,3)=Adj(i,j);
             s=s+1;
         end
     end
 end
+% Edge=Edge(Edge(:,1)>0,:);

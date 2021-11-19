@@ -13,7 +13,7 @@ if ~isfield(opts,'Dist'); opts.Dist='sqeuclidean'; end
 if ~isfield(opts,'normalize'); opts.normalize=0; end
 if ~isfield(opts,'dmax'); opts.dmax=30; end
 d=opts.dmax;
-
+n=length(Y);
 [~,~,Y]=unique(Y);
 % n=length(Y);
 K=max(Y);
@@ -55,7 +55,7 @@ if opts.Adjacency==1
         for j=1:d
             tic
             Z_ASE=U(:,1:j)*S(1:j,1:j)^0.5;
-            ind_ASE = kmeans(Z_ASE, K);
+            ind_ASE = kmeans(Z_ASE, K,'Distance',opts.Dist);
             t_ASE(j)=t1+toc;
             ARI_ASE(j)=RandIndex(Y,ind_ASE);
         end
@@ -85,7 +85,7 @@ if opts.Laplacian==1
         for j=1:d
             tic
             Z_LSE=U(:,1:j)*S(1:j,1:j)^0.5;
-            ind_LSE = kmeans(Z_LSE, K);
+            ind_LSE = kmeans(Z_LSE, K,'Distance',opts.Dist);
             t_LSE(j)=t1+toc;
             ARI_LSE(j)=RandIndex(Y,ind_LSE);
         end

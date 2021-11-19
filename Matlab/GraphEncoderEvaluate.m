@@ -8,9 +8,9 @@ if ~isfield(opts,'Adjacency'); opts.Adjacency=1; end
 if ~isfield(opts,'Laplacian'); opts.Laplacian=1; end
 if ~isfield(opts,'Spectral'); opts.Spectral=1; end
 if ~isfield(opts,'LDA'); opts.LDA=1; end
-if ~isfield(opts,'GFN'); opts.GFN=1; end
-if ~isfield(opts,'GCN'); opts.GCN=1; end
-if ~isfield(opts,'GNN'); opts.GNN=1; end
+if ~isfield(opts,'GFN'); opts.GFN=0; end
+if ~isfield(opts,'GCN'); opts.GCN=0; end
+if ~isfield(opts,'GNN'); opts.GNN=0; end
 if ~isfield(opts,'knn'); opts.knn=5; end
 if ~isfield(opts,'dim'); opts.dim=30; end
 % if ~isfield(opts,'deg'); opts.deg=0; end
@@ -103,6 +103,10 @@ for i = 1:kfold
         
     tsn = (indices == i); % tst indices
     trn = ~tsn; % trning indices
+    
+%     trn = (indices == i); % tst indices
+%     tsn = ~trn; % trning indices
+    
     val = (indices == max(mod(i+1,kfold+1),1));
     trn2= ~(tsn+val);
     
