@@ -1,80 +1,87 @@
 %% Compute the Adjacency Encoder Embedding.
 %% Running time is O(s) where s is number of edges.
-%% Reference: C. Shen and Q. Wang and C. E. Priebe, "Graph Encoder Embedding", 2021. 
+%% Reference: C. Shen and Q. Wang and C. E. Priebe, "Graph Encoder Embedding", 2021.
+%%            C. Shen et.al., "Graph Encoder Clustering", in preparation.
 %%
-%% @param X is either n*n adjacency, or s*3 edge list.
-%%        Adjacency matrix can be weighted or unweighted, directed or undirected. Complexity in O(n^2).
+%% @param X is either n*n adjacency, or s*3 edge list. Vertex size should be >10.
+%%        Adjacency matrix can be weighted or unweighted, directed or undirected. It will be converted to s*3 edgelist.
 %%        Edgelist input can be either s*2 or s*3, and complexity in O(s).
-%% @param Y is either an n*1 class label vector, or a positive integer for number of classes. 
-%%        Y should be a n*1 vector when some labels are known. Unknown labels shall be set to <=0 and known labels being >0. 
-%%        When there is no known label, set Y to be the number of classes. 
-%% @param opts specifies two options: Laplacian being 1 uses graph Laplacian, otherwise uses adjacency matrix; 
-%%        then maxIter denotes the max iteration when there is no known label, and not used otherwise.
+%% @param Y is either an n*1 class label vector, or a positive integer for number of clusters, or a range of potential cluster size, i.e., [2,10].
+%%        In case of partial known labels, Y should be a n*1 vector with unknown labels set to <=0 and known labels being >0. 
+%%        When there is no known label, set Y to be the number of clusters or a range of clusters.
+%% @param opts specifies options: 
+%%        DiagA = true means adding 1 to all diagonal entries (i.e., add self-loop to edgelist);
+%%        Correlation specifies whether to use angle metric or Euclidean metric;
+%%        Laplacian specifies whether to uses graph Laplacian or adjacency matrix; 
+%%        Three integers for clustering: Replicates denotes the number of replicates for clustering, 
+%%                                       MaxIter denotes the max iteration within each replicate for encoder embedding,
+%%                                       MaxIterK denotes the max iteration used within kmeans.
 %%
-%% @return The n*k Encoder Embedding Z
-%% @return The n*k Encoder Transformation W
+%% @return The n*k Encoder Embedding Z; the n*k Encoder Transformation: W; the n*1 label vector: Y;
+%% @return The n*1 boolean vector for known label: indT (only for classification);
+%% @return The within-cluster sum of square divided by total: meanSS (only for clustering);
 %%
 %% @export
 %%
 
-function [Z,Y,W,indT,B]=GraphEncoder(X,Y,opts)
-
-if nargin<3
-    opts = struct('Laplacian',false,'MaxIter',100,'Learn',false,'DiagA',true,'Correlation',true);
+function [Z,Y,W,indT,meanSS]=GraphEncoder(X,Y,opts)
+warning ('off','all');
+if nargin<2
+    Y=2:5;
 end
-if ~isfield(opts,'Laplacian'); opts.Laplacian=false; end
-if ~isfield(opts,'Learn'); opts.Learn=false; end
-if ~isfield(opts,'MaxIter'); opts.MaxIter=100; end
+if nargin<3
+    opts = struct('DiagA',true,'Correlation',true,'Laplacian',false,'Learn',false,'MaxIter',50,'MaxIterK',5,'Replicates',3);
+end
 if ~isfield(opts,'DiagA'); opts.DiagA=true; end
 if ~isfield(opts,'Correlation'); opts.Correlation=true; end
+if ~isfield(opts,'Laplacian'); opts.Laplacian=false; end
+if ~isfield(opts,'Learn'); opts.Learn=false; end
+if ~isfield(opts,'MaxIter'); opts.MaxIter=50; end
+if ~isfield(opts,'MaxIterK'); opts.MaxIterK=10; end
+if ~isfield(opts,'Replicates'); opts.Replicates=3; end
 % if ~isfield(opts,'distance'); opts.distance='correlation'; end
 % opts.DiagA=false;
 % opts.Laplacian=true;
 % opts.Correlation=false;
 
+%% pre-precess input to s*3 then diagonal augment
 [s,t]=size(X);
-if t<=3
-    n=max(max(X));
-    if t==2
-        X=[X,ones(s,1)];
-%         t=3;
-    end
-    if opts.DiagA==true
-        XNew=[1:n;1:n;ones(1,n)]';
-        X=[X;XNew];
-%         s=size(X,1);
-    end
-else
-    n=size(X,1);
-    if opts.DiagA==true
-        X=X+1*eye(n,n);
-    end
+if s==t % convert adjacency matrix to edgelist
+    [X]=adj2edge(X);
+end
+if t==2 % enlarge the edgelist to s*3
+    X=[X,ones(s,1)];
+end
+n=max(max(X));
+if opts.DiagA==true
+    XNew=[1:n;1:n;ones(1,n)]';
+    X=[X;XNew];
 end
 
-if length(Y)==1
-    k=Y;
-    indT=0; 
-    Y2=randi([1,k],[n,1]);   
-    warning ('off','all');
-    for r=1:opts.MaxIter
-        [Z,~,~,W,B]=GraphEncoderMain(X,Y2,opts);
-%         try
-            Y = kmeans(Z, k,'MaxIter',10,'Replicates',1,'Start','plus');
-%             Y = kmeans(Z, k,'MaxIter',3,'Replicates',1,'Start','plus','Distance',opts.distance);
-%             gmfit = fitgmdist(Z,k, 'CovarianceType','diagonal');%'RegularizationValue',0.00001); % Fitted GMM
-%             Y = cluster(gmfit,Z); % Cluster index
-            if RandIndex(Y2,Y)==1
-                break;
-            else
-                Y2=Y;
+%% partial or full known labels when label size matches vertex size, do embedding / classification directly
+if length(Y)==n 
+    [Z,Y,W,indT]=GraphEncoderEmbed(X,Y,n,opts);
+    meanSS=0;
+else 
+    %% otherwise do clustering
+    indT=zeros(n,1);
+    K=Y;
+    %% when a given cluster size is specified
+    if length(K)==1
+        [Z,Y,W,meanSS]=GraphEncoderCluster(X,K,n,opts);
+    else
+        %% when a range of cluster size is specified
+        if length(K)<n/2 && max(K)<max(n/2,10)
+            meanSS=1;Z=0;W=0;
+            for r=1:length(K)
+                [Zt,Yt,Wt,tmpSS]=GraphEncoderCluster(X,K(r),n,opts);
+                if tmpSS<meanSS
+                    meanSS=tmpSS;Y=Yt;Z=Zt;W=Wt;
+                end
             end
-%         catch
-%             r=1;
-%             Y2=randi([1,k],[n,1]); %%% re-initialize
-%         end
+        end
     end
-else
-    [Z,Y,W,indT,B]=GraphEncoderMain(X,Y,opts);
+end
 %     if opts.Learn==true && sum(indT)<length(Y)
 %         t1=indT;
 %         t2=~indT;
@@ -103,20 +110,42 @@ else
 %             end
 %         end
 %     end
+
+%% Clustering Function
+function [Z,Y,W,meanSS]=GraphEncoderCluster(X,K,n,opts)
+
+if nargin<4
+    opts = struct('Correlation',true,'Laplacian',false,'MaxIter',50,'MaxIterK',5,'Replicates',3);
+end
+meanSS=1;
+for rep=1:opts.Replicates
+    Y2=randi([1,K],[n,1]);
+    for r=1:opts.MaxIter
+        [Zt,~,~,Wt]=GraphEncoderEmbed(X,Y2,n,opts);
+        [Y3,~,tmp,D] = kmeans(Zt, K,'MaxIter',opts.MaxIterK,'Replicates',1,'Start','plus');
+        %gmfit = fitgmdist(Z,k, 'CovarianceType','diagonal');%'RegularizationValue',0.00001); % Fitted GMM
+        %Y = cluster(gmfit,Z); % Cluster index
+        if RandIndex(Y2,Y3)==1
+            break;
+        else
+            Y2=Y3;
+        end
+    end
+    tmp=sum(tmp)/sum(sum(D));
+    if tmp<meanSS
+        Z=Zt;W=Wt;meanSS=tmp;Y=Y3;
+    end
 end
 
-
-function [Z,Y,W,indT,B]=GraphEncoderMain(X,Y,opts)
-if nargin<3
-    opts = struct('Laplacian',false,'Correlation',true);
+%% Embedding Function
+function [Z,Y,W,indT,B]=GraphEncoderEmbed(X,Y,n,opts)
+if nargin<4
+    opts = struct('Correlation',true,'Laplacian',false);
 end
-if ~isfield(opts,'Laplacian'); opts.Laplacian=false; end
-if ~isfield(opts,'Correlation'); opts.Correlation=true; end
 
-n=length(Y);
 indT=(Y>0);
 Y1=Y(indT);
-[s,t]=size(X);
+s=size(X,1);
 [tmp,~,Ytmp]=unique(Y1);
 Y(indT)=Ytmp;
 k=length(tmp);
@@ -130,52 +159,38 @@ for i=1:k
     W(ind,i)=1/nk(i);
     indS(:,i)=ind;
 end
-num=size(X,3);
+% num=size(X,3);
         
 if opts.Laplacian==true
-    if t==3
-        D=zeros(n,1);
-        for i=1:s
-            a=X(i,1);
-            b=X(i,2);
-            D(a)=D(a)+X(i,3);
-            if a~=b
-                D(b)=D(b)+X(i,3);
-            end
-        end
-        D=D.^-0.5;
-        for i=1:s
-            X(i,3)=X(i,3)*D(X(i,1))*D(X(i,2));
-        end
-    else
-        D=max(sum(X,1),1).^(0.5);
-        for i=1:n
-            X(:,i)=X(:,i)/D(i)./D';
-        end
-    end
-end
-
-% Adjacency matrix version in O(n^2)
-if s==n && t==n   
-    Z=zeros(n,k,num);
-    for r=1:num
-        Z(:,:,r)=X(:,:,r)*W;
-    end
-end
-
-% Edge List Version in O(s) (thus more efficient for large sparse graph)
-if t==3 && num==1
-    Z=zeros(n,k);
+    D=zeros(n,1);
     for i=1:s
         a=X(i,1);
         b=X(i,2);
-        c=Y(a);
-        d=Y(b);
-        e=X(i,3);
-        Z(a,d)=Z(a,d)+W(b,d)*e;
+        c=X(i,3);
+        D(a)=D(a)+c;
         if a~=b
-            Z(b,c)=Z(b,c)+W(a,c)*e;
+            D(b)=D(b)+c;
         end
+    end
+    D=D.^-0.5;
+    for i=1:s
+        X(i,3)=X(i,3)*D(X(i,1))*D(X(i,2));
+    end
+end
+
+% Edge List Version in O(s)
+Z=zeros(n,k);
+for i=1:s
+    a=X(i,1);
+    b=X(i,2);
+    c=Y(a);
+    d=Y(b);
+    e=X(i,3);
+    if d>0
+        Z(a,d)=Z(a,d)+W(b,d)*e;
+    end
+    if c>0 && a~=b
+        Z(b,c)=Z(b,c)+W(a,c)*e;
     end
 end
 
@@ -189,4 +204,24 @@ B=zeros(k,k);
 for j=1:k
     tmp=(indS(:,j)==1);
     B(j,:)=mean(Z(tmp,:));
+end
+
+%% Adj to Edge Function
+function [Edge]=adj2edge(Adj)
+if size(Adj,2)<=3
+    Edge=Adj;
+    return;
+end
+n=size(Adj,1);
+Edge=zeros(sum(sum(Adj>0)),3);
+s=1;
+for i=1:n
+    for j=1:n
+        if Adj(i,j)>0
+            Edge(s,1)=i;
+            Edge(s,2)=j;
+            Edge(s,3)=Adj(i,j);
+            s=s+1;
+        end
+    end
 end

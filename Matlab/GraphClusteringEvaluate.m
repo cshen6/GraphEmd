@@ -79,8 +79,12 @@ if opts.Laplacian==1
     if opts.Spectral==1
         ARI_LSE=zeros(d,1);t_LSE=zeros(d,1);
         tic
-        D=diag(max(sum(Adj,1),1))^(-0.5);
-        [U,S,~]=svds(D*Adj*D,d);
+        D=max(sum(Adj,1),1).^(0.5);
+        AdjT=Adj;
+        for j=1:n
+            AdjT(:,j)=AdjT(:,j)/D(j)./D';
+        end
+        [U,S,~]=svds(AdjT,d);
         t1=toc;
         for j=1:d
             tic

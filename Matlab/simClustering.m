@@ -1,9 +1,9 @@
 function simClustering
 
 %%% self-learning
-n=2000;k=10;
+n=2000;K=10;
 opts = struct('Adjacency',1,'Laplacian',1,'Spectral',1,'LDA',1,'GFN',1,'GCN',0,'GNN',0,'knn',5,'dim',30,'neuron',10,'epoch',100,'training',0.8,'activation','poslin'); % default parameters
-[Adj,Y]=simGenerate(10,n,k);
+[Adj,Y]=simGenerate(10,n,K);
 indices = crossvalind('Kfold',Y,5);error1=0;
 for i=1:max(indices);
 trn = (indices == i); % tst indices
@@ -15,7 +15,7 @@ error1=error1+mean(Y3(tsn)==Y(tsn))/max(indices);
 end
 
 %%%%
-n=2000;k=10;
+n=2000;K=10;
 opts = struct('Adjacency',1,'Laplacian',1,'Spectral',1,'LDA',1,'GFN',1,'GCN',0,'GNN',0,'knn',5,'dim',30,'neuron',10,'epoch',100,'training',0.8,'activation','poslin'); % default parameters
 [Adj,Y]=simGenerate(10,n);
 GraphEncoderC(Adj,3,Y);
@@ -31,7 +31,7 @@ GraphEncoderC(Adj,3,Y);
 GraphEncoderC(Adj,5,Y);
 
 %%% Basic Sims
-n=2000;k=10;
+n=2000;K=10;
 opts = struct('Adjacency',1,'Laplacian',1,'Spectral',1,'LDA',1,'GFN',1,'GCN',0,'GNN',0,'knn',5,'dim',30,'neuron',10,'epoch',100,'training',0.8,'activation','poslin'); % default parameters
 [Adj,Y]=simGenerate(10,n);
 indices = crossvalind('Kfold',Y,5);
@@ -40,20 +40,20 @@ opts.indices=indices;
 % opts2.deg=1;opts2.ASE=0;opts2.LSE=0;opts2.GCN=0;opts2.GNN=0; opts2.LDA=0;opts2.GFN=0;
 SBM=GraphEncoderSemi(Adj,Y,opts);
 % SBM1=GraphEncoderEvaluate(Adj,Y,opts2);
-[Adj,Y]=simGenerate(11,n,k);
+[Adj,Y]=simGenerate(11,n,K);
 SBM2=GraphEncoderSemi(Adj,Y,opts);
 % SBM3=GraphEncoderEvaluate(Adj,Y,opts2);
 [Adj,Y]=simGenerate(30,n);
 RDPG=GraphEncoderSemi(Adj,Y,opts);
 % RDPG1=GraphEncoderEvaluate(Adj,Y,opts2);
-[Adj,Y]=simGenerate(31,n,k);
+[Adj,Y]=simGenerate(31,n,K);
 RDPG2=GraphEncoderSemi(Adj,Y,opts);
 % RDPG3=GraphEncoderEvaluate(Adj,Y,opts2);
 % DC-SBM
 [Adj,Y]=simGenerate(20,n);
 DCSBM=GraphEncoderSemi(Adj,Y,opts);
 % DCSBM1=GraphEncoderEvaluate(Adj,Y,opts2);
-[Adj,Y]=simGenerate(21,n,k);
+[Adj,Y]=simGenerate(21,n,K);
 DCSBM2=GraphEncoderSemi(Adj,Y,opts);
 % DCSBM3=GraphEncoderEvaluate(Adj,Y,opts2);
 % Dist
@@ -61,32 +61,32 @@ opts.LSE=0;opts2.LSE=0;
 [Adj,Y]=simGenerate(40,n);
 Dist=GraphEncoderSemi(Adj,Y,opts);
 % Dist1=GraphEncoderEvaluate(Adj,Y,opts2);
-[Adj,Y]=simGenerate(41,n,k);
+[Adj,Y]=simGenerate(41,n,K);
 Dist2=GraphEncoderSemi(Adj,Y,opts);
 % Dist3=GraphEncoderEvaluate(Adj,Y,opts2);
 % Kernel
 [Adj,Y]=simGenerate(50,n);
 Kern=GraphEncoderSemi(Adj,Y,opts);
 % Kern1=GraphEncoderEvaluate(Adj,Y,opts2);
-[Adj,Y]=simGenerate(51,n,k);
+[Adj,Y]=simGenerate(51,n,K);
 Kern2=GraphEncoderSemi(Adj,Y,opts);
 
 
 %%% Basic Sims
 n=5000;
 % opts = struct('ASE',1,'LSE',1,'NN',0,'Dist','cosine','maxIter',20,'normalize',0,'deg',0,'dmax',30); % default parameters
-k=10;rep=10; tt=3;
+K=10;rep=10; tt=3;
 SBM=zeros(2,5,tt);
 RDPG=zeros(2,5,tt);
 DCSBM=zeros(2,5,tt);
 for r=1:rep
-[Adj,Y]=simGenerate(10,n,k);
+[Adj,Y]=simGenerate(10,n,K);
 % % Edge=Adj2Edge(Adj);
 SBM(:,:,1)=SBM(:,:,1)+table2array(GraphClusteringEvaluate(Adj,Y))/rep;
-[Adj,Y]=simGenerate(11,n,k);
+[Adj,Y]=simGenerate(11,n,K);
 % Edge=Adj2Edge(Adj);
 SBM(:,:,2)=SBM(:,:,2)+table2array(GraphClusteringEvaluate(Adj,Y))/rep;
-[Adj,Y]=simGenerate(12,n,k);
+[Adj,Y]=simGenerate(12,n,K);
 % Edge=Adj2Edge(Adj);
 SBM(:,:,3)=SBM(:,:,3)+table2array(GraphClusteringEvaluate(Adj,Y))/rep;
 % [Adj,Y]=simGenerate(30,n,k);
@@ -99,28 +99,28 @@ SBM(:,:,3)=SBM(:,:,3)+table2array(GraphClusteringEvaluate(Adj,Y))/rep;
 [Adj,Y]=simGenerate(20,n);
 % % Edge=Adj2Edge(Adj);
 DCSBM(:,:,1)=DCSBM(:,:,1)+table2array(GraphClusteringEvaluate(Adj,Y))/rep;
-[Adj,Y]=simGenerate(21,n,k);
+[Adj,Y]=simGenerate(21,n,K);
 % Edge=Adj2Edge(Adj);
 DCSBM(:,:,2)=DCSBM(:,:,2)+table2array(GraphClusteringEvaluate(Adj,Y))/rep;
-[Adj,Y]=simGenerate(22,n,k);
+[Adj,Y]=simGenerate(22,n,K);
 % Edge=Adj2Edge(Adj);
 DCSBM(:,:,3)=DCSBM(:,:,3)+table2array(GraphClusteringEvaluate(Adj,Y))/rep;
 end
 
-n=2000;k=3;
-[Adj,Y]=simGenerate(10,n,k);
+n=2000;K=3;
+[Adj,Y]=simGenerate(10,n,K);
 simClusteringReal(Adj,Y);
 
 % Dist
 opts.LSE=0;opts2.LSE=0;
 [Adj,Y]=simGenerate(40,n);
 Dist=GraphClusteringEvaluate(Adj,Y);
-[Adj,Y]=simGenerate(41,n,k);
+[Adj,Y]=simGenerate(41,n,K);
 Dist2=GraphClusteringEvaluate(Adj,Y);
 % Kernel
 [Adj,Y]=simGenerate(50,n);
 Kern=GraphClusteringEvaluate(Adj,Y);
-[Adj,Y]=simGenerate(51,n,k);
+[Adj,Y]=simGenerate(51,n,K);
 Kern2=GraphClusteringEvaluate(Adj,Y);
 
 
@@ -149,12 +149,12 @@ Dist='sqeuclidean';%Dist='cosine';
 % 
 
 %%% 1. Corr better
-n=5000;k=10;
+n=5000;K=10;
 [Adj,Y]=simGenerate(10,n);
 GraphClusteringEvaluate(Adj,Y)
-[Adj,Y]=simGenerate(11,n,k);
+[Adj,Y]=simGenerate(11,n,K);
 GraphClusteringEvaluate(Adj,Y)
-[Adj,Y]=simGenerate(12,n,k);
+[Adj,Y]=simGenerate(12,n,K);
 GraphClusteringEvaluate(Adj,Y)
 % [Adj,Y]=simGenerate(15,n,k);
 % GraphClusteringEvaluate(Adj,Y)
@@ -162,10 +162,33 @@ GraphClusteringEvaluate(Adj,Y)
 % GraphClusteringEvaluate(Adj,Y)
 [Adj,Y]=simGenerate(20,n);
 GraphClusteringEvaluate(Adj,Y)
-[Adj,Y]=simGenerate(21,n,k);
+[Adj,Y]=simGenerate(21,n,K);
 GraphClusteringEvaluate(Adj,Y)
-[Adj,Y]=simGenerate(22,n,k);
+[Adj,Y]=simGenerate(22,n,K);
 GraphClusteringEvaluate(Adj,Y)
+
+% Try K choice
+kmax=20;
+score=zeros(kmax,1);
+ari=zeros(kmax,1);
+for r=2:kmax
+    [~,Y2,~,~,score(r)]=GraphEncoder(Adj,r);
+    ari(r)=RandIndex(Y2,Y+1);
+end
+subplot(1,2,1);
+plot(2:kmax,1-score(2:kmax),'r-','LineWidth',2)
+title(strcat('1-MeanSS at K=',num2str(K)))
+xlim([2,kmax]);
+axis('square')
+set(gca,'FontSize',15);
+subplot(1,2,2);
+plot(2:kmax,ari(2:kmax),'b-','LineWidth',2)
+title(strcat('ARI at K=',num2str(K)))
+xlim([2,kmax]);
+axis('square')
+set(gca,'FontSize',15);
+%
+
 % [Adj,Y]=simGenerate(25,n,k);
 % GraphClusteringEvaluate(Adj,Y)
 % [Adj,Y]=simGenerate(26,n,k);
@@ -187,11 +210,15 @@ GraphClusteringEvaluate(AdjOri,YOri)
 % [PB_RI_AEE,PB_RI_AEN,PB_RI_ASE,PB_t_AEE,PB_t_AEE2,PB_t_AEN,PB_t_ASE]=simClusteringReal(Adj,Label);
 
 %%% 3. No changce / similar
+load('Adjnoun.mat') %AEL / GFN K=2
+GraphClusteringEvaluate(Adj,Y)
+load('DD244.mat') %AEL / GFN K=2
+GraphClusteringEvaluate(Adj,Y)
 load('pubmedAdj.mat') %k=3;
 GraphClusteringEvaluate(AdjOri,YOri)
 load('Wiki_Data.mat')
-GraphClusteringEvaluate(GEAdj,Label)
-GraphClusteringEvaluate(GFAdj,Label)
+GraphClusteringEvaluate(GEAdj,Label+1)
+GraphClusteringEvaluate(GFAdj,Label+1)
 load('graphCElegans.mat')
 GraphClusteringEvaluate(Ag,vcols)
 load('adjnoun.mat')
@@ -207,3 +234,8 @@ load('OHSU.mat')
 GraphClusteringEvaluate(AdjOri,YOri)
 load('Peking.mat')
 GraphClusteringEvaluate(AdjOri,YOri)
+% Simple Eval
+tic
+[~,Y1,~,~]=GraphEncoder(Adj,K);
+toc
+RandIndex(Y,Y1)

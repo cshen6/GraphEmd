@@ -250,8 +250,12 @@ for i = 1:kfold
         if opts.Spectral==1
         tic
         Adj=mean(X,3);
-        D=diag(max(sum(Adj,1),1))^(-0.5);
-        [U,S,~]=svds(D*Adj*D,d);
+        D=max(sum(Adj,1),1).^(0.5);
+        AdjT=Adj;
+        for j=1:n
+            AdjT(:,j)=AdjT(:,j)/D(j)./D';
+        end
+        [U,S,~]=svds(AdjT,d);
         t1=toc;
         for j=1:d
             tic

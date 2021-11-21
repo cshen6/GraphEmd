@@ -145,12 +145,14 @@ SBM=GraphEncoderEvaluate(Adj,Y,opts);
 % SBM1=GraphEncoderEvaluate(Adj,Y,opts2);
 [Adj,Y]=simGenerate(11,n,k);
 SBM2=GraphEncoderEvaluate(Adj,Y,opts);
+[Adj,Y]=simGenerate(12,n,k);
+SBM3=GraphEncoderEvaluate(Adj,Y,opts);
 % SBM3=GraphEncoderEvaluate(Adj,Y,opts2);
-[Adj,Y]=simGenerate(30,n);
-RDPG=GraphEncoderEvaluate(Adj,Y,opts);
-% RDPG1=GraphEncoderEvaluate(Adj,Y,opts2);
-[Adj,Y]=simGenerate(31,n,k);
-RDPG2=GraphEncoderEvaluate(Adj,Y,opts);
+% [Adj,Y]=simGenerate(30,n);
+% RDPG=GraphEncoderEvaluate(Adj,Y,opts);
+% % RDPG1=GraphEncoderEvaluate(Adj,Y,opts2);
+% [Adj,Y]=simGenerate(31,n,k);
+% RDPG2=GraphEncoderEvaluate(Adj,Y,opts);
 % RDPG3=GraphEncoderEvaluate(Adj,Y,opts2);
 % DC-SBM
 [Adj,Y]=simGenerate(20,n);
@@ -158,6 +160,8 @@ DCSBM=GraphEncoderEvaluate(Adj,Y,opts);
 % DCSBM1=GraphEncoderEvaluate(Adj,Y,opts2);
 [Adj,Y]=simGenerate(21,n,k);
 DCSBM2=GraphEncoderEvaluate(Adj,Y,opts);
+[Adj,Y]=simGenerate(22,n,k);
+DCSBM3=GraphEncoderEvaluate(Adj,Y,opts);
 % DCSBM3=GraphEncoderEvaluate(Adj,Y,opts2);
 % Dist
 opts.LSE=0;opts2.LSE=0;
@@ -306,9 +310,9 @@ WikiGF=GraphEncoderEvaluate(GFAdj,Label,opts);
 
 load('CoraAdj.mat') %AEK K=7
 % GraphEncoder(Adj,Y,knum); %0 
-indices = crossvalind('Kfold',Y,10);
+indices = crossvalind('Kfold',YOri,10);
 opts.indices=indices;
-Cora=GraphEncoderEvaluate(Adj,Y,opts);
+Cora=GraphEncoderEvaluate(AdjOri,YOri,opts);
 % opts2=opts;
 % opts2.deg=1;opts2.ASE=0;opts2.LSE=0;opts2.GCN=0;opts2.GNN=0; opts2.LDA=0;opts2.GFN=0;
 % Cora2=GraphEncoderEvaluate(Adj,Y,opts2);
@@ -319,9 +323,9 @@ Cora=GraphEncoderEvaluate(Adj,Y,opts);
 
 load('Gene.mat') %AEL / GFN K=2
 % GraphEncoder(Adj,Y,knum); %0
-indices = crossvalind('Kfold',Y,10);
+indices = crossvalind('Kfold',YOri,10);
 opts.indices=indices;
-Gene=GraphEncoderEvaluate(Adj,Y,opts);
+Gene=GraphEncoderEvaluate(AdjOri,YOri,opts);
 % opts2=opts;
 % opts2.deg=1;opts2.ASE=0;opts2.LSE=0;opts2.GCN=0;opts2.GNN=0; opts2.LDA=0;opts2.GFN=0;
 % Gene2=GraphEncoderEvaluate(Adj,Y,opts2);
@@ -340,9 +344,9 @@ IIP=GraphEncoderEvaluate(Adj,Y,opts);
 
 load('lastfm.mat') %AEK K=17
 % GraphEncoder(Adj,Y,knum); %542
-indices = crossvalind('Kfold',Y,10);
+indices = crossvalind('Kfold',YOri,10);
 opts.indices=indices;
-LFM=GraphEncoderEvaluate(Adj,Y,opts);
+LFM=GraphEncoderEvaluate(AdjOri,YOri,opts);
 % opts2=opts;
 % opts2.deg=1;opts2.ASE=0;opts2.LSE=0;opts2.GCN=0;opts2.GNN=0; opts2.LDA=0;opts2.GFN=0;
 % LFM2=GraphEncoderEvaluate(Adj,Y,opts2);
@@ -357,17 +361,17 @@ LFM=GraphEncoderEvaluate(Adj,Y,opts);
 
 load('pubmedAdj.mat')
 % GraphEncoder(Adj,Y,knum); %7 
-indices = crossvalind('Kfold',Y,10);
+indices = crossvalind('Kfold',YOri,10);
 opts.indices=indices;
-Pub=GraphEncoderEvaluate(Adj,Y,opts);
+Pub=GraphEncoderEvaluate(AdjOri,YOri,opts);
 % opts2=opts;
 % opts2.deg=1;opts2.ASE=0;opts2.LSE=0;opts2.GCN=0;opts2.GNN=0; opts2.LDA=0;opts2.GFN=0;
 % Pub2=GraphEncoderEvaluate(Adj,Y,opts2);
 
 load('email.mat')
-indices = crossvalind('Kfold',Y,10);
+indices = crossvalind('Kfold',YOri,10);
 opts.indices=indices;
-email=GraphEncoderEvaluate(Adj,Y,opts);
+email=GraphEncoderEvaluate(AdjOri,YOri,opts);
 % opts2=opts;
 % opts2.deg=1;opts2.ASE=0;opts2.LSE=0;opts2.GCN=0;opts2.GNN=0; opts2.LDA=0;opts2.GFN=0;
 % email2=GraphEncoderEvaluate(Adj,Y,opts2);
