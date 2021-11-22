@@ -239,3 +239,7 @@ tic
 [~,Y1,~,~]=GraphEncoder(Adj,K);
 toc
 RandIndex(Y,Y1)
+tic
+[~,Y1,~,~]=GraphEncoder(Adj,[2:10]);
+toc
+RandIndex(Y,Y1)

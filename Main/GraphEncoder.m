@@ -19,7 +19,7 @@
 %%
 %% @return The n*k Encoder Embedding Z; the n*k Encoder Transformation: W; the n*1 label vector: Y;
 %% @return The n*1 boolean vector for known label: indT (only for classification);
-%% @return The within-cluster sum of square divided by total: meanSS (only for clustering);
+%% @return The meanSS criterion, the smaller the better (only for clustering);
 %%
 %% @export
 %%
@@ -30,7 +30,7 @@ if nargin<2
     Y=2:5;
 end
 if nargin<3
-    opts = struct('DiagA',true,'Correlation',true,'Laplacian',false,'Learn',false,'MaxIter',50,'MaxIterK',5,'Replicates',3);
+    opts = struct('DiagA',true,'Correlation',true,'Laplacian',false,'Learn',false,'MaxIter',50,'MaxIterK',5,'Replicates',1);
 end
 if ~isfield(opts,'DiagA'); opts.DiagA=true; end
 if ~isfield(opts,'Correlation'); opts.Correlation=true; end
@@ -72,11 +72,12 @@ else
     else
         %% when a range of cluster size is specified
         if length(K)<n/2 && max(K)<max(n/2,10)
-            meanSS=1;Z=0;W=0;
+            meanSS=-1;Z=0;W=0;
             for r=1:length(K)
-                [Zt,Yt,Wt,tmpSS]=GraphEncoderCluster(X,K(r),n,opts);
-                if tmpSS<meanSS
-                    meanSS=tmpSS;Y=Yt;Z=Zt;W=Wt;
+                [Zt,Yt,Wt,tmp]=GraphEncoderCluster(X,K(r),n,opts);
+%                 a_counts = accumarray(Yt,1);
+                if meanSS==-1 || tmp<meanSS
+                    meanSS=tmp;Y=Yt;Z=Zt;W=Wt;
                 end
             end
         end
@@ -117,7 +118,7 @@ function [Z,Y,W,meanSS]=GraphEncoderCluster(X,K,n,opts)
 if nargin<4
     opts = struct('Correlation',true,'Laplacian',false,'MaxIter',50,'MaxIterK',5,'Replicates',3);
 end
-meanSS=1;
+meanSS=-1;
 for rep=1:opts.Replicates
     Y2=randi([1,K],[n,1]);
     for r=1:opts.MaxIter
@@ -131,8 +132,9 @@ for rep=1:opts.Replicates
             Y2=Y3;
         end
     end
-    tmp=sum(tmp)/sum(sum(D));
-    if tmp<meanSS
+%     tmp=tmp/sum(sum(D));
+    tmp=sum(tmp)/sum(sum(D))*sqrt(K/2);
+    if meanSS==-1 || tmp<meanSS
         Z=Zt;W=Wt;meanSS=tmp;Y=Y3;
     end
 end

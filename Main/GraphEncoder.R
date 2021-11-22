@@ -2,7 +2,7 @@
 suppressMessages(require(igraph))
 suppressMessages(require(Matrix))
 ##suppressMessages(require(irlba))
-##suppressMessages(require(mclust))
+suppressMessages(require(mclust))
 ##suppressMessages(require(gmmase))
 suppressMessages(require(wordspace))
 options(warn =-1) 
@@ -21,7 +21,7 @@ options(warn =-1)
 ##
 ## Return:
 ##   result: Encoder Embedding Z of size n*k, Y is the final label, W is the encoder projection matrix. 
-##           For clustering, also output meanSS as the total within-cluster sum of squares divided by total sum of squares; 
+##           For clustering, also output meanSS as the total within-cluster sum of squares divided by total sum of squares then normalized by K/2; 
 ##           For classification, also output indT as the index of known labels.
 ##
 ## Reference:
@@ -30,7 +30,7 @@ options(warn =-1)
 
 ## Main Function
 ## X=as.matrix(get.data.frame(g));
-GraphEncoder <- function(X, Y=c(2:5), Laplacian = FALSE, DiagA = TRUE, Correlation = TRUE, MaxIter=50, MaxIterK=5, Replicates=3) {
+GraphEncoder <- function(X, Y=c(2:5), Laplacian = FALSE, DiagA = TRUE, Correlation = TRUE, MaxIter=50, MaxIterK=5, Replicates=2) {
   
   s=dim(X);
   t=s[2];s=s[1];
@@ -64,10 +64,10 @@ GraphEncoder <- function(X, Y=c(2:5), Laplacian = FALSE, DiagA = TRUE, Correlati
     } else {
       ## when a range of cluster size is specified
       if (length(K)<n/2 & max(K)<max(n/2,10)){
-        meanSS=1;Z=0;W=0;
+        meanSS=-1;Z=0;W=0;
         for (r in 1:length(K)){
           resTmp = GraphEncoderCluster(X,K[r],n,Laplacian,Correlation, MaxIter, MaxIterK, Replicates);
-          if (resTmp$meanSS<meanSS){
+          if (meanSS==-1 | resTmp$meanSS<meanSS){
             meanSS=resTmp$meanSS;
             result=resTmp;
           }
@@ -82,7 +82,7 @@ GraphEncoder <- function(X, Y=c(2:5), Laplacian = FALSE, DiagA = TRUE, Correlati
 
 ## Clustering Function
 GraphEncoderCluster <- function(X, K, n, Laplacian = FALSE, Correlation = TRUE, MaxIter=50, MaxIterK=5, Replicates=3) {
-  meanSS = 1;
+  meanSS = -1;
   #ariv = rep(0, MaxIter);
   for (rep in 1:Replicates){
     Y2 = matrix(sample(K,n,rep=T), n, 1);
@@ -99,8 +99,8 @@ GraphEncoderCluster <- function(X, K, n, Laplacian = FALSE, Correlation = TRUE, 
         Y2 = matrix(Y3, n, 1);
       }
     }
-    tmp = mc$tot.withinss / mc$totss;
-    if (tmp<meanSS){
+    tmp = mc$tot.withinss / mc$totss * sqrt(K/2);
+    if (meanSS==-1 | tmp<meanSS){
       meanSS=tmp;
       Y=Y3;
       result=resTmp;
