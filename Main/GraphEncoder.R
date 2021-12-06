@@ -30,7 +30,7 @@ options(warn =-1)
 
 ## Main Function
 ## X=as.matrix(get.data.frame(g));
-GraphEncoder <- function(X, Y=c(2:5), Laplacian = FALSE, DiagA = TRUE, Correlation = TRUE, MaxIter=50, MaxIterK=5, Replicates=2) {
+GraphEncoder <- function(X, Y=c(2:5), Laplacian = FALSE, DiagA = TRUE, Correlation = TRUE, MaxIter=50, MaxIterK=5, Replicates=5) {
   
   s=dim(X);
   t=s[2];s=s[1];
@@ -42,8 +42,8 @@ GraphEncoder <- function(X, Y=c(2:5), Laplacian = FALSE, DiagA = TRUE, Correlati
   }
   if (t==2){
     X=cbind(X,matrix(1, nrow = s, ncol = 1));
-    n = max(max(X))[1];
-  }
+  } 
+  n = max(max(X[,1:2]))[1];
   if (DiagA==TRUE){
     XNew=cbind(1:n,1:n,1);
     X=rbind(X,XNew);
@@ -60,15 +60,17 @@ GraphEncoder <- function(X, Y=c(2:5), Laplacian = FALSE, DiagA = TRUE, Correlati
     ## when a given cluster size is specified
     if (length(K)==1){ #clustering
       result=GraphEncoderCluster(X,K,n,Laplacian,Correlation, MaxIter, MaxIterK, Replicates);
-      Y=result$Y;meanSS=result$meanSS;
+      Y=result$Y;meanSS=result$minSS;
     } else {
       ## when a range of cluster size is specified
       if (length(K)<n/2 & max(K)<max(n/2,10)){
-        meanSS=-1;Z=0;W=0;
+        minSS=-1;Z=0;W=0;meanSS = rep(0, length(K));
         for (r in 1:length(K)){
           resTmp = GraphEncoderCluster(X,K[r],n,Laplacian,Correlation, MaxIter, MaxIterK, Replicates);
-          if (meanSS==-1 | resTmp$meanSS<meanSS){
-            meanSS=resTmp$meanSS;
+          tmp=resTmp$minSS;
+          meanSS[r]=tmp;
+          if (minSS==-1 | tmp<minSS){
+            minSS=tmp;
             result=resTmp;
           }
         }
@@ -82,7 +84,7 @@ GraphEncoder <- function(X, Y=c(2:5), Laplacian = FALSE, DiagA = TRUE, Correlati
 
 ## Clustering Function
 GraphEncoderCluster <- function(X, K, n, Laplacian = FALSE, Correlation = TRUE, MaxIter=50, MaxIterK=5, Replicates=3) {
-  meanSS = -1;
+  minSS = -1;
   #ariv = rep(0, MaxIter);
   for (rep in 1:Replicates){
     Y2 = matrix(sample(K,n,rep=T), n, 1);
@@ -99,14 +101,14 @@ GraphEncoderCluster <- function(X, K, n, Laplacian = FALSE, Correlation = TRUE, 
         Y2 = matrix(Y3, n, 1);
       }
     }
-    tmp = mc$tot.withinss / mc$totss * sqrt(K/2);
-    if (meanSS==-1 | tmp<meanSS){
-      meanSS=tmp;
+    tmp = max(mc$withinss) / mc$totss * K;
+    if (minSS==-1 | tmp<minSS){
+      minSS=tmp;
       Y=Y3;
       result=resTmp;
     }
   }
-  result = list(Z = result$Z, Y = Y, W = result$W, meanSS=meanSS);
+  result = list(Z = result$Z, Y = Y, W = result$W, minSS=minSS);
   return(result)
 }
 

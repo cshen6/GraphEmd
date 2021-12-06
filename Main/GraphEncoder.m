@@ -30,7 +30,7 @@ if nargin<2
     Y=2:5;
 end
 if nargin<3
-    opts = struct('DiagA',true,'Correlation',true,'Laplacian',false,'Learn',false,'MaxIter',50,'MaxIterK',5,'Replicates',1);
+    opts = struct('DiagA',true,'Correlation',true,'Laplacian',false,'Learn',false,'MaxIter',100,'MaxIterK',10,'Replicates',1);
 end
 if ~isfield(opts,'DiagA'); opts.DiagA=true; end
 if ~isfield(opts,'Correlation'); opts.Correlation=true; end
@@ -52,7 +52,7 @@ end
 if t==2 % enlarge the edgelist to s*3
     X=[X,ones(s,1)];
 end
-n=max(max(X));
+n=max(max(X(:,1:2)));
 if opts.DiagA==true
     XNew=[1:n;1:n;ones(1,n)]';
     X=[X;XNew];
@@ -66,18 +66,22 @@ else
     %% otherwise do clustering
     indT=zeros(n,1);
     K=Y;
+    if n/max(K)<30
+        disp('Too many clusters at maximum. Result may bias towards large K. Please make sure n/Kmax >30.')
+    end
     %% when a given cluster size is specified
     if length(K)==1
         [Z,Y,W,meanSS]=GraphEncoderCluster(X,K,n,opts);
     else
         %% when a range of cluster size is specified
         if length(K)<n/2 && max(K)<max(n/2,10)
-            meanSS=-1;Z=0;W=0;
+            minSS=-1;Z=0;W=0;meanSS=zeros(length(K),1);
             for r=1:length(K)
                 [Zt,Yt,Wt,tmp]=GraphEncoderCluster(X,K(r),n,opts);
+                meanSS(r)=tmp;
 %                 a_counts = accumarray(Yt,1);
-                if meanSS==-1 || tmp<meanSS
-                    meanSS=tmp;Y=Yt;Z=Zt;W=Wt;
+                if minSS==-1 || tmp<minSS
+                    minSS=tmp;Y=Yt;Z=Zt;W=Wt;
                 end
             end
         end
@@ -113,12 +117,12 @@ end
 %     end
 
 %% Clustering Function
-function [Z,Y,W,meanSS]=GraphEncoderCluster(X,K,n,opts)
+function [Z,Y,W,minSS]=GraphEncoderCluster(X,K,n,opts)
 
 if nargin<4
     opts = struct('Correlation',true,'Laplacian',false,'MaxIter',50,'MaxIterK',5,'Replicates',3);
 end
-meanSS=-1;
+minSS=-1;
 for rep=1:opts.Replicates
     Y2=randi([1,K],[n,1]);
     for r=1:opts.MaxIter
@@ -132,10 +136,19 @@ for rep=1:opts.Replicates
             Y2=Y3;
         end
     end
+%     tmp
+    tmpCount=accumarray(Y3,1);
+    tmp=median(tmp./tmpCount./sum(D)'*n)
+%         tmp=max(tmp)/sum(sum(D))*K*n;
+%     sum(D)/n
+%     tmp=max(tmp./sum(D)');
+%     tmp=max(tmp)/min(sum(D));
+%     tmp=max(tmp)/sum(sum(D))*K*n;
+%     tmp=sum(sum(D));
 %     tmp=tmp/sum(sum(D));
-    tmp=sum(tmp)/sum(sum(D))*sqrt(K/2);
-    if meanSS==-1 || tmp<meanSS
-        Z=Zt;W=Wt;meanSS=tmp;Y=Y3;
+%     tmp=sum(tmp)/sum(sum(D));
+    if minSS==-1 || tmp<minSS
+        Z=Zt;W=Wt;minSS=tmp;Y=Y3;
     end
 end
 

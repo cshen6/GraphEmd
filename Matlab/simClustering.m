@@ -166,27 +166,6 @@ GraphClusteringEvaluate(Adj,Y)
 GraphClusteringEvaluate(Adj,Y)
 [Adj,Y]=simGenerate(22,n,K);
 GraphClusteringEvaluate(Adj,Y)
-
-% Try K choice
-kmax=20;
-score=zeros(kmax,1);
-ari=zeros(kmax,1);
-for r=2:kmax
-    [~,Y2,~,~,score(r)]=GraphEncoder(Adj,r);
-    ari(r)=RandIndex(Y2,Y+1);
-end
-subplot(1,2,1);
-plot(2:kmax,1-score(2:kmax),'r-','LineWidth',2)
-title(strcat('1-MeanSS at K=',num2str(K)))
-xlim([2,kmax]);
-axis('square')
-set(gca,'FontSize',15);
-subplot(1,2,2);
-plot(2:kmax,ari(2:kmax),'b-','LineWidth',2)
-title(strcat('ARI at K=',num2str(K)))
-xlim([2,kmax]);
-axis('square')
-set(gca,'FontSize',15);
 %
 
 % [Adj,Y]=simGenerate(25,n,k);
@@ -235,11 +214,42 @@ GraphClusteringEvaluate(AdjOri,YOri)
 load('Peking.mat')
 GraphClusteringEvaluate(AdjOri,YOri)
 % Simple Eval
+% tic
+% [~,Y1,~,~]=GraphEncoder(Adj,K);
+% toc
+% RandIndex(Y,Y1)
 tic
-[~,Y1,~,~]=GraphEncoder(Adj,K);
+[~,Y1,~,~,score]=GraphEncoder(Adj,[2:10]);
 toc
 RandIndex(Y,Y1)
-tic
-[~,Y1,~,~]=GraphEncoder(Adj,[2:10]);
-toc
-RandIndex(Y,Y1)
+%% n increase and mse
+n=100;K=5;kmax=20;nmax=50;
+score=zeros(kmax,nmax);
+ari=zeros(kmax,nmax);
+for i=1:nmax
+    [Adj,Y]=simGenerate(11,i*n,K);
+    for r=2:kmax
+        [~,Y2,~,~,score(r,i)]=GraphEncoder(Adj,r);
+        ari(r,i)=RandIndex(Y2,Y+1);
+    end
+end
+% Try K choice
+kmax=50;
+score=zeros(kmax,1);
+ari=zeros(kmax,1);
+for r=2:kmax
+    [~,Y2,~,~,score(r)]=GraphEncoder(Adj,r);
+    ari(r)=RandIndex(Y2,Y+1);
+end
+subplot(1,2,1);
+plot(2:kmax,1-score(2:kmax),'r-','LineWidth',2)
+title(strcat('1-MeanSS at K=',num2str(K)))
+xlim([2,kmax]);
+axis('square')
+set(gca,'FontSize',15);
+subplot(1,2,2);
+plot(2:kmax,ari(2:kmax),'b-','LineWidth',2)
+title(strcat('ARI at K=',num2str(K)))
+xlim([2,kmax]);
+axis('square')
+set(gca,'FontSize',15);
