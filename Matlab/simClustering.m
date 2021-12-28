@@ -167,6 +167,16 @@ GraphClusteringEvaluate(Adj,Y)
 [Adj,Y]=simGenerate(22,n,K);
 GraphClusteringEvaluate(Adj,Y)
 %
+t=0;r=100;
+for i=1:r
+    [Adj,Y]=simGenerate(13,450,3);
+    [~,~,~,~,score]=GraphEncoder(Adj,[2:10]);
+    [~,ind]=min(score);
+    if ind==2
+        t=t+1/r;
+    end
+end
+%
 
 % [Adj,Y]=simGenerate(25,n,k);
 % GraphClusteringEvaluate(Adj,Y)
@@ -234,7 +244,7 @@ for i=1:nmax
     end
 end
 % Try K choice
-kmax=50;
+kmax=20;
 score=zeros(kmax,1);
 ari=zeros(kmax,1);
 for r=2:kmax

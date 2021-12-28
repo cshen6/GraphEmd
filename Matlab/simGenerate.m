@@ -9,7 +9,7 @@ switch option
     case 10 % SBM with 3 classes
         fileName='SBM';
         d=3;
-        bd=0.2; %0.13 at n=2000;
+        bd=0.13; %0.13 at n=2000;
         pp=[0.2,0.3,0.5];
         Bl=zeros(d,d);
         %             Bl=rand(clas,clas);
@@ -81,6 +81,32 @@ switch option
         %             Bl=rand(clas,clas);
         Bl(:,1)=[0.13,0.1];
         Bl(:,2)=[0.1,0.13];
+        Dis=zeros(n,n);
+        tt=rand([n,1]);
+        Label=ones(n,1);
+        thres=0;
+        for i=1:size(pp,2)
+            thres=thres+pp(i);
+            Label=Label+(tt>thres); %determine the block of each data
+        end
+        for i=1:n
+            Dis(i,i)=0;%diagonals are zeros
+            for j=i+1:n
+                Dis(i,j)=rand(1)<Bl(Label(i),Label(j));
+                Dis(j,i)=Dis(i,j);
+            end
+        end
+        X=Dis;
+    case 13 % SBM with 3 classes
+        fileName='SBM';
+        d=3;
+        bd=0.13; %0.13 at n=2000;
+        pp=[1/3,1/3,1/3];
+        Bl=zeros(d,d);
+        %             Bl=rand(clas,clas);
+        Bl(:,1)=[0.1,0.01,0.05];
+        Bl(:,2)=[0.01,0.1,0.025];
+        Bl(:,3)=[0.05,0.025,0.15];
         Dis=zeros(n,n);
         tt=rand([n,1]);
         Label=ones(n,1);

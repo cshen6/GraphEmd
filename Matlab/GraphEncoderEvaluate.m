@@ -87,7 +87,7 @@ sample_size = [];     % Sample size. If empty, equivalent to batched GCN
 szW0 = [n,d2];       % Size of parameter matrix W0
 szW1 = [d2,K];       % Size of parameter matrix W1
 num_var = prod(szW0) + prod(szW1);
-adam_param = adam_init(num_var, learning_rate);
+% adam_param = adam_init(num_var, learning_rate);
 
 acc_AEE_NN=zeros(kfold,1);acc_AEE_LDA=zeros(kfold,1);acc_GFN=zeros(kfold,1);acc_GNN=zeros(kfold,1);
 acc_LEE_NN=zeros(kfold,1);acc_LEE_LDA=zeros(kfold,1);t_LEE_NN=zeros(kfold,1);t_LEE_LDA=zeros(kfold,1);
@@ -114,8 +114,11 @@ for i = 1:kfold
     tic
     YT=Y;
     YT(tsn)=-1;
+    YTrn=Y(trn);
+    YTsn=Y(tsn);
 %     if opts.deg==0
-    [Z,~,~,indT]=GraphEncoder(X,YT);
+    [Z,tt,~,indT]=GraphEncoder(X,YT);
+        
 %     else
 %         [Z,indT]=GraphEncoder(X,YT,opts);
 %         %[Z,indT]=GraphSBMEst(X,YT);
@@ -125,6 +128,9 @@ for i = 1:kfold
 %         Z=Z(:,ind);
 %     end
     tmp1=toc;
+    t_AEE_LDA(i)=tmp1;
+    acc_AEE_LDA(i)=acc_AEE_LDA(i)+mean(YTsn~=tt(tsn));
+    
     tic
 %     if nre>n
 % %         ZRe=zeros(nr,K,num);
@@ -138,8 +144,6 @@ for i = 1:kfold
 %     else
         ZTrn=Z(indT,:);
         ZTsn=Z(~indT,:);
-        YTrn=Y(trn);
-        YTsn=Y(tsn);
 %     end
     tmp2=toc;
     
@@ -151,13 +155,13 @@ for i = 1:kfold
         acc_AEE_NN(i)=acc_AEE_NN(i)+mean(Y(tsn)~=tt);
     end
     
-    if opts.LDA==1
-        tic
-        mdl=fitcdiscr(ZTrn,YTrn,'discrimType',discrimType);
-        tt=predict(mdl,ZTsn);
-        t_AEE_LDA(i)=tmp1+tmp2+toc;
-        acc_AEE_LDA(i)=acc_AEE_LDA(i)+mean(YTsn~=tt);
-    end
+%     if opts.LDA==1
+%         tic
+%         mdl=fitcdiscr(ZTrn,YTrn,'discrimType',discrimType);
+%         tt=predict(mdl,ZTsn);
+%         t_AEE_LDA(i)=tmp1+tmp2+toc;
+%         acc_AEE_LDA(i)=acc_AEE_LDA(i)+mean(YTsn~=tt);
+%     end
     
     
     if opts.GFN==1
@@ -212,7 +216,9 @@ for i = 1:kfold
     if opts.Laplacian==1
         tic
         oot=struct('Laplacian',true);
-        [Z,~,~,indT]=GraphEncoder(X,YT,oot);
+        YTrn=Y(trn);
+        YTsn=Y(tsn);
+        [Z,tt,~,indT]=GraphEncoder(X,YT,oot);
         %     else
         %         [Z,indT]=GraphEncoder(X,YT,opts);
         %         %[Z,indT]=GraphSBMEst(X,YT);
@@ -222,11 +228,11 @@ for i = 1:kfold
         %         Z=Z(:,ind);
         %     end
         tmp1=toc;
+        t_LEE_LDA(i)=tmp1;
+        acc_LEE_LDA(i)=acc_LEE_LDA(i)+mean(YTsn~=tt(tsn));
         tic
         ZTrn=Z(indT,:);
         ZTsn=Z(~indT,:);
-        YTrn=Y(trn);
-        YTsn=Y(tsn);
         %     end
         tmp2=toc;
         if opts.knn>0
@@ -237,13 +243,13 @@ for i = 1:kfold
             acc_LEE_NN(i)=acc_LEE_NN(i)+mean(Y(tsn)~=tt);
         end
         
-        if opts.LDA==1
-            tic
-            mdl=fitcdiscr(ZTrn,YTrn,'discrimType',discrimType);
-            tt=predict(mdl,ZTsn);
-            t_LEE_LDA(i)=tmp1+tmp2+toc;
-            acc_LEE_LDA(i)=acc_LEE_LDA(i)+mean(YTsn~=tt);
-        end
+%         if opts.LDA==1
+%             tic
+%             mdl=fitcdiscr(ZTrn,YTrn,'discrimType',discrimType);
+%             tt=predict(mdl,ZTsn);
+%             t_LEE_LDA(i)=tmp1+tmp2+toc;
+%             acc_LEE_LDA(i)=acc_LEE_LDA(i)+mean(YTsn~=tt);
+%         end
         
     
         % ASE
@@ -280,13 +286,13 @@ for i = 1:kfold
     end
     % kipf GCN
     
-    if opts.GCN==1
-        tic
-        acc_GCN(i)=model_fastgcn_train_and_test(X, ide, Y2, trn2, val, tsn, ...
-            szW0, szW1, l2_reg, num_epoch, batch_size, ...
-            sample_size, adam_param);
-        t_GCN(i)=toc;
-    end
+%     if opts.GCN==1
+%         tic
+%         acc_GCN(i)=model_fastgcn_train_and_test(X, ide, Y2, trn2, val, tsn, ...
+%             szW0, szW1, l2_reg, num_epoch, batch_size, ...
+%             sample_size, adam_param);
+%         t_GCN(i)=toc;
+%     end
     
     %  Direct NN
     if opts.GNN==1

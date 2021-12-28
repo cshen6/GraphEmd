@@ -61,6 +61,10 @@ end
 %% partial or full known labels when label size matches vertex size, do embedding / classification directly
 if length(Y)==n 
     [Z,Y,W,indT]=GraphEncoderEmbed(X,Y,n,opts);
+%     mdl=fitcdiscr(Z(indT,:),Y(indT));
+%     Y(~indT)=predict(mdl,Z(~indT,:));        
+    Mdl = fitsemiself(Z(indT,:),Y(indT),Z(~indT,:),'Learner','discriminant','IterationLimit',10,'ScoreThreshold',0.1);
+    Y(~indT)=Mdl.FittedLabels;
     meanSS=0;
 else 
     %% otherwise do clustering
@@ -138,7 +142,12 @@ for rep=1:opts.Replicates
     end
 %     tmp
     tmpCount=accumarray(Y3,1);
-    tmp=median(tmp./tmpCount./sum(D)'*n)
+%         tmp./tmpCount
+%     tmp./tmpCount./sum(D)'*n
+    tmp=tmp./tmpCount./(sum(D)'-tmp).*(n-tmpCount).*tmpCount/n;
+    tmp=mean(tmp)+2*std(tmp);
+    %tmp=max(tmp./tmpCount./sum(D)'*n);
+%     tmp=median(tmp./tmpCount./sum(D)'*n)
 %         tmp=max(tmp)/sum(sum(D))*K*n;
 %     sum(D)/n
 %     tmp=max(tmp./sum(D)');
