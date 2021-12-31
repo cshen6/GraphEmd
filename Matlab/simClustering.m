@@ -167,12 +167,12 @@ GraphClusteringEvaluate(Adj,Y)
 [Adj,Y]=simGenerate(22,n,K);
 GraphClusteringEvaluate(Adj,Y)
 %
-t=0;r=100;
+t=0;r=100;K=3;
 for i=1:r
-    [Adj,Y]=simGenerate(13,450,3);
+    [Adj,Y]=simGenerate(13,450,K);
     [~,~,~,~,score]=GraphEncoder(Adj,[2:10]);
     [~,ind]=min(score);
-    if ind==2
+    if ind==K-1
         t=t+1/r;
     end
 end

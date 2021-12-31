@@ -30,15 +30,17 @@ if nargin<2
     Y=2:5;
 end
 if nargin<3
-    opts = struct('DiagA',true,'Correlation',true,'Laplacian',false,'Learn',false,'MaxIter',100,'MaxIterK',10,'Replicates',1);
+    opts = struct('DiagA',true,'Correlation',true,'Laplacian',false,'Learn',1,'MaxIter',50,'MaxIterK',5,'Replicates',3);
 end
 if ~isfield(opts,'DiagA'); opts.DiagA=true; end
 if ~isfield(opts,'Correlation'); opts.Correlation=true; end
 if ~isfield(opts,'Laplacian'); opts.Laplacian=false; end
-if ~isfield(opts,'Learn'); opts.Learn=false; end
+if ~isfield(opts,'Learn'); opts.Learn=1; end
 if ~isfield(opts,'MaxIter'); opts.MaxIter=50; end
-if ~isfield(opts,'MaxIterK'); opts.MaxIterK=10; end
+if ~isfield(opts,'MaxIterK'); opts.MaxIterK=5; end
 if ~isfield(opts,'Replicates'); opts.Replicates=3; end
+opts.neuron=20;
+opts.activation='poslin';
 % if ~isfield(opts,'distance'); opts.distance='correlation'; end
 % opts.DiagA=false;
 % opts.Laplacian=true;
@@ -59,13 +61,95 @@ if opts.DiagA==true
 end
 
 %% partial or full known labels when label size matches vertex size, do embedding / classification directly
-if length(Y)==n 
-    [Z,Y,W,indT]=GraphEncoderEmbed(X,Y,n,opts);
-%     mdl=fitcdiscr(Z(indT,:),Y(indT));
-%     Y(~indT)=predict(mdl,Z(~indT,:));        
-    Mdl = fitsemiself(Z(indT,:),Y(indT),Z(~indT,:),'Learner','discriminant','IterationLimit',10,'ScoreThreshold',0.1);
-    Y(~indT)=Mdl.FittedLabels;
-    meanSS=0;
+if length(Y)==n
+    indT=(Y>0);
+    Y1=Y(indT);
+    [~,~,Ytmp]=unique(Y1);
+    Y(indT)=Ytmp;
+    K=max(Y);
+    if opts.Learn==0
+        [Z,W]=GraphEncoderEmbed(X,Y,n,opts);
+        meanSS=0;
+    else
+        %         indNew=indT;
+        %         initialize NN
+%         netGNN = patternnet(max(opts.neuron,K),'trainscg','crossentropy'); % number of neurons, Scaled Conjugate Gradient, cross entropy
+%         netGNN.layers{1}.transferFcn = opts.activation;
+%         netGNN.trainParam.showWindow = false;
+%         netGNN.trainParam.epochs=100;
+%         netGNN.divideParam.trainRatio = 0.8;
+%         netGNN.divideParam.valRatio   = 0.2;
+%         netGNN.divideParam.testRatio  = 0;
+        %
+        %         indNew=indT;
+        Y1=Y;
+        YTrn=Y(indT);YTrn2=onehotencode(categorical(YTrn),2)';
+%         YEN=onehotencode(categorical(YN),2);
+        meanSS=0;
+        for rep=1:opts.Replicates
+            tmp=randi([1,K],[sum(~indT),1]);
+            Y1(~indT)=tmp;
+            Y2=onehotencode(categorical(Y1),2);
+%             [Z,W]=GraphEncoderEmbed(X,YN,n,opts);
+%             [Z2,W2]=GraphEncoderEmbed(X,Y2,n,opts);
+%             W(1,:)
+%             W2(1,:)
+%             norm(W-W2,'fro')
+            %         [Z,W]=GraphEncoderEmbed(X,Y,n,opts);
+            YND=double(Y1);
+            %         indTD=double(indT);
+            %             ll=sum(indT);
+            %         indNew=indT;
+                        minP=0;
+            ll=sum(indT);
+            for i=1:opts.MaxIter/2
+                %             i
+              
+                [Z,W]=GraphEncoderEmbed(X,Y2,n,opts);
+                if opts.Learn==1
+                    mdl=fitcdiscr(Z(indT,:),YTrn,'discrimType','pseudoLinear');
+                    [class,prob] = predict(mdl,Z(~indT,:));
+                    prob1=max(prob,[],2);
+                else
+                    mdl = train(netGNN,Z(indT,:)',YTrn2);
+                    prob=mdl(Z(~indT,:)')';
+                    [prob1,class] = max(prob,[],2); % class-wise probability for tsting data
+                end
+%                 tmp=mean(prob1)-3*std(prob1);
+%                 if tmp>minP
+%                     minP=tmp;
+                    Y2(~indT,:)=prob;
+                YND(~indT)=prob1;
+                Y1(~indT)=class;
+%                 else
+%                     break;
+%                 end
+                
+                
+%                 indNew=(prob1>=max(0.85,mean(prob1)+2*std(prob1)));
+%                 ll2=sum(indNew>0);
+%                 if ((ll2<ll && ll2>n/2) || (ll2==length(prob1)))
+%                     %                 ll2
+%                     %                 i
+%                     break;
+%                 else
+%                     ll=ll2;
+%                 end
+            end
+%              minP=min(prob);
+            minP=mean(prob1)-3*std(prob1);
+            if minP>meanSS
+                meanSS=minP;Y=Y1;
+%             else
+%                 break;
+            end
+        end
+        meanSS
+        %
+        %         [Z,Y,W]=GraphEncoderEmbed(X,Y,n,opts);
+        %         mdl=fitcdiscr(Z(indT,:),Y(indT));
+        %         Y(~indT)=predict(mdl,Z(~indT,:));
+    end
 else 
     %% otherwise do clustering
     indT=zeros(n,1);
@@ -130,7 +214,7 @@ minSS=-1;
 for rep=1:opts.Replicates
     Y2=randi([1,K],[n,1]);
     for r=1:opts.MaxIter
-        [Zt,~,~,Wt]=GraphEncoderEmbed(X,Y2,n,opts);
+        [Zt,Wt]=GraphEncoderEmbed(X,Y2,n,opts);
         [Y3,~,tmp,D] = kmeans(Zt, K,'MaxIter',opts.MaxIterK,'Replicates',1,'Start','plus');
         %gmfit = fitgmdist(Z,k, 'CovarianceType','diagonal');%'RegularizationValue',0.00001); % Fitted GMM
         %Y = cluster(gmfit,Z); % Cluster index
@@ -140,10 +224,7 @@ for rep=1:opts.Replicates
             Y2=Y3;
         end
     end
-%     tmp
     tmpCount=accumarray(Y3,1);
-%         tmp./tmpCount
-%     tmp./tmpCount./sum(D)'*n
     tmp=tmp./tmpCount./(sum(D)'-tmp).*(n-tmpCount).*tmpCount/n;
     tmp=mean(tmp)+2*std(tmp);
     %tmp=max(tmp./tmpCount./sum(D)'*n);
@@ -162,26 +243,32 @@ for rep=1:opts.Replicates
 end
 
 %% Embedding Function
-function [Z,Y,W,indT,B]=GraphEncoderEmbed(X,Y,n,opts)
+function [Z,W]=GraphEncoderEmbed(X,Y,n,opts)
 if nargin<4
     opts = struct('Correlation',true,'Laplacian',false);
 end
+prob=false;
 
-indT=(Y>0);
-Y1=Y(indT);
 s=size(X,1);
-[tmp,~,Ytmp]=unique(Y1);
-Y(indT)=Ytmp;
-k=length(tmp);
-
+if size(Y,2)>1
+    k=size(Y,2);
+    prob=true;
+else
+    k=max(Y);
+end
 nk=zeros(1,k);
 W=zeros(n,k);
-indS=zeros(n,k);
-for i=1:k
-    ind=(Y==i);
-    nk(i)=sum(ind);
-    W(ind,i)=1/nk(i);
-    indS(:,i)=ind;
+% indS=zeros(n,k);
+if prob==true
+    nk=sum(Y);
+    W=Y./repmat(nk,n,1);
+else
+    for i=1:k
+        ind=(Y==i);
+        nk(i)=sum(ind);
+        W(ind,i)=1/nk(i);
+%         indS(:,i)=ind;
+    end
 end
 % num=size(X,3);
         
@@ -207,14 +294,23 @@ Z=zeros(n,k);
 for i=1:s
     a=X(i,1);
     b=X(i,2);
-    c=Y(a);
-    d=Y(b);
     e=X(i,3);
-    if d>0
-        Z(a,d)=Z(a,d)+W(b,d)*e;
-    end
-    if c>0 && a~=b
-        Z(b,c)=Z(b,c)+W(a,c)*e;
+    if prob==true
+        for j=1:k
+            Z(a,j)=Z(a,j)+W(b,j)*e;
+            if a~=b
+               Z(b,j)=Z(b,j)+W(a,j)*e;
+            end
+        end
+    else
+        c=Y(a);
+        d=Y(b);
+        if d>0
+            Z(a,d)=Z(a,d)+W(b,d)*e;
+        end
+        if c>0 && a~=b
+            Z(b,c)=Z(b,c)+W(a,c)*e;
+        end
     end
 end
 
@@ -223,12 +319,12 @@ if opts.Correlation==true
     Z(isnan(Z))=0;
 end
 
-% Z=reshape(Z,n,size(Z,2)*num);
-B=zeros(k,k);
-for j=1:k
-    tmp=(indS(:,j)==1);
-    B(j,:)=mean(Z(tmp,:));
-end
+% % Z=reshape(Z,n,size(Z,2)*num);
+% B=zeros(k,k);
+% for j=1:k
+%     tmp=(indS(:,j)==1);
+%     B(j,:)=mean(Z(tmp,:));
+% end
 
 %% Adj to Edge Function
 function [Edge]=adj2edge(Adj)
