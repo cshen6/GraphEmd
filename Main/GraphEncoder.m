@@ -115,12 +115,17 @@ if length(Y)==n
                     prob=mdl(Z(~indT,:)')';
                     [prob1,class] = max(prob,[],2); % class-wise probability for tsting data
                 end
-%                 tmp=mean(prob1)-3*std(prob1);
-%                 if tmp>minP
-%                     minP=tmp;
+                %                 tmp=mean(prob1)-3*std(prob1);
+                %                 if tmp>minP
+                %                     minP=tmp;
+                if RandIndex(Y1(~indT),class)==1
+                    break;
+                else
                     Y2(~indT,:)=prob;
-                YND(~indT)=prob1;
-                Y1(~indT)=class;
+                    YND(~indT)=prob1;
+                    Y1(~indT)=class;
+                end
+                
 %                 else
 %                     break;
 %                 end
@@ -167,7 +172,6 @@ else
             for r=1:length(K)
                 [Zt,Yt,Wt,tmp]=GraphEncoderCluster(X,K(r),n,opts);
                 meanSS(r)=tmp;
-%                 a_counts = accumarray(Yt,1);
                 if minSS==-1 || tmp<minSS
                     minSS=tmp;Y=Yt;Z=Zt;W=Wt;
                 end
@@ -225,8 +229,11 @@ for rep=1:opts.Replicates
         end
     end
     tmpCount=accumarray(Y3,1);
+%     cent=sum(squareform(pdist(cent)),2);
+%     tmp=tmp./tmpCount./cent.*(n-tmpCount).*tmpCount/n;
     tmp=tmp./tmpCount./(sum(D)'-tmp).*(n-tmpCount).*tmpCount/n;
     tmp=mean(tmp)+2*std(tmp);
+    
     %tmp=max(tmp./tmpCount./sum(D)'*n);
 %     tmp=median(tmp./tmpCount./sum(D)'*n)
 %         tmp=max(tmp)/sum(sum(D))*K*n;

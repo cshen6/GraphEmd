@@ -90,8 +90,8 @@ GraphEncoderCluster <- function(X, K, n, Laplacian = FALSE, Correlation = TRUE, 
     Y2 = matrix(sample(K,n,rep=T), n, 1);
     for (r in 1:MaxIter) {
       resTmp = GraphEncoderEmbed(X, Y2, n, Laplacian, Correlation);
-      mc = kmeans(resTmp$Z, K, iter.max = MaxIterK); 
-      Y3 = mc$cluster;
+      grp = kmeans(resTmp$Z, K, iter.max = MaxIterK); 
+      Y3 = grp$cluster;
       #mc = Mclust(restmp$Z, verbose = FALSE);
       #Y3 = mc$class;
       #ariv[i] = adjustedRandIndex(Y2, Y3);
@@ -101,7 +101,15 @@ GraphEncoderCluster <- function(X, K, n, Laplacian = FALSE, Correlation = TRUE, 
         Y2 = matrix(Y3, n, 1);
       }
     }
-    tmp = max(mc$withinss) / mc$totss * K;
+    #tmp = max(mc$withinss) / mc$totss * K;
+    tmp=grp$withinss^2; #within-cluster squared distance per cluster
+    tmpBetween=matrix(0, nrow = K, ncol = 1); #between-cluster squared distance from each observation to the each center
+    tmpCount=grp$size; #number of points per cluster
+    for (i in 1:K){
+      tmpBetween[i]=sum(colSums(resTmp$Z-matrix(grp$centers[i], nrow=n, ncol=K, byrow=TRUE))^2);
+    }
+    tmp=tmp/tmpCount/(tmpBetween-tmp)*(n-tmpCount)*tmpCount/n;
+    tmp=mean(tmp)+2*var(tmp)^0.5;
     if (minSS==-1 | tmp<minSS){
       minSS=tmp;
       Y=Y3;
