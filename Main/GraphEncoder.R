@@ -102,11 +102,11 @@ GraphEncoderCluster <- function(X, K, n, Laplacian = FALSE, Correlation = TRUE, 
       }
     }
     #tmp = max(mc$withinss) / mc$totss * K;
-    tmp=grp$withinss^2; #within-cluster squared distance per cluster
+    tmp=grp$withinss; #within-cluster squared distance per cluster
     tmpBetween=matrix(0, nrow = K, ncol = 1); #between-cluster squared distance from each observation to the each center
     tmpCount=grp$size; #number of points per cluster
     for (i in 1:K){
-      tmpBetween[i]=sum(colSums(resTmp$Z-matrix(grp$centers[i], nrow=n, ncol=K, byrow=TRUE))^2);
+      tmpBetween[i]=sum(rowNorms(resTmp$Z-matrix(grp$centers[i,], nrow=n, ncol=K, byrow=TRUE)));
     }
     tmp=tmp/tmpCount/(tmpBetween-tmp)*(n-tmpCount)*tmpCount/n;
     tmp=mean(tmp)+2*var(tmp)^0.5;

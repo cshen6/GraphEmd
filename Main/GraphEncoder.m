@@ -231,7 +231,7 @@ for rep=1:opts.Replicates
     tmpCount=accumarray(Y3,1);
 %     cent=sum(squareform(pdist(cent)),2);
 %     tmp=tmp./tmpCount./cent.*(n-tmpCount).*tmpCount/n;
-    tmp=tmp./tmpCount./(sum(D)'-tmp).*(n-tmpCount).*tmpCount/n;
+    tmp=tmp./tmpCount./(sum(D.^0.5)'-tmp).*(n-tmpCount).*tmpCount/n;
     tmp=mean(tmp)+2*std(tmp);
     
     %tmp=max(tmp./tmpCount./sum(D)'*n);
