@@ -84,24 +84,12 @@ if length(Y)==n
         %         indNew=indT;
         Y1=Y;
         YTrn=Y(indT);YTrn2=onehotencode(categorical(YTrn),2)';
-%         YEN=onehotencode(categorical(YN),2);
         meanSS=0;
         for rep=1:opts.Replicates
             tmp=randi([1,K],[sum(~indT),1]);
             Y1(~indT)=tmp;
             Y2=onehotencode(categorical(Y1),2);
-%             [Z,W]=GraphEncoderEmbed(X,YN,n,opts);
-%             [Z2,W2]=GraphEncoderEmbed(X,Y2,n,opts);
-%             W(1,:)
-%             W2(1,:)
-%             norm(W-W2,'fro')
-            %         [Z,W]=GraphEncoderEmbed(X,Y,n,opts);
             YND=double(Y1);
-            %         indTD=double(indT);
-            %             ll=sum(indT);
-            %         indNew=indT;
-                        minP=0;
-            ll=sum(indT);
             for i=1:opts.MaxIter/2
                 %             i
               
@@ -115,9 +103,6 @@ if length(Y)==n
                     prob=mdl(Z(~indT,:)')';
                     [prob1,class] = max(prob,[],2); % class-wise probability for tsting data
                 end
-                %                 tmp=mean(prob1)-3*std(prob1);
-                %                 if tmp>minP
-                %                     minP=tmp;
                 if RandIndex(Y1(~indT),class)==1
                     break;
                 else
@@ -125,35 +110,12 @@ if length(Y)==n
                     YND(~indT)=prob1;
                     Y1(~indT)=class;
                 end
-                
-%                 else
-%                     break;
-%                 end
-                
-                
-%                 indNew=(prob1>=max(0.85,mean(prob1)+2*std(prob1)));
-%                 ll2=sum(indNew>0);
-%                 if ((ll2<ll && ll2>n/2) || (ll2==length(prob1)))
-%                     %                 ll2
-%                     %                 i
-%                     break;
-%                 else
-%                     ll=ll2;
-%                 end
             end
-%              minP=min(prob);
             minP=mean(prob1)-3*std(prob1);
             if minP>meanSS
                 meanSS=minP;Y=Y1;
-%             else
-%                 break;
             end
         end
-        meanSS
-        %
-        %         [Z,Y,W]=GraphEncoderEmbed(X,Y,n,opts);
-        %         mdl=fitcdiscr(Z(indT,:),Y(indT));
-        %         Y(~indT)=predict(mdl,Z(~indT,:));
     end
 else 
     %% otherwise do clustering
@@ -179,34 +141,6 @@ else
         end
     end
 end
-%     if opts.Learn==true && sum(indT)<length(Y)
-%         t1=indT;
-%         t2=~indT;
-%         thres=0.5;
-%         
-%         opttt=2;
-%         if opttt==1
-%             mdl=fitsemiself(Z(t1,:),Y(t1),Z(t2,:),'Learner','discriminant','IterationLimit',opts.maxIter,'ScoreThreshold',thres);
-%             tmp=(max(abs(mdl.LabelScores),[],2)>thres);
-%             tmp1=find(t2>0);
-%             Y(tmp1(tmp))=mdl.FittedLabels(tmp);
-%             [Z,Y,W,indT,B]=GraphEncoderMain(X,Y,opts);
-%         else
-%             for i=1:opts.maxIter
-%                 mdl=fitsemiself(Z(t1,:),Y(t1),Z(t2,:),'Learner','discriminant','IterationLimit',1,'ScoreThreshold',thres);
-%                 tmp=(max(abs(mdl.LabelScores),[],2)>thres);
-%                 if (sum(tmp)==0)
-%                     break;
-%                 else
-%                     tmp1=find(t2>0);
-%                     Y(tmp1(tmp))=mdl.FittedLabels(tmp);
-%                     t1=find(Y>=0);
-%                     t2=~t1;
-%                     [Z,Y,W,indT,B]=GraphEncoderMain(X,Y,opts);
-%                 end
-%             end
-%         end
-%     end
 
 %% Clustering Function
 function [Z,Y,W,minSS]=GraphEncoderCluster(X,K,n,opts)
@@ -220,6 +154,7 @@ for rep=1:opts.Replicates
     for r=1:opts.MaxIter
         [Zt,Wt]=GraphEncoderEmbed(X,Y2,n,opts);
         [Y3,~,tmp,D] = kmeans(Zt, K,'MaxIter',opts.MaxIterK,'Replicates',1,'Start','plus');
+%         [Y3,~,tmp,D] = kmeans(Zt*WB, K,'MaxIter',opts.MaxIterK,'Replicates',1,'Start','plus');
         %gmfit = fitgmdist(Z,k, 'CovarianceType','diagonal');%'RegularizationValue',0.00001); % Fitted GMM
         %Y = cluster(gmfit,Z); % Cluster index
         if RandIndex(Y2,Y3)==1
@@ -229,21 +164,8 @@ for rep=1:opts.Replicates
         end
     end
     tmpCount=accumarray(Y3,1);
-%     cent=sum(squareform(pdist(cent)),2);
-%     tmp=tmp./tmpCount./cent.*(n-tmpCount).*tmpCount/n;
     tmp=tmp./tmpCount./(sum(D.^0.5)'-tmp).*(n-tmpCount).*tmpCount/n;
     tmp=mean(tmp)+2*std(tmp);
-    
-    %tmp=max(tmp./tmpCount./sum(D)'*n);
-%     tmp=median(tmp./tmpCount./sum(D)'*n)
-%         tmp=max(tmp)/sum(sum(D))*K*n;
-%     sum(D)/n
-%     tmp=max(tmp./sum(D)');
-%     tmp=max(tmp)/min(sum(D));
-%     tmp=max(tmp)/sum(sum(D))*K*n;
-%     tmp=sum(sum(D));
-%     tmp=tmp/sum(sum(D));
-%     tmp=sum(tmp)/sum(sum(D));
     if minSS==-1 || tmp<minSS
         Z=Zt;W=Wt;minSS=tmp;Y=Y3;
     end
