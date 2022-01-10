@@ -1,7 +1,7 @@
 function [result]=GraphEncoderEvaluate(X,Y,opts)
 
 if nargin < 3
-    opts = struct('indices',crossvalind('Kfold',Y,5),'Adjacency',1,'Laplacian',1,'Spectral',1,'LDA',1,'GFN',1,'GCN',0,'GNN',0,'knn',5,'dim',30,'neuron',20,'epoch',100,'training',0.8,'activation','poslin','Learn',0); % default parameters
+    opts = struct('indices',crossvalind('Kfold',Y,5),'Adjacency',1,'Laplacian',1,'Spectral',1,'LDA',1,'GFN',1,'GCN',0,'GNN',0,'knn',5,'dim',30,'neuron',20,'epoch',100,'training',0.05,'activation','poslin','Learner',1); % default parameters
 end
 if ~isfield(opts,'indices'); opts.indices=crossvalind('Kfold',Y,5); end
 if ~isfield(opts,'Adjacency'); opts.Adjacency=1; end
@@ -11,13 +11,14 @@ if ~isfield(opts,'LDA'); opts.LDA=1; end
 if ~isfield(opts,'GFN'); opts.GFN=0; end
 if ~isfield(opts,'GCN'); opts.GCN=0; end
 if ~isfield(opts,'GNN'); opts.GNN=0; end
-if ~isfield(opts,'Learn'); opts.Learn=0; end
+if ~isfield(opts,'Learner'); opts.Learner=1; end
+if ~isfield(opts,'LearnIter'); opts.LearnIter=0; end
 if ~isfield(opts,'knn'); opts.knn=5; end
 if ~isfield(opts,'dim'); opts.dim=30; end
 % if ~isfield(opts,'deg'); opts.deg=0; end
 if ~isfield(opts,'neuron'); opts.neuron=20; end
 if ~isfield(opts,'epoch'); opts.epoch=100; end
-if ~isfield(opts,'training'); opts.training=0.8; end
+if ~isfield(opts,'training'); opts.training=0.05; end
 if ~isfield(opts,'activation'); opts.activation='poslin'; end %purelin, tansig
 warning('off','all');
 %met=[opts.AEE,opts.LDA,opts.GFN,opts.ASE,opts.LSE,opts.GCN,opts.GNN]; %AEE, LDA, GFN, ASE, GFN, ANN
@@ -41,30 +42,30 @@ discrimType='pseudoLinear';
 %     discrimType='diagLinear';
 % end
 %%Edge to Adj
-if size(X,2)==2
-    Adj=zeros(n,n);
-    for i=1:size(X,1)
-        Adj(X(i,1),X(i,2))=1;
-    end
-    X=Adj+Adj';
-end
-[X2]=adj2edge(X);
+% if size(X,2)==2
+%     Adj=zeros(n,n);
+%     for i=1:size(X,1)
+%         Adj(X(i,1),X(i,2))=1;
+%     end
+%     X=Adj+Adj';
+% end
+% [X2]=adj2edge(X);
 
 % initialize NN
 netGNN = patternnet(max(opts.neuron,K),'trainscg','crossentropy'); % number of neurons, Scaled Conjugate Gradient, cross entropy
 netGNN.layers{1}.transferFcn = opts.activation;
 netGNN.trainParam.showWindow = false;
 netGNN.trainParam.epochs=opts.epoch;
-netGNN.divideParam.trainRatio = opts.training;
-netGNN.divideParam.valRatio   = 1-opts.training;
+netGNN.divideParam.trainRatio = 0.9;
+netGNN.divideParam.valRatio   = 0.1;
 netGNN.divideParam.testRatio  = 0/100;
 
 netGFN = patternnet(max(opts.neuron,K),'trainscg','crossentropy'); % number of neurons, Scaled Conjugate Gradient, cross entropy
 netGFN.layers{1}.transferFcn = opts.activation;
 netGFN.trainParam.showWindow = false;
 netGFN.trainParam.epochs=opts.epoch;
-netGFN.divideParam.trainRatio = opts.training;
-netGFN.divideParam.valRatio   = 1-opts.training;
+netGFN.divideParam.trainRatio = 0.9;
+netGFN.divideParam.valRatio   = 0.1;
 netGFN.divideParam.testRatio  = 0/100;
 %netGFN.trainParam.lr = 0.01;
 
@@ -100,7 +101,7 @@ acc_GCN=zeros(kfold,1);t_GCN=zeros(kfold,1);
 % opts2 = struct('deg',opts.deg,'pivot',opts.pivot); % default parameters
 
 for i = 1:kfold
-    if opts.Learn==0
+    if opts.LearnIter==0
         %     tst = (indices == i); % tst indices
         %     trn = ~tst; % trning indices
         
@@ -119,8 +120,8 @@ for i = 1:kfold
             YTrn=Y(trn);
             YTsn=Y(tsn);
             tic
-            oot=struct('Laplacian',false,'Learn',0);
-            [Z,~,~,indT]=GraphEncoder(X2,YT,oot);
+            oot=struct('Laplacian',false,'LearnIter',0,'Learner',opts.Learner);
+            [Z,YTNew,~,indT]=GraphEncoder(X,YT,oot);
             ZTrn=Z(indT,:);
             ZTsn=Z(~indT,:);
             
@@ -144,10 +145,10 @@ for i = 1:kfold
             
             if opts.LDA==1
                 tic
-                mdl=fitcdiscr(ZTrn,YTrn,'discrimType',discrimType);
-                tt=predict(mdl,ZTsn);
+%                 mdl=fitcdiscr(ZTrn,YTrn,'discrimType',discrimType);
+%                 tt=predict(mdl,ZTsn);
                 t_AEE_LDA(i)=tmp1+toc;
-                acc_AEE_LDA(i)=acc_AEE_LDA(i)+mean(YTsn~=tt);
+                acc_AEE_LDA(i)=acc_AEE_LDA(i)+mean(YTNew(tsn)~=tt);
             end
             
             
@@ -203,11 +204,11 @@ for i = 1:kfold
         if opts.Laplacian==1
             YT=Y;
             YT(tsn)=-1;
-            oot=struct('Laplacian',true,'Learn',0);
+            oot=struct('Laplacian',true,'LearnIter',0,'Learner',opts.Learner);
             YTrn=Y(trn);
             YTsn=Y(tsn);
             tic
-            [Z,~,~,indT]=GraphEncoder(X2,YT,oot);
+            [Z,~,~,indT]=GraphEncoder(X,YT,oot);
             ZTrn=Z(indT,:);
             ZTsn=Z(~indT,:);
             %     else
@@ -294,7 +295,7 @@ for i = 1:kfold
         trn=(indices==0);
         for j=1:K
             tmp=find(Y==j);
-            sz=ceil(length(tmp)/opts.neuron)+1;
+            sz=ceil(length(tmp)*opts.training)+1;
             sz=randi(length(tmp),sz,1);
             trn(sz)=1;
         end
@@ -303,9 +304,9 @@ for i = 1:kfold
         YT(tsn)=-1;
         YTsn=Y(tsn);
         if opts.Adjacency==1
-            oot=struct('Learn',opts.Learn);
+            oot=struct('LearnIter',opts.LearnIter,'Learner',opts.Learner);
             tic
-            [~,tt,~,~]=GraphEncoder(X2,YT,oot);
+            [~,tt,~,~]=GraphEncoder(X,YT,oot);
             t_AEE_LDA(i)=toc;
             acc_AEE_LDA(i)=mean(YTsn~=tt(tsn));
             if opts.Spectral==1
@@ -342,9 +343,9 @@ for i = 1:kfold
             end
         end
         if opts.Laplacian==1
-            oot=struct('Laplacian',true,'Learn',opts.Learn);
+            oot=struct('Laplacian',true,'LearnIter',opts.LearnIter,'Learner',opts.Learner);
             tic
-            [~,tt]=GraphEncoder(X2,YT,oot);
+            [~,tt]=GraphEncoder(X,YT,oot);
             t_LEE_LDA(i)=toc;
             acc_LEE_LDA(i)=mean(YTsn~=tt(tsn));
             if opts.Spectral==1

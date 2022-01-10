@@ -30,71 +30,106 @@ if nargin<2
     Y=2:5;
 end
 if nargin<3
-    opts = struct('DiagA',true,'Correlation',true,'Laplacian',false,'Learn',1,'MaxIter',50,'MaxIterK',5,'Replicates',3);
+    opts = struct('DiagA',true,'Correlation',true,'Laplacian',false,'Learner',1,'LearnIter',0,'MaxIter',50,'MaxIterK',5,'Replicates',1,'Attributes',0);
 end
 if ~isfield(opts,'DiagA'); opts.DiagA=true; end
 if ~isfield(opts,'Correlation'); opts.Correlation=true; end
 if ~isfield(opts,'Laplacian'); opts.Laplacian=false; end
-if ~isfield(opts,'Learn'); opts.Learn=1; end
+if ~isfield(opts,'Learner'); opts.Learner=1; end
+if ~isfield(opts,'LearnIter'); opts.LearnIter=0; end
 if ~isfield(opts,'MaxIter'); opts.MaxIter=50; end
 if ~isfield(opts,'MaxIterK'); opts.MaxIterK=5; end
 if ~isfield(opts,'Replicates'); opts.Replicates=3; end
+if ~isfield(opts,'Attributes'); opts.Attributes=0; end
 opts.neuron=20;
 opts.activation='poslin';
+U=opts.Attributes;
 % if ~isfield(opts,'distance'); opts.distance='correlation'; end
 % opts.DiagA=false;
 % opts.Laplacian=true;
 % opts.Correlation=false;
 
 %% pre-precess input to s*3 then diagonal augment
-[s,t]=size(X);
-if s==t % convert adjacency matrix to edgelist
-    [X]=adj2edge(X);
+if iscell(X)
+    num=length(X);
+else
+    X={X};
+    num=1;
 end
-if t==2 % enlarge the edgelist to s*3
-    X=[X,ones(s,1)];
+for i=1:num
+    [s,t]=size(X{i});
+    if s==t % convert adjacency matrix to edgelist
+        [X{i}]=adj2edge(X{i});
+    end
+    if t==2 % enlarge the edgelist to s*3
+        X{i}=[X{i},ones(s,1)];
+    end
+    n=max(max(X{1}(:,1:2)));
+    if opts.DiagA==true
+        XNew=[1:n;1:n;ones(1,n)]';
+        X{i}=[X{i};XNew];
+    end
 end
-n=max(max(X(:,1:2)));
-if opts.DiagA==true
-    XNew=[1:n;1:n;ones(1,n)]';
-    X=[X;XNew];
+if size(U,1)==n
+    attr=true;
+else
+    attr=false;
 end
 
 %% partial or full known labels when label size matches vertex size, do embedding / classification directly
 if length(Y)==n
     indT=(Y>0);
-    Y1=Y(indT);
-    [~,~,Ytmp]=unique(Y1);
-    Y(indT)=Ytmp;
+    YTrn=Y(indT);
+    [~,~,YTrn]=unique(YTrn);
+    Y(indT)=YTrn;
+    YTrn2=onehotencode(categorical(YTrn),2)';
     K=max(Y);
-    if opts.Learn==0
-        [Z,W]=GraphEncoderEmbed(X,Y,n,opts);
-        meanSS=0;
-    else
-        %         indNew=indT;
-        %         initialize NN
-%         netGNN = patternnet(max(opts.neuron,K),'trainscg','crossentropy'); % number of neurons, Scaled Conjugate Gradient, cross entropy
+    Z=zeros(n,K*num);
+    W=cell(1,num);
+    if opts.Learner==2
+        % initialize NN
+        netGNN = patternnet(max(opts.neuron,K),'trainscg','crossentropy'); % number of neurons, Scaled Conjugate Gradient, cross entropy
 %         netGNN.layers{1}.transferFcn = opts.activation;
-%         netGNN.trainParam.showWindow = false;
-%         netGNN.trainParam.epochs=100;
-%         netGNN.divideParam.trainRatio = 0.8;
-%         netGNN.divideParam.valRatio   = 0.2;
-%         netGNN.divideParam.testRatio  = 0;
+        netGNN.trainParam.showWindow = false;
+        netGNN.trainParam.epochs=100;
+        netGNN.divideParam.trainRatio = 0.9;
+        netGNN.divideParam.valRatio   = 0.1;
+        netGNN.divideParam.testRatio  = 0;
+    end
+    if opts.LearnIter<1
+        for i=1:num
+            [Z(:,(i-1)*K+1:i*K),W{i}]=GraphEncoderEmbed(X{i},Y,n,opts);
+        end
+        if attr==true
+            Z=[Z,U];
+        end
+        if opts.Learner==1
+            mdl=fitcdiscr(Z(indT,:),YTrn,'discrimType','pseudoLinear');
+            Y(~indT)=predict(mdl,Z(~indT,:));
+        else
+            mdl = train(netGNN,Z(indT,:)',YTrn2);
+            prob=mdl(Z(~indT,:)');
+            [~,Y(~indT)] = max(prob,[],1); % class-wise probability for tsting data
+        end
+    else
         %
         %         indNew=indT;
-        Y1=Y;
-        YTrn=Y(indT);YTrn2=onehotencode(categorical(YTrn),2)';
-        meanSS=0;
+        meanSS=0;Y1=Y;
         for rep=1:opts.Replicates
             tmp=randi([1,K],[sum(~indT),1]);
             Y1(~indT)=tmp;
             Y2=onehotencode(categorical(Y1),2);
             YND=double(Y1);
-            for i=1:opts.MaxIter/2
+            for r=1:opts.LearnIter
                 %             i
-              
-                [Z,W]=GraphEncoderEmbed(X,Y2,n,opts);
-                if opts.Learn==1
+                for i=1:num
+                    [Z(:,(i-1)*K+1:i*K),W{i}]=GraphEncoderEmbed(X{i},Y1,n,opts);
+                end
+%                 [Z,W]=GraphEncoderEmbed(X,Y2,n,opts);
+                if attr==true
+                    Z=[Z,U];
+                end
+                if opts.Learner==1
                     mdl=fitcdiscr(Z(indT,:),YTrn,'discrimType','pseudoLinear');
                     [class,prob] = predict(mdl,Z(~indT,:));
                     prob1=max(prob,[],2);
@@ -126,13 +161,13 @@ else
     end
     %% when a given cluster size is specified
     if length(K)==1
-        [Z,Y,W,meanSS]=GraphEncoderCluster(X,K,n,opts);
+        [Z,Y,W,meanSS]=GraphEncoderCluster(X,K,n,num,attr,opts);
     else
         %% when a range of cluster size is specified
         if length(K)<n/2 && max(K)<max(n/2,10)
             minSS=-1;Z=0;W=0;meanSS=zeros(length(K),1);
             for r=1:length(K)
-                [Zt,Yt,Wt,tmp]=GraphEncoderCluster(X,K(r),n,opts);
+                [Zt,Yt,Wt,tmp]=GraphEncoderCluster(X,K(r),n,num,attr,opts);
                 meanSS(r)=tmp;
                 if minSS==-1 || tmp<minSS
                     minSS=tmp;Y=Yt;Z=Zt;W=Wt;
@@ -143,16 +178,24 @@ else
 end
 
 %% Clustering Function
-function [Z,Y,W,minSS]=GraphEncoderCluster(X,K,n,opts)
+function [Z,Y,W,minSS]=GraphEncoderCluster(X,K,n,num,attr,opts)
 
 if nargin<4
     opts = struct('Correlation',true,'Laplacian',false,'MaxIter',50,'MaxIterK',5,'Replicates',3);
 end
 minSS=-1;
+Z=zeros(n,K*num);
+Wt=cell(1,num);
+W=cell(1,num);              
 for rep=1:opts.Replicates
     Y2=randi([1,K],[n,1]);
     for r=1:opts.MaxIter
-        [Zt,Wt]=GraphEncoderEmbed(X,Y2,n,opts);
+        for i=1:num
+            [Zt(:,(i-1)*K+1:i*K),Wt{i}]=GraphEncoderEmbed(X{i},Y2,n,opts);
+        end
+        if attr==true
+            Zt=[Zt,U];
+        end
         [Y3,~,tmp,D] = kmeans(Zt, K,'MaxIter',opts.MaxIterK,'Replicates',1,'Start','plus');
 %         [Y3,~,tmp,D] = kmeans(Zt*WB, K,'MaxIter',opts.MaxIterK,'Replicates',1,'Start','plus');
         %gmfit = fitgmdist(Z,k, 'CovarianceType','diagonal');%'RegularizationValue',0.00001); % Fitted GMM

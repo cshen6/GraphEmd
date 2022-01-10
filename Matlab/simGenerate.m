@@ -195,6 +195,32 @@ switch option
             end
         end
         X=Dis;
+     case 18 % SBM with 2 classes
+        fileName='SBM';
+        d=4;
+        pp=[0.2,0.3,0.2,0.3];
+        Dis=cell(1,3);
+        tt=rand([n,1]);
+        Label=ones(n,1);
+        thres=0;
+        for i=1:size(pp,2)
+            thres=thres+pp(i);
+            Label=Label+(tt>thres); %determine the block of each data
+        end
+        for k=1:3
+            Bl=0.1*ones(d,d);
+            %             Bl=rand(clas,clas);
+            Bl(k,k)=0.2;
+            Dis{k}=zeros(n,n);
+            for i=1:n
+                Dis{k}(i,i)=0;%diagonals are zeros
+                for j=i+1:n
+                    Dis{k}(i,j)=rand(1)<Bl(Label(i),Label(j));
+                    Dis{k}(j,i)=Dis{k}(i,j);
+                end
+            end
+        end
+        X=Dis;
      case 20 % DC-SBM with 3 classes
         fileName='DCSBM';
         pp=[0.2,0.3,0.5];
