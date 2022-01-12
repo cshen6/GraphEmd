@@ -186,7 +186,7 @@ n=1000;k=10;
 opts = struct('Adjacency',1,'Laplacian',1,'Spectral',1,'LDA',1,'GFN',1,'GCN',0,'GNN',0,'knn',5,'dim',30,'neuron',20,'epoch',100,'training',0.2,'activation','poslin'); % default parameters
 [Adj,Y]=simGenerate(18,n);
 indices = crossvalind('Kfold',Y,5);
-opts.indices=indices; 
+opts.indices=indices; opts.Learner=1;opts.LearnIter=0;
 % opts2=opts;opts2.Learner=1;opts2.LearnIter=20;
 SBM1=GraphEncoderEvaluate(Adj{1},Y,opts);
 SBM2=GraphEncoderEvaluate(Adj{2},Y,opts);
@@ -265,13 +265,15 @@ load('graphCElegans.mat')
 % [Z,W]=GraphEncoder(Ac,vcols,knum); %3 significant nodes
 % GraphEncoder(Ag,vcols,knum); %2
 indices = crossvalind('Kfold',vcols,5);
-opts.indices=indices; opts2.indices=indices;
+opts.indices=indices; opts2.indices=indices;opts.Learner=2;
 CEAc=GraphEncoderEvaluate(Ac,vcols,opts);
 CEAg=GraphEncoderEvaluate(Ag,vcols,opts);
 % opts2=opts;
 % opts2.deg=1;opts2.ASE=0;opts2.LSE=0;opts2.GCN=0;opts2.GNN=0; opts2.LDA=0;opts2.GFN=0;
-CEAc2=GraphEncoderEvaluate(Ac,vcols,opts2);
-CEAg2=GraphEncoderEvaluate(Ag,vcols,opts2);
+% CEAc2=GraphEncoderEvaluate(Ac,vcols,opts2);
+% CEAg2=GraphEncoderEvaluate(Ag,vcols,opts2);
+opts.Spectral=0;opts.LearnIter=0;
+CE=GraphEncoderEvaluate({Ac,Ag},vcols,opts);
 
 load('adjnoun.mat')
 %knum=3; % all sim models have zero significant node. 
@@ -300,7 +302,7 @@ load('Wiki_Data.mat')
 % [Z,W]=GraphEncoder(TF,Label,knum); %0
 % [Z,W]=GraphEncoder(GEAdj,Label,knum); %1138
 % [Z,W]=GraphEncoder(GFAdj,Label,knum); %1004
-indices = crossvalind('Kfold',Label,5);
+indices = crossvalind('Kfold',Label,10);
 opts.indices=indices;opts2.indices=indices;opts2.Learner=1;opts2.LearnIter=20;
 WikiTE=GraphEncoderEvaluate(TE,Label,opts);
 WikiTF=GraphEncoderEvaluate(TF,Label,opts);
@@ -317,7 +319,7 @@ WikiGF=GraphEncoderEvaluate(GFAdj,Label,opts);
 % WikiGE2=GraphEncoderEvaluate(GEAdj,Label,opts2);
 % WikiGF2=GraphEncoderEvaluate(GFAdj,Label,opts2);
 %%%%Fusion
-opts.Spectral=0;opts.Learner=2;opts.LearnIter=30;
+opts.Spectral=0;opts.Learner=2;opts.LearnIter=0;
 WikiT=GraphEncoderEvaluate({TE,TF},Label,opts);
 WikiG=GraphEncoderEvaluate({GE,GF},Label,opts);
 WikiE=GraphEncoderEvaluate({TE,GE},Label,opts);

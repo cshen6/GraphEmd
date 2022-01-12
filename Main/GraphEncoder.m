@@ -59,15 +59,33 @@ end
 for i=1:num
     [s,t]=size(X{i});
     if s==t % convert adjacency matrix to edgelist
-        [X{i}]=adj2edge(X{i});
+        [X{i},s]=adj2edge(X{i});
     end
     if t==2 % enlarge the edgelist to s*3
         X{i}=[X{i},ones(s,1)];
+%         t=3;
     end
     n=max(max(X{1}(:,1:2)));
     if opts.DiagA==true
         XNew=[1:n;1:n;ones(1,n)]';
         X{i}=[X{i};XNew];
+        s=s+n;
+    end
+    if opts.Laplacian==true
+        D=zeros(n,1);
+        for j=1:s
+            a=X{i}(j,1);
+            b=X{i}(j,2);
+            c=X{i}(j,3);
+            D(a)=D(a)+c;
+            if a~=b
+                D(b)=D(b)+c;
+            end
+        end
+        D=D.^-0.5;
+        for j=1:s
+            X{i}(j,3)=X{i}(j,3)*D(X{i}(j,1))*D(X{i}(j,2));
+        end
     end
 end
 if size(U,1)==n
@@ -109,7 +127,8 @@ if length(Y)==n
         else
             mdl = train(netGNN,Z(indT,:)',YTrn2);
             prob=mdl(Z(~indT,:)');
-            [~,Y(~indT)] = max(prob,[],1); % class-wise probability for tsting data
+            Y(~indT)=vec2ind(prob)';
+%             [~,Y(~indT)] = max(prob,[],1); % class-wise probability for tsting data
         end
     else
         %
@@ -181,7 +200,7 @@ end
 function [Z,Y,W,minSS]=GraphEncoderCluster(X,K,n,num,attr,opts)
 
 if nargin<4
-    opts = struct('Correlation',true,'Laplacian',false,'MaxIter',50,'MaxIterK',5,'Replicates',3);
+    opts = struct('Correlation',true,'MaxIter',50,'MaxIterK',5,'Replicates',3);
 end
 minSS=-1;
 Z=zeros(n,K*num);
@@ -217,7 +236,7 @@ end
 %% Embedding Function
 function [Z,W]=GraphEncoderEmbed(X,Y,n,opts)
 if nargin<4
-    opts = struct('Correlation',true,'Laplacian',false);
+    opts = struct('Correlation',true);
 end
 prob=false;
 
@@ -243,23 +262,6 @@ else
     end
 end
 % num=size(X,3);
-        
-if opts.Laplacian==true
-    D=zeros(n,1);
-    for i=1:s
-        a=X(i,1);
-        b=X(i,2);
-        c=X(i,3);
-        D(a)=D(a)+c;
-        if a~=b
-            D(b)=D(b)+c;
-        end
-    end
-    D=D.^-0.5;
-    for i=1:s
-        X(i,3)=X(i,3)*D(X(i,1))*D(X(i,2));
-    end
-end
 
 % Edge List Version in O(s)
 Z=zeros(n,k);
@@ -299,7 +301,7 @@ end
 % end
 
 %% Adj to Edge Function
-function [Edge]=adj2edge(Adj)
+function [Edge,s]=adj2edge(Adj)
 if size(Adj,2)<=3
     Edge=Adj;
     return;
@@ -317,3 +319,4 @@ for i=1:n
         end
     end
 end
+s=s-1;

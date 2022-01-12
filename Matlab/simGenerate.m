@@ -414,6 +414,33 @@ switch option
             end
         end
         X=theta;
+     case 28 % SBM with 2 classes
+        fileName='SBM';
+        d=4;
+        pp=[0.2,0.3,0.2,0.3];
+        Dis=cell(1,3);
+        tt=rand([n,1]);
+        Label=ones(n,1);
+        thres=0;
+        theta=unifrnd(0.1,0.5,n,1);%randi(10,n,1)/10;%betarnd(1,4,n,1); %0.2*ones(n,1);%
+        for i=1:size(pp,2)
+            thres=thres+pp(i);
+            Label=Label+(tt>thres); %determine the block of each data
+        end
+        for k=1:3
+            Bl=0.1*ones(d,d);
+            %             Bl=rand(clas,clas);
+            Bl(k,k)=0.5;
+            Dis{k}=zeros(n,n);
+            for i=1:n
+                Dis{k}(i,i)=0;%diagonals are zeros
+                for j=i+1:n
+                    Dis{k}(i,j)=rand(1)<theta(i)*theta(j)*Bl(Label(i),Label(j));
+                    Dis{k}(j,i)=Dis{k}(i,j);
+                end
+            end
+        end
+        X=Dis;
     case 30 % RDPG
         fileName='RDPG';
         p=1;
