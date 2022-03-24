@@ -30,7 +30,7 @@ if nargin<2
     Y=2:5;
 end
 if nargin<3
-    opts = struct('DiagA',true,'Correlation',true,'Laplacian',false,'Learner',1,'LearnIter',0,'MaxIter',50,'MaxIterK',5,'Replicates',1,'Attributes',0);
+    opts = struct('DiagA',true,'Correlation',true,'Laplacian',false,'Learner',1,'LearnIter',0,'MaxIter',50,'MaxIterK',5,'Replicates',3,'Attributes',0);
 end
 if ~isfield(opts,'DiagA'); opts.DiagA=true; end
 if ~isfield(opts,'Correlation'); opts.Correlation=true; end
@@ -45,9 +45,9 @@ opts.neuron=20;
 opts.activation='poslin';
 U=opts.Attributes;
 % if ~isfield(opts,'distance'); opts.distance='correlation'; end
-% opts.DiagA=false;
-% opts.Laplacian=true;
-% opts.Correlation=false;
+opts.DiagA=true;
+opts.Correlation=true;
+opts.Laplacian=false;
 
 %% pre-precess input to s*3 then diagonal augment
 if iscell(X)
@@ -59,13 +59,13 @@ end
 for i=1:num
     [s,t]=size(X{i});
     if s==t % convert adjacency matrix to edgelist
-        [X{i},s]=adj2edge(X{i});
+        [X{i},s,n]=adj2edge(X{i});
     end
     if t==2 % enlarge the edgelist to s*3
         X{i}=[X{i},ones(s,1)];
 %         t=3;
     end
-    n=max(max(X{1}(:,1:2)));
+%     n=max(max(X{1}(:,1:2)));
     if opts.DiagA==true
         XNew=[1:n;1:n;ones(1,n)]';
         X{i}=[X{i};XNew];
@@ -138,11 +138,12 @@ if length(Y)==n
             tmp=randi([1,K],[sum(~indT),1]);
             Y1(~indT)=tmp;
             Y2=onehotencode(categorical(Y1),2);
-            YND=double(Y1);
+%             Y3=double(Y1);
             for r=1:opts.LearnIter
                 %             i
                 for i=1:num
-                    [Z(:,(i-1)*K+1:i*K),W{i}]=GraphEncoderEmbed(X{i},Y1,n,opts);
+                    [Z(:,(i-1)*K+1:i*K),W{i}]=GraphEncoderEmbed(X{i},Y1,n,opts); % discrete label version
+                    %[Z(:,(i-1)*K+1:i*K),W{i}]=GraphEncoderEmbed(X{i},Y2,n,opts); % probability version
                 end
 %                 [Z,W]=GraphEncoderEmbed(X,Y2,n,opts);
                 if attr==true
@@ -154,14 +155,15 @@ if length(Y)==n
                     prob1=max(prob,[],2);
                 else
                     mdl = train(netGNN,Z(indT,:)',YTrn2);
-                    prob=mdl(Z(~indT,:)')';
-                    [prob1,class] = max(prob,[],2); % class-wise probability for tsting data
+                    prob=mdl(Z(~indT,:)');
+%                     class=vec2ind(prob)';
+                    [prob1,class] = max(prob,[],1); % class-wise probability for tsting data
                 end
                 if RandIndex(Y1(~indT),class)==1
                     break;
                 else
-                    Y2(~indT,:)=prob;
-                    YND(~indT)=prob1;
+                    Y2(~indT,:)=prob';
+%                     Y3(~indT)=prob1;
                     Y1(~indT)=class;
                 end
             end
@@ -184,11 +186,11 @@ else
     else
         %% when a range of cluster size is specified
         if length(K)<n/2 && max(K)<max(n/2,10)
-            minSS=-1;Z=0;W=0;meanSS=zeros(length(K),1);
+            minSS=100;Z=0;W=0;meanSS=zeros(length(K),1);
             for r=1:length(K)
                 [Zt,Yt,Wt,tmp]=GraphEncoderCluster(X,K(r),n,num,attr,opts);
                 meanSS(r)=tmp;
-                if minSS==-1 || tmp<minSS
+                if tmp<minSS
                     minSS=tmp;Y=Yt;Z=Zt;W=Wt;
                 end
             end
@@ -202,7 +204,7 @@ function [Z,Y,W,minSS]=GraphEncoderCluster(X,K,n,num,attr,opts)
 if nargin<4
     opts = struct('Correlation',true,'MaxIter',50,'MaxIterK',5,'Replicates',3);
 end
-minSS=-1;
+minSS=100;
 Z=zeros(n,K*num);
 Wt=cell(1,num);
 W=cell(1,num);              
@@ -228,7 +230,7 @@ for rep=1:opts.Replicates
     tmpCount=accumarray(Y3,1);
     tmp=tmp./tmpCount./(sum(D.^0.5)'-tmp).*(n-tmpCount).*tmpCount/n;
     tmp=mean(tmp)+2*std(tmp);
-    if minSS==-1 || tmp<minSS
+    if tmp<minSS
         Z=Zt;W=Wt;minSS=tmp;Y=Y3;
     end
 end
@@ -301,7 +303,7 @@ end
 % end
 
 %% Adj to Edge Function
-function [Edge,s]=adj2edge(Adj)
+function [Edge,s,n]=adj2edge(Adj)
 if size(Adj,2)<=3
     Edge=Adj;
     return;

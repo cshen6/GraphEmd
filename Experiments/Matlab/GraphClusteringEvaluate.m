@@ -1,7 +1,7 @@
 function [result]=GraphClusteringEvaluate(X,Y,opts)
 
 if nargin < 3
-    opts = struct('Adjacency',1,'Laplacian',1,'Spectral',1,'NN',0,'Dist','sqeuclidean','normalize',0,'dmax',30); % default parameters
+    opts = struct('Adjacency',1,'Laplacian',1,'Spectral',0,'NN',0,'Dist','sqeuclidean','normalize',0,'dmax',30); % default parameters
 end
 if ~isfield(opts,'Adjacency'); opts.Adjacency=1; end
 if ~isfield(opts,'Laplacian'); opts.Laplacian=1; end
@@ -25,7 +25,9 @@ ARI_AEE=0;t_AEE=0;ARI_LEE=0;t_LEE=0;ARI_AEE_GNN=0;t_AEE_GNN=0;ARI_ASE=0;t_ASE=0;
 % [ind_AEE,~]=GraphClustering(X,K,opts2);
 % t_AEE=toc;
 % ARI_AEE=RandIndex(Y,ind_AEE);
-
+if iscell(X)
+    opts.Spectral=0;
+end
 if opts.Spectral==1
     if size(X,2)<=3
         X=X-min(min(X))+1;

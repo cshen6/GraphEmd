@@ -196,6 +196,20 @@ GraphClusteringEvaluate(AdjOri,YOri)
 load('polblogs.mat') %k=2
 GraphClusteringEvaluate(AdjOri,YOri)
 
+%% fusion
+load('Wiki_Data.mat')
+Label=Label+1;
+GraphClusteringEvaluate(GEAdj,Label)
+GraphClusteringEvaluate(GFAdj,Label)
+GraphClusteringEvaluate(TE,Label)
+GraphClusteringEvaluate(TF,Label)
+GraphClusteringEvaluate({TE,TF},Label)
+GraphClusteringEvaluate({GEAdj,GFAdj},Label)
+GraphClusteringEvaluate({TE,TF,GEAdj,GFAdj},Label)
+load('graphCElegans.mat')
+GraphClusteringEvaluate(Ag,vcols)
+GraphClusteringEvaluate(Ac,vcols)
+GraphClusteringEvaluate({Ac,Ag},vcols)
 % [PB_RI_AEE,PB_RI_AEN,PB_RI_ASE,PB_t_AEE,PB_t_AEE2,PB_t_AEN,PB_t_ASE]=simClusteringReal(Adj,Label);
 
 %%% 3. No changce / similar

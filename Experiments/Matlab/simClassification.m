@@ -134,12 +134,12 @@ end
 % % Data4=GraphEncoderEvaluate(Adj,Y,opts1);
 
 %%% Basic Sims
-n=5000;k=10;
+n=3000;k=10;
 opts = struct('Adjacency',1,'Laplacian',1,'Spectral',1,'LDA',1,'GFN',1,'GCN',0,'GNN',0,'knn',5,'dim',30,'neuron',20,'epoch',100,'training',0.2,'activation','poslin'); % default parameters
 [Adj,Y]=simGenerate(10,n);
 indices = crossvalind('Kfold',Y,5);
 opts.indices=indices; 
-opts2=opts;opts2.Learner=1;opts2.LearnIter=20;
+opts2=opts;opts2.Learner=1;opts2.LearnIter=0;
 % opts2.deg=1;opts2.ASE=0;opts2.LSE=0;opts2.GCN=0;opts2.GNN=0; opts2.LDA=0;opts2.GFN=0;
 SBM=GraphEncoderEvaluate(Adj,Y,opts);
 SBM0=GraphEncoderEvaluate(Adj,Y,opts2);
@@ -186,7 +186,7 @@ n=1000;k=10;
 opts = struct('Adjacency',1,'Laplacian',1,'Spectral',1,'LDA',1,'GFN',1,'GCN',0,'GNN',0,'knn',5,'dim',30,'neuron',20,'epoch',100,'training',0.2,'activation','poslin'); % default parameters
 [Adj,Y]=simGenerate(18,n);
 indices = crossvalind('Kfold',Y,5);
-opts.indices=indices; opts.Learner=1;opts.LearnIter=0;
+opts.indices=indices; opts.Learner=2;opts.LearnIter=0;
 % opts2=opts;opts2.Learner=1;opts2.LearnIter=20;
 SBM1=GraphEncoderEvaluate(Adj{1},Y,opts);
 SBM2=GraphEncoderEvaluate(Adj{2},Y,opts);
@@ -298,12 +298,14 @@ PB2=GraphEncoderEvaluate(Adj,Y,opts2);
 
 %%% Distance and Kernel
 load('Wiki_Data.mat')
+Label=Label+1;
 % [Z,W]=GraphEncoder(TE,Label,knum); %0 
 % [Z,W]=GraphEncoder(TF,Label,knum); %0
 % [Z,W]=GraphEncoder(GEAdj,Label,knum); %1138
 % [Z,W]=GraphEncoder(GFAdj,Label,knum); %1004
+opts = struct('Adjacency',1,'Laplacian',1,'Spectral',1,'LDA',1,'GFN',1,'GCN',0,'GNN',0,'knn',5,'dim',30,'neuron',5,'epoch',100,'training',0.5,'activation','poslin'); % default parameters
 indices = crossvalind('Kfold',Label,10);
-opts.indices=indices;opts2.indices=indices;opts2.Learner=1;opts2.LearnIter=20;
+opts.indices=indices;opts.Learner=2;opts.LearnIter=0; %opts2.indices=indices;opts2.Learner=1;opts2.LearnIter=20;
 WikiTE=GraphEncoderEvaluate(TE,Label,opts);
 WikiTF=GraphEncoderEvaluate(TF,Label,opts);
 % D=diag(sum(GEAdj,1));
@@ -319,7 +321,7 @@ WikiGF=GraphEncoderEvaluate(GFAdj,Label,opts);
 % WikiGE2=GraphEncoderEvaluate(GEAdj,Label,opts2);
 % WikiGF2=GraphEncoderEvaluate(GFAdj,Label,opts2);
 %%%%Fusion
-opts.Spectral=0;opts.Learner=2;opts.LearnIter=0;
+opts.Spectral=0;
 WikiT=GraphEncoderEvaluate({TE,TF},Label,opts);
 WikiG=GraphEncoderEvaluate({GE,GF},Label,opts);
 WikiE=GraphEncoderEvaluate({TE,GE},Label,opts);

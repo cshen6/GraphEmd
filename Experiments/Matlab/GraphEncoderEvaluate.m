@@ -140,7 +140,7 @@ for i = 1:kfold
                 mdl=fitcknn(ZTrn,YTrn,'Distance','euclidean','NumNeighbors',opts.knn);
                 tt=predict(mdl,ZTsn);
                 t_AEE_NN(i)=tmp1+toc;
-                acc_AEE_NN(i)=acc_AEE_NN(i)+mean(Y(tsn)~=tt);
+                acc_AEE_NN(i)=acc_AEE_NN(i)+mean(YTsn~=tt);
             end
             
             if opts.LDA==1
@@ -148,18 +148,19 @@ for i = 1:kfold
 %                 mdl=fitcdiscr(ZTrn,YTrn,'discrimType',discrimType);
 %                 tt=predict(mdl,ZTsn);
                 t_AEE_LDA(i)=tmp1+toc;
-                acc_AEE_LDA(i)=acc_AEE_LDA(i)+mean(YTNew(tsn)~=tt);
+                acc_AEE_LDA(i)=acc_AEE_LDA(i)+mean(YTsn~=YTNew(tsn));
             end
             
             
             if opts.GFN==1
                 tic
-                Y2=zeros(length(YTrn),K);
-                for j=1:length(YTrn)
-                    Y2(j,YTrn(j))=1;
-                end
+                Y2=onehotencode(categorical(YTrn),2)';
+%                 Y2=zeros(length(YTrn),K);
+%                 for j=1:length(YTrn)
+%                     Y2(j,YTrn(j))=1;
+%                 end
                 %         Y2Trn=Y2(trn,:);
-                mdl3 = train(netGFN,ZTrn',Y2');
+                mdl3 = train(netGFN,ZTrn',Y2);
                 classes = mdl3(ZTsn'); % class-wise probability for tsting data
                 %acc_NN = perform(mdl3,Y2Tsn',classes);
                 tt = vec2ind(classes)'; % this gives the actual class for each observation
@@ -208,7 +209,7 @@ for i = 1:kfold
             YTrn=Y(trn);
             YTsn=Y(tsn);
             tic
-            [Z,~,~,indT]=GraphEncoder(X,YT,oot);
+            [Z,YTNew,~,indT]=GraphEncoder(X,YT,oot);
             ZTrn=Z(indT,:);
             ZTsn=Z(~indT,:);
             %     else
@@ -225,15 +226,15 @@ for i = 1:kfold
                 mdl=fitcknn(ZTrn,YTrn,'Distance','euclidean','NumNeighbors',opts.knn);
                 tt=predict(mdl,ZTsn);
                 t_LEE_NN(i)=tmp1+toc;
-                acc_LEE_NN(i)=acc_LEE_NN(i)+mean(Y(tsn)~=tt);
+                acc_LEE_NN(i)=acc_LEE_NN(i)+mean(YTsn~=tt);
             end
             
             if opts.LDA==1
                 tic
-                mdl=fitcdiscr(ZTrn,YTrn,'discrimType',discrimType);
-                tt=predict(mdl,ZTsn);
+%                 mdl=fitcdiscr(ZTrn,YTrn,'discrimType',discrimType);
+%                 tt=predict(mdl,ZTsn);
                 t_LEE_LDA(i)=tmp1+toc;
-                acc_LEE_LDA(i)=acc_LEE_LDA(i)+mean(YTsn~=tt);
+                acc_LEE_LDA(i)=acc_LEE_LDA(i)+mean(YTsn~=YTNew(tsn));
             end
             
             
@@ -306,7 +307,7 @@ for i = 1:kfold
         if opts.Adjacency==1
             oot=struct('LearnIter',opts.LearnIter,'Learner',opts.Learner);
             tic
-            [~,tt,~,~]=GraphEncoder(X,YT,oot);
+             [~,tt,~,~]=GraphEncoder(X,YT,oot);
             t_AEE_LDA(i)=toc;
             acc_AEE_LDA(i)=mean(YTsn~=tt(tsn));
             if opts.Spectral==1
