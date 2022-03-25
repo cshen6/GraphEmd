@@ -92,7 +92,7 @@ def Run(case, opt, **kwargs):
         kwargs_for_learner = {k: kwargs[k] for k in ['Learner', 'LearnerIter']}
         if kwargs['Learner'] == 1:
             lda = LDA(Dataset, **kwargs_for_learner)
-            lda_res = lda.LDA_Learner()
+            lda_res = lda.LDA_Learner(Dataset)
             acc = eval.LDA_supervise_test(lda_res, Dataset.z_test, Dataset.Y_test)
         if kwargs['Learner'] == 0:
             gnn = GNN(Dataset, **kwargs_for_learner)
