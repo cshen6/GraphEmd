@@ -118,6 +118,3 @@ def Run(case, opt, **kwargs):
             acc = eval.GNN_semi_supervised_not_learn_test(gnn_res, Dataset, case)
         print("acc: ", acc)
 
-
-if __name__ == '__main__':
-    gimi = graph_encoder_embed()
