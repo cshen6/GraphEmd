@@ -1,6 +1,7 @@
 import numpy as np
 from sklearn.cluster import KMeans
 from sklearn.metrics import adjusted_rand_score
+from Main.Python.Main import graph_encoder_embed, multi_graph_encoder_embed
 
 
 class Clustering:
