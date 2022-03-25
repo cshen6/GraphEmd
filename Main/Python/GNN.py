@@ -2,6 +2,8 @@ import copy
 
 import numpy as np
 from sklearn.metrics import adjusted_rand_score
+from tensorflow import keras
+from tensorflow.keras.utils import to_categorical
 
 from Main.Python.Hyperperameters import Hyperperameters
 

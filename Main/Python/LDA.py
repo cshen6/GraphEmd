@@ -13,7 +13,7 @@ class LDA:
         LDA.meanSS = 0  # initialize the self-defined critirion meanSS
 
     def kwargs_construct(self, **kwargs):
-        defaultKwargs = {'Learner': 1,                         # LDA_Leaner
+        defaultKwargs = {'Learner': 1,                            # LDA_Leaner
                          'LearnerIter': 0, "Replicates": 3     # LDA_Iter
                          }
         kwargs = { **defaultKwargs, **kwargs}  # update the args using input_args

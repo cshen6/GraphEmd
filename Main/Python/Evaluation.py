@@ -1,6 +1,6 @@
 from sklearn import metrics
 from sklearn.metrics import adjusted_rand_score
-
+from tensorflow.keras.utils import to_categorical
 
 class Evaluation:
     def GNN_supervise_test(self, gnn, z_test, y_test):
