@@ -313,6 +313,14 @@ def graph_encoder_embed(X,Y,n,**kwargs):
     # Edge List Version in O(s)
     Z = np.zeros((n,k))
     i = 0
+
+    # Ariel change
+    from joblib import Parallel, delayed
+
+    # partials = Parallel(n_jobs=8)(delayed(parallel_for)(row, possibility_detected, k, Z, W, Y) for row in X)
+    # # Copy Z to compare results. Is parallel correct?
+    # Z_copy = Z.copy()
+
     for row in X:
         [v_i, v_j, edg_i_j] = row
         v_i = int(v_i)
@@ -335,12 +343,35 @@ def graph_encoder_embed(X,Y,n,**kwargs):
     # e.g.row_x: [ele_i,ele_j,ele_k]. norm2 = sqr(sum(2^2+1^2+4^2))
     # then divide each element by their row norm
     # e.g. [ele_i/norm2,ele_j/norm2,ele_k/norm2]
+    #
+    # for item in partials:
+    #     Z_copy[item[0], item[1]] +=
+
     if kwargs['Correlation']:
         row_norm = LA.norm(Z, axis = 1)
         reshape_row_norm = np.reshape(row_norm, (n,1))
         Z = np.nan_to_num(Z/reshape_row_norm)
 
     return Z, W
+
+def parallel_for(row, possibility_detected, k, Z, W, Y):
+    [v_i, v_j, edg_i_j] = row
+    v_i = int(v_i)
+    v_j = int(v_j)
+    if possibility_detected:
+        for label_j in range(k):
+            Z[v_i, label_j] = Z[v_i, label_j] + W[v_j, label_j]*edg_i_j
+            if v_i != v_j:
+                Z[v_j, label_j] = Z[v_j, label_j] + W[v_i, label_j]*edg_i_j
+    else:
+        label_i = Y[v_i][0]
+        label_j = Y[v_j][0]
+
+        if label_j >= 0:
+            # Modified for parallelism
+            return (v_i, label_j, Z[v_i, label_j] + W[v_j, label_j]*edg_i_j)
+        if (label_i >= 0) and (v_i != v_j):
+            return (v_j, label_i, Z[v_j, label_i] + W[v_i, label_i]*edg_i_j)
 
 def multi_graph_encoder_embed(DataSets, Y):
     """
