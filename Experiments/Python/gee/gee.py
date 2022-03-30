@@ -121,20 +121,21 @@ class GraphEncoderEmbedding:
 		self.encoder_embedding[node2, y1_index] += edge_weight * self.W[node1, y1_index]
 
 	# Ariel: I'm interested in this
-	def _fit_edge_list_parallel(self, X, y):
-		# TODO Ariel are for-iterations independent? Can we parallel-for?
-
-		# Let's parallelize!
-		from joblib import Parallel, delayed
-
-		Parallel(n_jobs=8)(delayed(parallel_for)(i, edge, y) for i, edge in enumerate(X))
+	# def _fit_edge_list_parallel(self, X, y):
+	# 	# TODO Ariel are for-iterations independent? Can we parallel-for?
+	#
+	# 	# Let's parallelize!
+	# 	from joblib import Parallel, delayed
+	#
+	# 	Parallel(n_jobs=8)(delayed(parallel_for)(i, edge, y) for i, edge in enumerate(X))
 
 
 	# Ariel: I'm interested in this
 	def _fit_edge_list(self, X, y):
 		# TODO Ariel are for-iterations independent? Can we parallel-for? No, they update same variable
 
-		for i, edge in enumerate(X):
+		# X = Adjacency Matrix? Have to load all in memory?
+		for i, edge in enumerate(X): # This should be the EdgeMap
 			# Gather needed variables
 			node1 = int(edge[0])
 			node2 = int(edge[1])
