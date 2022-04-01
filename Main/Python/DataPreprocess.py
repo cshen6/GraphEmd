@@ -315,7 +315,7 @@ def graph_encoder_embed(X,Y,n,**kwargs):
     i = 0
 
     # Ariel change
-    from joblib import Parallel, delayed
+    # from joblib import Parallel, delayed
 
     # partials = Parallel(n_jobs=8)(delayed(parallel_for)(row, possibility_detected, k, Z, W, Y) for row in X)
     # # Copy Z to compare results. Is parallel correct?
