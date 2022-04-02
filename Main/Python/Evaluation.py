@@ -82,3 +82,11 @@ if __name__ == '__main__':
     print(Dataset.X)
     print(Dataset.Y)
     print(Dataset.n)
+
+    print("Running graph_encoder_embed()")
+
+    from Main.Python.DataPreprocess import graph_encoder_embed
+
+    Z, W = graph_encoder_embed(Dataset.X[0], Dataset.Y, Dataset.n, Correlation = False)
+    print(Z)
+    print(W)
