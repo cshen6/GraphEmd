@@ -1,7 +1,7 @@
 function [result]=GraphClusteringEvaluate(X,Y,opts)
 
 if nargin < 3
-    opts = struct('Adjacency',1,'Laplacian',1,'Spectral',0,'NN',0,'Dist','sqeuclidean','normalize',0,'dmax',30); % default parameters
+    opts = struct('Adjacency',1,'Laplacian',1,'Spectral',1,'NN',0,'Dist','sqeuclidean','normalize',0,'dmax',30); % default parameters
 end
 if ~isfield(opts,'Adjacency'); opts.Adjacency=1; end
 if ~isfield(opts,'Laplacian'); opts.Laplacian=1; end
@@ -105,3 +105,24 @@ time=[t_AEE,t_ASE,t_AEE_GNN,t_LEE,t_LSE];
 
 result = array2table([accN; time], 'RowNames', {'ARI', 'time'},'VariableNames', {'AEE','ASE','AEE_GNN','LEE','LSE'});
 % result = array2table([accN; time], 'RowNames', {'ARI', 'time'},'VariableNames', {'AEE', 'AEE_Deg','AEE_NN', 'ASE','LSE'});
+
+%% Adj to Edge Function
+function [Edge,s,n]=adj2edge(Adj)
+if size(Adj,2)<=3
+    Edge=Adj;
+    return;
+end
+n=size(Adj,1);
+Edge=zeros(sum(sum(Adj>0)),3);
+s=1;
+for i=1:n
+    for j=1:n
+        if Adj(i,j)>0
+            Edge(s,1)=i;
+            Edge(s,2)=j;
+            Edge(s,3)=Adj(i,j);
+            s=s+1;
+        end
+    end
+end
+s=s-1;

@@ -1,12 +1,12 @@
 function [result]=GraphEncoderEvaluate(X,Y,opts)
 
 if nargin < 3
-    opts = struct('indices',crossvalind('Kfold',Y,5),'Adjacency',1,'Laplacian',1,'Spectral',1,'LDA',1,'GFN',1,'GCN',0,'GNN',0,'knn',5,'dim',30,'neuron',20,'epoch',100,'training',0.05,'activation','poslin','Learner',1); % default parameters
+    opts = struct('indices',crossvalind('Kfold',Y,5),'Adjacency',1,'Laplacian',1,'Spectral',0,'LDA',1,'GFN',1,'GCN',0,'GNN',0,'knn',5,'dim',30,'neuron',20,'epoch',100,'training',0.05,'activation','poslin','Learner',1); % default parameters
 end
 if ~isfield(opts,'indices'); opts.indices=crossvalind('Kfold',Y,5); end
 if ~isfield(opts,'Adjacency'); opts.Adjacency=1; end
 if ~isfield(opts,'Laplacian'); opts.Laplacian=1; end
-if ~isfield(opts,'Spectral'); opts.Spectral=1; end
+if ~isfield(opts,'Spectral'); opts.Spectral=0; end
 if ~isfield(opts,'LDA'); opts.LDA=1; end
 if ~isfield(opts,'GFN'); opts.GFN=0; end
 if ~isfield(opts,'GCN'); opts.GCN=0; end
@@ -136,18 +136,18 @@ for i = 1:kfold
             tmp1=toc;
             
             if opts.knn>0
-                tic
+%                 tic
                 mdl=fitcknn(ZTrn,YTrn,'Distance','euclidean','NumNeighbors',opts.knn);
                 tt=predict(mdl,ZTsn);
-                t_AEE_NN(i)=tmp1+toc;
+                t_AEE_NN(i)=tmp1;
                 acc_AEE_NN(i)=acc_AEE_NN(i)+mean(YTsn~=tt);
             end
             
             if opts.LDA==1
-                tic
+%                 tic
 %                 mdl=fitcdiscr(ZTrn,YTrn,'discrimType',discrimType);
 %                 tt=predict(mdl,ZTsn);
-                t_AEE_LDA(i)=tmp1+toc;
+                t_AEE_LDA(i)=tmp1;
                 acc_AEE_LDA(i)=acc_AEE_LDA(i)+mean(YTsn~=YTNew(tsn));
             end
             
@@ -186,16 +186,16 @@ for i = 1:kfold
                     t2=toc;
                     if opts.LDA==1
                         tic
-                        mdl=fitcdiscr(Z(trn,:),YA(trn),'discrimType',discrimType);
+                        mdl=fitcdiscr(Z(trn,:),YA(trn),'DiscrimType',discrimType);
                         tt=predict(mdl,Z(tsn,:));
-                        t_ASE_LDA(i,j)=t1;%+t2+toc;
+                        t_ASE_LDA(i,j)=t1+t2;%+toc;
                         acc_ASE_LDA(i,j)=acc_ASE_LDA(i,j)+mean(YTsn~=tt);
                     end
                     if opts.knn>0
                         tic
                         mdl=fitcknn(Z(trn,:),YA(trn),'Distance','euclidean','NumNeighbors',opts.knn);
                         tt=predict(mdl,Z(tsn,:));
-                        t_ASE_NN(i,j)=t1+t2+toc;
+                        t_ASE_NN(i,j)=t1+t2;%+toc;
                         acc_ASE_NN(i,j)=acc_ASE_NN(i,j)+mean(YTsn~=tt);
                     end
                 end
@@ -225,7 +225,7 @@ for i = 1:kfold
                 tic
                 mdl=fitcknn(ZTrn,YTrn,'Distance','euclidean','NumNeighbors',opts.knn);
                 tt=predict(mdl,ZTsn);
-                t_LEE_NN(i)=tmp1+toc;
+                t_LEE_NN(i)=tmp1;
                 acc_LEE_NN(i)=acc_LEE_NN(i)+mean(YTsn~=tt);
             end
             
@@ -233,7 +233,7 @@ for i = 1:kfold
                 tic
 %                 mdl=fitcdiscr(ZTrn,YTrn,'discrimType',discrimType);
 %                 tt=predict(mdl,ZTsn);
-                t_LEE_LDA(i)=tmp1+toc;
+                t_LEE_LDA(i)=tmp1;
                 acc_LEE_LDA(i)=acc_LEE_LDA(i)+mean(YTsn~=YTNew(tsn));
             end
             
@@ -255,16 +255,16 @@ for i = 1:kfold
                     t2=toc;
                     if opts.LDA==1
                         tic
-                        mdl=fitcdiscr(Z(trn,:),Y(trn),'discrimType',discrimType);
+                        mdl=fitcdiscr(Z(trn,:),Y(trn),'DiscrimType',discrimType);
                         tt=predict(mdl,Z(tsn,:));
-                        t_LSE_LDA(i,j)=t1;%+t2+toc;
+                        t_LSE_LDA(i,j)=t1+t2;
                         acc_LSE_LDA(i,j)=acc_LSE_LDA(i,j)+mean(Y(tsn)~=tt);
                     end
                     if opts.knn>0
                         tic
                         mdl=fitcknn(Z(trn,:),Y(trn),'Distance','euclidean','NumNeighbors',opts.knn);
                         tt=predict(mdl,Z(tsn,:));
-                        t_LSE_NN(i,j)=t1+t2+toc;
+                        t_LSE_NN(i,j)=t1+t2;
                         acc_LSE_NN(i,j)=acc_LSE_NN(i,j)+mean(Y(tsn)~=tt);
                     end
                 end
@@ -328,7 +328,7 @@ for i = 1:kfold
                     t2=toc;
 %                     if opts.LDA==1
                         tic
-                        mdl=fitcdiscr(Z(trn,:),YA(trn),'discrimType',discrimType);
+                        mdl=fitcdiscr(Z(trn,:),YA(trn),'DiscrimType',discrimType);
                         tt=predict(mdl,Z(tsn,:));
                         t_ASE_LDA(i,j)=t1+t2+toc;
                         acc_ASE_LDA(i,j)=acc_ASE_LDA(i,j)+mean(YTsn~=tt);
@@ -365,7 +365,7 @@ for i = 1:kfold
                     t2=toc;
 %                     if opts.LDA==1
                         tic
-                        mdl=fitcdiscr(Z(trn,:),Y(trn),'discrimType',discrimType);
+                        mdl=fitcdiscr(Z(trn,:),Y(trn),'DiscrimType',discrimType);
                         tt=predict(mdl,Z(tsn,:));
                         t_LSE_LDA(i,j)=t1+t2+toc;
                         acc_LSE_LDA(i,j)=acc_LSE_LDA(i,j)+mean(Y(tsn)~=tt);
@@ -382,6 +382,10 @@ for i = 1:kfold
         end
     end
 end
+
+[~,ind]=min(mean(acc_ASE_NN,1));
+[h,p]=ttest(acc_AEE_NN, acc_ASE_NN(:,ind),'Tail','left')
+[h,p]=ttest(t_AEE_NN, t_ASE_NN(:,ind),'Tail','left')
 
 std_AEE_NN=std(acc_AEE_NN);
 acc_AEE_NN=1-mean(acc_AEE_NN);
