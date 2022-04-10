@@ -90,3 +90,12 @@ if __name__ == '__main__':
     Z, W = graph_encoder_embed(Dataset.X[0], Dataset.Y, Dataset.n, Correlation = False)
     print(Z)
     print(W)
+
+
+    print("Loading custom input graph")
+
+    from utils.edgelist2adjmatrix import edgelist2adjmatrix
+
+    G = edgelist2adjmatrix("../../Data/facebook_combined.txt")
+
+    gimi = 23
