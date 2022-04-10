@@ -9,6 +9,7 @@ pre=strcat(rootDir,'');% The folder to save figures
 fs=30;
 lw=3;
 
+opts = struct('DiagA',false,'Correlation',false,'Laplacian',false);
 if opt==-1;
     load('AEETime0.mat')
     figure('units','normalized','Position',[0 0 1 1]);
@@ -25,8 +26,8 @@ if opt==-1;
     ylim([0.5e-3,3e4]);
     xticks([1,ln/2,ln])
     legend('AEE (edge)','AEE (matrix)', 'ASE (sparse SVD)','GCN (30 epoch)', 'Location','NorthWest');
-    xticklabels({'1000','10000','20000'})
-    xlabel('Sample Size')
+    xticklabels({'10^5','10^6','2*10^6'})
+    xlabel('Number of Edges')
     ylabel('Running Time (log scale)')
     title('Adjacency Encoder Embedding');
     axis('square')
@@ -44,14 +45,14 @@ if opt==-1;
     xticks([1,ln/2,ln])
     % legend('AEE*NN','AEE*NNC','AEE*LDA','ASE*NN','ASE*LDA','Location','SouthWest');
     legend('LEE (edge)','LEE (matrix)', 'LSE (sparse SVD)', 'Location','NorthWest');
-    xticklabels({'1000','10000','20000'})
-    xlabel('Sample Size')
+    xticklabels({'10^5','10^6','2*10^6'})
+    xlabel('Number of Edges') %xlabel('Sample Size')
     ylabel('Running Time (log scale)')
     title('Laplacian Encoder Embedding');
     axis('square')
     set(gca,'FontSize',fs);
     
-    F.fname=strcat('C:\Work\Applications\GitHub\GraphNN\Matlab\results\FigAEE4');
+    F.fname=strcat('C:\Work\Applications\GitHub\GraphNN\Experiments\Matlab\FigAEE4');
     F.wh=[8 4]*2;
     F.PaperPositionMode='auto';
     print_fig(gcf,F)
@@ -72,7 +73,7 @@ if opt==-1;
     ylabel('Running Time (log scale)')
     axis('square')
     set(gca,'FontSize',fs);
-    F.fname=strcat('C:\Work\Applications\GitHub\GraphNN\Matlab\results\FigAEE6');
+    F.fname=strcat('C:\Work\Applications\GitHub\GraphNN\Experiments\Matlab\FigAEE6');
     F.wh=[4 4]*2;
     F.PaperPositionMode='auto';
     print_fig(gcf,F)
@@ -208,7 +209,7 @@ axis('square')
 %xlabel(strcat('ARI = ',{' '}, num2str(round(RI_AEE*100)/100),{'; '}, 'Time = ',{' '},num2str(round(t_AEE*100)/100),{' '},'seconds'));
 set(gca,'FontSize',fs);
 
-F.fname=strcat('C:\Work\Applications\GitHub\GraphNN\Matlab\results\FigAEE0');
+F.fname=strcat('C:\Work\Applications\GitHub\GraphNN\Experiments\Matlab\FigAEE0');
 F.wh=[12 8]*2;
 F.PaperPositionMode='auto';
 print_fig(gcf,F)
@@ -235,7 +236,7 @@ set(gca,'FontSize',fs);
 
 n=2000;fs=40;K=2;
 [Adj,Y]=simGenerate(12,n,K);
-[Z,~]=GraphEncoder(Adj,Y);
+[Z,~]=GraphEncoder(Adj,Y,opts);
 subplot(3,3,4)
 plot(Z(Y==1,1),Z(Y==1,2),'o');
 hold on
@@ -283,7 +284,7 @@ set(gca,'FontSize',fs);
 
 n=2000;
 [Adj,Y]=simGenerate(22,n,K);
-[Z,~]=GraphEncoder(Adj,Y);
+[Z,~]=GraphEncoder(Adj,Y,opts);
 subplot(3,3,5)
 plot(Z(Y==1,1),Z(Y==1,2),'o');
 hold on
@@ -322,7 +323,7 @@ set(gca,'FontSize',fs);
 
 n=2000;
 [Adj,Y]=simGenerate(32,n,K);
-[Z,~]=GraphEncoder(Adj,Y);
+[Z,~]=GraphEncoder(Adj,Y,opts);
 subplot(3,3,6)
 plot(Z(Y==1,1),Z(Y==1,2),'o');
 hold on
@@ -345,7 +346,7 @@ hold off
 title('','FontSize',fs)
 set(gca,'FontSize',fs);
 
-F.fname=strcat('C:\Work\Applications\GitHub\GraphNN\Matlab\results\FigAEE1');
+F.fname=strcat('C:\Work\Applications\GitHub\GraphNN\Experiments\Matlab\FigAEE1');
 F.wh=[12 12]*2;
 F.PaperPositionMode='auto';
 print_fig(gcf,F)
@@ -355,7 +356,8 @@ if opt==2;
     figure('units','normalized','Position',[0 0 1 1]);
     n=3000;fs=40;K=2;
     [Adj,Y]=simGenerate(15,n,K);
-    [Z,~]=GraphEncoder(Adj,Y);
+    [Z,~]=GraphEncoder(Adj,Y,opts);
+    Z=Z/2;
     subplot(3,3,1)
 plot(Z(Y==1,1),Z(Y==1,2),'o');
 hold on
@@ -384,7 +386,8 @@ axis('square')
 
 n=3000;K=2;type=16;
 [Adj,Y]=simGenerate(type,n,K);
-[Z,~]=GraphEncoder(Adj,Y);
+[Z,~]=GraphEncoder(Adj,Y,opts);
+Z=Z/2;
 subplot(3,3,4)
 plot(Z(Y==1,1),Z(Y==1,2),'o');
 hold on
@@ -412,7 +415,8 @@ axis('square')
 
 n=3000;K=2;type=17;
 [Adj,Y]=simGenerate(type,n,K);
-[Z,~]=GraphEncoder(Adj,Y);
+[Z,~]=GraphEncoder(Adj,Y,opts);
+Z=Z/2;
 subplot(3,3,7)
 plot(Z(Y==1,1),Z(Y==1,2),'o');
 hold on
@@ -438,9 +442,10 @@ xlabel('Encoder Embedding')
 set(gca,'FontSize',fs);
 axis('square')
 
-n=5000;K=2;
+n=5000;K=2;cc1=4.2;
 [Adj,Y,~,theta]=simGenerate(25,n,K);
-[Z,~]=GraphEncoder(Adj,Y);
+[Z,~]=GraphEncoder(Adj,Y,opts);
+Z=Z/2;
 % D=sum(Adj,2); D=D./max(D);
 % dk=[mean(D(Y==1)),mean(D(Y==2))];
 % Z=Z./repmat(D,1,2)./repmat(dk,n,1);
@@ -453,27 +458,28 @@ plot(Z(Y==2,1),Z(Y==2,2),'x');
 % plot(Z(Y==3,1),Z(Y==3,2),'bs');
 ang=0:0.01:2*pi; 
 crr=[0.2,0.1];
-radius=sqrt(crr(1)*(1-crr(1)))/sqrt(n/2)/0.3*3.8;
-xp=radius*cos(ang);
-yp=radius*sin(ang);
+radius=sqrt(crr(1)*(1-crr(1)))/sqrt(n/2)/0.3*cc1;
+xp=radius*1.2*cos(ang);
+yp=radius*0.8*sin(ang);
 plot(crr(1)+xp,crr(2)+yp,'.');
 crr=[0.1,0.1];
-radius=sqrt(crr(1)*(1-crr(1)))/sqrt(n/2)/0.3*3.8;
-xp=radius*cos(ang);
-yp=radius*sin(ang);
+radius=sqrt(crr(1)*(1-crr(1)))/sqrt(n/2)/0.3*cc1;
+xp=radius*1.2*cos(ang);
+yp=radius*1*sin(ang);
 plot(crr(1)+xp,crr(2)+yp,'.');
 hold off
 title('DC-SBM','FontSize',fs)
 % ylabel('SBM Graph 1')
-xlim([0,0.35]);
-ylim([0,0.25]);
+xlim([0,0.4]);
+ylim([0,0.3]);
 % ylabel('n=3000')
 set(gca,'FontSize',fs);
 axis('square')
 
 type=26;xl=[0,0.35];yl=[0,0.4];
 [Adj,Y,~,theta]=simGenerate(type,n,K);
-[Z,~]=GraphEncoder(Adj,Y);
+[Z,~]=GraphEncoder(Adj,Y,opts);
+Z=Z/2;
 % D=sum(Adj,2); D=D./max(D);
 % dk=[mean(D(Y==1)),mean(D(Y==2))];
 % Z=Z./repmat(D,1,2)./repmat(dk,n,1);
@@ -486,18 +492,18 @@ plot(Z(Y==2,1),Z(Y==2,2),'x');
 % plot(Z(Y==3,1),Z(Y==3,2),'bs');
 ang=0:0.01:2*pi; 
 crr=[0.1,0.2];
-radius=sqrt(crr(2)*(1-crr(2)))/sqrt(n/2)/0.3*3.8;
-xp=radius*cos(ang);
+radius=sqrt(crr(2)*(1-crr(2)))/sqrt(n/2)/0.3*cc1;
+xp=radius*1*cos(ang);
 yp=radius*sin(ang);
 plot(crr(1)+xp,crr(2)+yp,'.');
 crr=[0.2,0.1];
-radius=sqrt(crr(1)*(1-crr(1)))/sqrt(n/2)/0.3*3.8;
-xp=radius*cos(ang);
-yp=radius*sin(ang);
+radius=sqrt(crr(1)*(1-crr(1)))/sqrt(n/2)/0.3*cc1;
+xp=radius*1.5*cos(ang);
+yp=radius*0.7*sin(ang);
 plot(crr(1)+xp,crr(2)+yp,'.');
 hold off
-xlim([0,0.3]);
-ylim([0,0.3]);
+xlim([0,0.4]);
+ylim([0,0.4]);
 %title('SBM Graph 1','FontSize',fs)
 % title('DC-SBM 2')
 set(gca,'FontSize',fs);
@@ -505,7 +511,8 @@ axis('square')
 
 n=5000;K=2;type=27;
 [Adj,Y,~,theta]=simGenerate(type,n,K);
-[Z,~]=GraphEncoder(Adj,Y);
+[Z,~]=GraphEncoder(Adj,Y,opts);
+Z=Z/2;
 % D=sum(Adj,2); D=D./max(D);
 % dk=[mean(D(Y==1)),mean(D(Y==2))];
 % Z=Z./repmat(D,1,2)./repmat(dk,n,1);
@@ -518,18 +525,18 @@ plot(Z(Y==2,1),Z(Y==2,2),'x');
 % plot(Z(Y==3,1),Z(Y==3,2),'bs');
 ang=0:0.01:2*pi; 
 crr=[0.1,0.2];
-radius=sqrt(crr(2)*(1-crr(2)))/sqrt(n/2)/0.3*3.8;
-xp=radius*cos(ang);
-yp=radius*sin(ang);
+radius=sqrt(crr(2)*(1-crr(2)))/sqrt(n/2)/0.3*cc1;
+xp=radius*1*cos(ang);
+yp=radius*1.2*sin(ang);
 plot(crr(1)+xp,crr(2)+yp,'.');
 crr=[0.2,0.4];
-radius=sqrt(crr(2)*(1-crr(2)))/sqrt(n/2)/0.3*3.8;
-xp=radius*cos(ang);
-yp=radius*sin(ang);
+radius=sqrt(crr(2)*(1-crr(2)))/sqrt(n/2)/0.3*cc1;
+xp=radius*1.1*cos(ang);
+yp=radius*1.3*sin(ang);
 plot(crr(1)+xp,crr(2)+yp,'.');
 hold off
-xlim([0,0.35])
-ylim([0,0.6])
+xlim([0,0.45])
+ylim([0,0.7])
 %title('SBM Graph 1','FontSize',fs)
 xlabel('Scaled Embedding')
 set(gca,'FontSize',fs);
@@ -537,7 +544,8 @@ axis('square')
 
 n=3000;K=2;
 [Adj,Y,~,X]=simGenerate(35,n,K);
-[Z,~]=GraphEncoder(Adj,Y);
+[Z,~]=GraphEncoder(Adj,Y,opts);
+Z=Z/2;
 Z=(Z-X*[0.4,0.6])./[0.4,0.6];mv=0.2;
 Z(Y==1)=Z(Y==1)+mv;
 subplot(3,3,3)
@@ -567,7 +575,8 @@ axis('square')
 
 n=3000;K=2;type=36;
 [Adj,Y,~,X]=simGenerate(type,n,K);
-[Z,~]=GraphEncoder(Adj,Y);
+[Z,~]=GraphEncoder(Adj,Y,opts);
+Z=Z/2;
 Z=(Z-X*[0.2,0.15])./[0.2,0.15];mv=0.2;
 Z(Y==1)=Z(Y==1)+mv;
 subplot(3,3,6)
@@ -595,7 +604,8 @@ axis('square')
 
 n=3000;K=2;type=37;
 [Adj,Y,~,X]=simGenerate(type,n,K);
-[Z,~]=GraphEncoder(Adj,Y);
+[Z,~]=GraphEncoder(Adj,Y,opts);
+Z=Z/2;
 Z=(Z-X*[0.15,0.2])./[0.15,0.2];mv=0.2;
 Z(Y==1)=Z(Y==1)+mv;
 subplot(3,3,9)
@@ -621,7 +631,7 @@ xlabel('Normalized Embedding')
 set(gca,'FontSize',fs);
 axis('square')
 
-F.fname=strcat('C:\Work\Applications\GitHub\GraphNN\Matlab\results\FigAEE2');
+F.fname=strcat('C:\Work\Applications\GitHub\GraphNN\Experiments\Matlab\FigAEE2');
 F.wh=[12 12]*2;
 F.PaperPositionMode='auto';
 print_fig(gcf,F)
@@ -695,7 +705,7 @@ if opt==3
     set(gca,'FontSize',fs);
 %     ylabel('Resampled Adjacency');
     
-    F.fname=strcat('C:\Work\Applications\GitHub\GraphNN\Matlab\results\FigAEE3');
+    F.fname=strcat('C:\Work\Applications\GitHub\GraphNN\Experiments\Matlab\FigAEE3');
     F.wh=[8 8]*2;
     F.PaperPositionMode='auto';
     print_fig(gcf,F)
@@ -703,23 +713,27 @@ end
 
 if opt==5;
         load('polblogs.mat') 
-    n=size(Adj,1);Y=Label+1;fs=30;sz=12;
+    n=size(Adj,1);fs=30;sz=12;
 figure('units','normalized','Position',[0 0 1 1]);
     subplot(2,2,1)
-heatmap(Adj,'GridVisible','off');
-Ax = gca;
-Ax.XDisplayLabels = nan(size(Ax.XDisplayData));
-Ax.YDisplayLabels = nan(size(Ax.YDisplayData));
-colorbar( 'off' )
-colormap default
+        G = graph(Adj,'upper');
+    colo=onehotencode(categorical(Y'),1);
+    colo=[colo(1,:);zeros(1,n);colo(2,:)];
+    plot(G,'-.dr','NodeColor',colo');
+% heatmap(Adj,'GridVisible','off');
+% Ax = gca;
+% Ax.XDisplayLabels = nan(size(Ax.XDisplayData));
+% Ax.YDisplayLabels = nan(size(Ax.YDisplayData));
+% colorbar( 'off' )
+% colormap default
 title('Blogs Network');
 
-ylabel('Adjacency Matrix');
+ylabel('Graph Connection');
 % axis('square')
 set(gca,'FontSize',fs);
-[Z,~]=GraphEncoder(Adj,Y);
+[Z,~]=GraphEncoder(Adj,Y,opts);
 n2=1000;
-[Adj2,Y2]=GraphResample(Adj,Y,n2);
+% [Adj2,Y2]=GraphResample(Adj,Y,n2);
 % D=sum(Adj,2); D=D./max(D);
 % dk=[mean(D(Y==1)),mean(D(Y==2))];
 subplot(2,2,3)
@@ -753,14 +767,18 @@ set(gca,'FontSize',fs);
 load('Gene.mat')
 Adj=AdjOri;Y=YOri;
     n=size(Adj,1);fs=30;
-[Z,~]=GraphEncoder(Adj,Y);
+[Z,~]=GraphEncoder(Adj,Y,opts);
     subplot(2,2,2)
-heatmap(Adj,'GridVisible','off');
-colormap default
-Ax = gca;
-Ax.XDisplayLabels = nan(size(Ax.XDisplayData));
-Ax.YDisplayLabels = nan(size(Ax.YDisplayData));
-colorbar( 'off' )
+    G = graph(Adj,'upper');
+    colo=onehotencode(categorical(Y'),1);
+    colo=[colo(1,:);zeros(1,n);colo(2,:)];
+    plot(G,'-.dr','NodeColor',colo');
+% heatmap(Adj,'GridVisible','off');
+% colormap default
+% Ax = gca;
+% Ax.XDisplayLabels = nan(size(Ax.XDisplayData));
+% Ax.YDisplayLabels = nan(size(Ax.YDisplayData));
+% colorbar( 'off' )
 title('Gene Network')
 % axis('square')
 set(gca,'FontSize',fs);
@@ -792,7 +810,7 @@ set(gca,'FontSize',fs);
 % title('','FontSize',fs)
 % set(gca,'FontSize',fs);
 
-F.fname=strcat('C:\Work\Applications\GitHub\GraphNN\Matlab\results\FigAEE5');
+F.fname=strcat('C:\Work\Applications\GitHub\GraphNN\Experiments\Matlab\FigAEE5');
 F.wh=[8 8]*2;
 F.PaperPositionMode='auto';
 print_fig(gcf,F)
@@ -802,7 +820,7 @@ if opt==10
 
 n=2000;fs=10;K=2;
 [Adj,Y]=simGenerate(31,n,K);
-[Z,~]=GraphEncoder(Adj,Y);
+[Z,~]=GraphEncoder(Adj,Y,opts);
 subplot(2,2,1)
 plot(Z(Y==1,1),Z(Y==1,2),'o');
 hold on
@@ -866,7 +884,7 @@ end
 % 
 % n=200;fs=30;K=2;
 % [Adj,Y]=simGenerate(15,n,K);
-% [Z,~]=GraphEncoder(Adj,Y);
+% [Z,~]=GraphEncoder(Adj,Y,opts);
 % figure('units','normalized','Position',[0 0 1 1]);
 % subplot(3,3,1)
 % plot(Z(Y==1,1),Z(Y==1,2),'o');
@@ -894,7 +912,7 @@ end
 % 
 % n=1000;fs=30;K=2;
 % [Adj,Y]=simGenerate(15,n,K);
-% [Z,~]=GraphEncoder(Adj,Y);
+% [Z,~]=GraphEncoder(Adj,Y,opts);
 % subplot(3,3,4)
 % plot(Z(Y==1,1),Z(Y==1,2),'o');
 % hold on
@@ -921,7 +939,7 @@ end
 % 
 % n=5000;fs=30;K=2;
 % [Adj,Y]=simGenerate(15,n,K);
-% [Z,~]=GraphEncoder(Adj,Y);
+% [Z,~]=GraphEncoder(Adj,Y,opts);
 % subplot(3,3,7)
 % plot(Z(Y==1,1),Z(Y==1,2),'o');
 % hold on
@@ -948,7 +966,7 @@ end
 % 
 % n=200;fs=30;K=2;type=16;
 % [Adj,Y]=simGenerate(type,n,K);
-% [Z,~]=GraphEncoder(Adj,Y);
+% [Z,~]=GraphEncoder(Adj,Y,opts);
 % subplot(3,3,2)
 % plot(Z(Y==1,1),Z(Y==1,2),'o');
 % hold on
@@ -974,7 +992,7 @@ end
 % 
 % n=1000;fs=30;K=2;type=16;
 % [Adj,Y]=simGenerate(type,n,K);
-% [Z,~]=GraphEncoder(Adj,Y);
+% [Z,~]=GraphEncoder(Adj,Y,opts);
 % subplot(3,3,5)
 % plot(Z(Y==1,1),Z(Y==1,2),'o');
 % hold on
@@ -1000,7 +1018,7 @@ end
 % 
 % n=5000;fs=30;K=2;type=16;
 % [Adj,Y]=simGenerate(type,n,K);
-% [Z,~]=GraphEncoder(Adj,Y);
+% [Z,~]=GraphEncoder(Adj,Y,opts);
 % subplot(3,3,8)
 % plot(Z(Y==1,1),Z(Y==1,2),'o');
 % hold on

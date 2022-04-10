@@ -30,24 +30,24 @@ if nargin<2
     Y=2:5;
 end
 if nargin<3
-    opts = struct('DiagA',true,'Correlation',true,'Laplacian',false,'Learner',1,'LearnIter',0,'MaxIter',50,'MaxIterK',5,'Replicates',3,'Attributes',0);
+    opts = struct('DiagA',true,'Correlation',true,'Laplacian',false,'Learner',1,'LearnIter',0,'MaxIter',20,'MaxIterK',2,'Replicates',1,'Attributes',0);
 end
 if ~isfield(opts,'DiagA'); opts.DiagA=true; end
 if ~isfield(opts,'Correlation'); opts.Correlation=true; end
 if ~isfield(opts,'Laplacian'); opts.Laplacian=false; end
 if ~isfield(opts,'Learner'); opts.Learner=1; end
 if ~isfield(opts,'LearnIter'); opts.LearnIter=0; end
-if ~isfield(opts,'MaxIter'); opts.MaxIter=50; end
-if ~isfield(opts,'MaxIterK'); opts.MaxIterK=5; end
-if ~isfield(opts,'Replicates'); opts.Replicates=3; end
+if ~isfield(opts,'MaxIter'); opts.MaxIter=20; end
+if ~isfield(opts,'MaxIterK'); opts.MaxIterK=2; end
+if ~isfield(opts,'Replicates'); opts.Replicates=1; end
 if ~isfield(opts,'Attributes'); opts.Attributes=0; end
 opts.neuron=20;
 opts.activation='poslin';
 U=opts.Attributes;
 % if ~isfield(opts,'distance'); opts.distance='correlation'; end
-opts.DiagA=true;
-opts.Correlation=true;
-opts.Laplacian=false;
+% opts.DiagA=true;
+% opts.Correlation=true;
+% opts.Laplacian=false;
 
 %% pre-precess input to s*3 then diagonal augment
 if iscell(X)
@@ -56,14 +56,18 @@ else
     X={X};
     num=1;
 end
+
 for i=1:num
     [s,t]=size(X{i});
     if s==t % convert adjacency matrix to edgelist
         [X{i},s,n]=adj2edge(X{i});
-    end
-    if t==2 % enlarge the edgelist to s*3
-        X{i}=[X{i},ones(s,1)];
-%         t=3;
+    else
+        if t==2 % enlarge the edgelist to s*3
+            X{i}=[X{i},ones(s,1)];
+            %         n=max(max(X{i}));
+            %         t=3;
+        end
+        n=max(max(X{i}));
     end
 %     n=max(max(X{1}(:,1:2)));
     if opts.DiagA==true
@@ -121,14 +125,16 @@ if length(Y)==n
         if attr==true
             Z=[Z,U];
         end
-        if opts.Learner==1
-            mdl=fitcdiscr(Z(indT,:),YTrn,'discrimType','pseudoLinear');
-            Y(~indT)=predict(mdl,Z(~indT,:));
-        else
-            mdl = train(netGNN,Z(indT,:)',YTrn2);
-            prob=mdl(Z(~indT,:)');
-            Y(~indT)=vec2ind(prob)';
-%             [~,Y(~indT)] = max(prob,[],1); % class-wise probability for tsting data
+        if sum(indT)<n
+            if opts.Learner==1
+                mdl=fitcdiscr(Z(indT,:),YTrn,'DiscrimType','pseudoLinear');
+                Y(~indT)=predict(mdl,Z(~indT,:));
+            else
+                mdl = train(netGNN,Z(indT,:)',YTrn2);
+                prob=mdl(Z(~indT,:)');
+                Y(~indT)=vec2ind(prob)';
+                %             [~,Y(~indT)] = max(prob,[],1); % class-wise probability for tsting data
+            end
         end
     else
         %
@@ -150,7 +156,7 @@ if length(Y)==n
                     Z=[Z,U];
                 end
                 if opts.Learner==1
-                    mdl=fitcdiscr(Z(indT,:),YTrn,'discrimType','pseudoLinear');
+                    mdl=fitcdiscr(Z(indT,:),YTrn,'DiscrimType','pseudoLinear');
                     [class,prob] = predict(mdl,Z(~indT,:));
                     prob1=max(prob,[],2);
                 else
