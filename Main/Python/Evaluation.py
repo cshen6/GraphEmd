@@ -1,6 +1,8 @@
 from sklearn import metrics
 from sklearn.metrics import adjusted_rand_score
 from tensorflow.keras.utils import to_categorical
+import numpy as np
+from Main.Python.DataPreprocess import graph_encoder_embed
 
 class Evaluation:
     def GNN_supervise_test(self, gnn, z_test, y_test):
@@ -61,41 +63,43 @@ class Encoder_case:
 
 
 if __name__ == '__main__':
+    # A = np.ones((5,5))
+    # A[0,4] = 0
+    # A[4,0] = 0
+    # np.fill_diagonal(A, 0)
+    #
+    # Y = np.array([[0,0,0,1,1]]).reshape((5,1))
+    #
+    # print(A)
+    # print(Y)
+    #
+    # Encoder_case5 = Encoder_case(A,Y,5)
+    #
+    # from Main.Python.DataPreprocess import DataPreprocess
+    #
+    # Dataset = DataPreprocess(Encoder_case5, Laplacian = False, DiagA = False)
+    # print(Dataset.X)
+    # print(Dataset.Y)
+    # print(Dataset.n)
 
-    import numpy as np
+    # print("Running graph_encoder_embed()")
 
-    A = np.ones((5,5))
-    A[0,4] = 0
-    A[4,0] = 0
-    np.fill_diagonal(A, 0)
-
-    Y = np.array([[0,0,0,1,1]]).reshape((5,1))
-
-    print(A)
-    print(Y)
-
-    Encoder_case5 = Encoder_case(A,Y,5)
-
-    from Main.Python.DataPreprocess import DataPreprocess
-
-    Dataset = DataPreprocess(Encoder_case5, Laplacian = False, DiagA = False)
-    print(Dataset.X)
-    print(Dataset.Y)
-    print(Dataset.n)
-
-    print("Running graph_encoder_embed()")
-
-    from Main.Python.DataPreprocess import graph_encoder_embed
-
-    Z, W = graph_encoder_embed(Dataset.X[0], Dataset.Y, Dataset.n, Correlation = False)
-    print(Z)
-    print(W)
+    # Z, W = graph_encoder_embed(Dataset.X[0], Dataset.Y, Dataset.n, Correlation = False)
+    # print(Z)
+    # print(W)
 
 
     print("Loading custom input graph")
 
-    from utils.edgelist2adjmatrix import edgelist2adjmatrix
+    G_edgelist = np.loadtxt("../../Data/facebook_combined.txt")
 
-    G = edgelist2adjmatrix("../../Data/facebook_combined.txt")
+    # Add column of ones - weights
+    G_edgelist = np.hstack((G_edgelist, np.ones((G_edgelist.shape[0], 1))))
 
-    gimi = 23
+    n = int(np.max(G_edgelist[:,1]) + 1) # Nr. vertices
+
+    Y = np.array([i % 10 for i in range(n)]).reshape((n, 1)) # Init Y to nonsense TODO change to random sampling
+
+    Z, W = graph_encoder_embed(G_edgelist, Y, n, Correlation = False)
+    print(Z)
+    print(W)
