@@ -77,19 +77,20 @@ for i=1:ln;
 end
 
 %%% running time
-rep=1;nn=1000;ln=7;
+rep=1;nn=1000;ln=13;
 opts = struct('Laplacian',1);
-t1=zeros(ln,rep);t2=zeros(ln,rep);
+t1=zeros(ln,rep);t2=zeros(ln,rep);t3=zeros(ln,rep);t4=zeros(ln,rep);t5=zeros(ln,rep);
 for i=1:ln;
-    i
-    s=10^(i-1)*nn;
+    s=10^(floor((i-1)/2))*nn*5^(mod(i+1,2));
     n=s/100;
     for r=1:rep
+        
         Edge=zeros(s,3);
         Edge(:,1)=randi(n,1,s);
         Edge(:,2)=randi(n,1,s);
-        Edge(:,3)=randi(10,1,s);
-        Y=randi(10,1,n);
+        Edge(:,3)=1;
+        [~,~,Y]=unique(randi(10,1,n));
+%         Adj=edge2adj(Edge);
 %         [Edge,Y]=simGenerate(20,n,1,1);
 %         Edge=adj2edge(Adj);
 %         s(i,r)=size(Edge,1);
@@ -100,9 +101,32 @@ for i=1:ln;
         tic
         GraphEncoder(Edge,Y,opts);
         t2(i,r)=toc;
-        
+
+% %         if opts.Laplacian==0
+%             Y2=zeros(n,max(Y));
+%             for j=1:n
+%                 Y2(j,Y(j))=1;
+%             end
+%             indices=crossvalind('Kfold',Y,10);
+%             tsn = (indices == 1); % tst indices
+%             val = (indices == 2);
+%             trn2= ~(tsn+val);
+%             tic
+%             szW0 = [n,d2];       % Size of parameter matrix W0
+%             szW1 = [d2,3];       % Size of parameter matrix W1
+%             num_var = prod(szW0) + prod(szW1);
+%             adam_param = adam_init(num_var, learning_rate);
+%             model_fastgcn_train_and_test(Adj, eye(n), Y2, trn2, val, tsn, ...
+%                 szW0, szW1, l2_reg, num_epoch, batch_size, ...
+%                 sample_size, adam_param);
+%             t4(i,r)=toc;
+% %         end
+
+%         tic
+%         svds(Adj,20);
+%         t3(i,r)=toc;
     end
-    save(strcat('AEETimeEdge.mat'),'t1','t2','rep','nn','ln','i');
+    %save(strcat('AEETimeEdge.mat'),'t1','t2','rep','nn','ln','i');
 end
 
 % % %%% Bootstrap
@@ -142,7 +166,7 @@ end
 
 %%% Basic Sims
 n=3000;k=10;
-opts = struct('Adjacency',1,'Laplacian',1,'Spectral',1,'LDA',1,'GFN',1,'GCN',0,'GNN',0,'knn',5,'dim',30,'neuron',20,'epoch',100,'training',0.2,'activation','poslin'); % default parameters
+opts = struct('Adjacency',1,'Laplacian',1,'Spectral',0,'LDA',1,'GFN',1,'GCN',0,'GNN',0,'knn',5,'dim',30,'neuron',20,'epoch',100,'training',0.2,'activation','poslin'); % default parameters
 [Adj,Y]=simGenerate(10,n);
 indices = crossvalind('Kfold',Y,10);
 opts.indices=indices; 
@@ -159,7 +183,7 @@ SBM2=GraphEncoderEvaluate(Adj,Y,opts);
 % SBM3=GraphEncoderEvaluate(Adj,Y,opts2);
 % [Adj,Y]=simGenerate(30,n);
 % RDPG=GraphEncoderEvaluate(Adj,Y,opts);
-% % RDPG1=GraphEncoderEvaluate(Adj,Y,opts2);
+% % % RDPG1=GraphEncoderEvaluate(Adj,Y,opts2);
 % [Adj,Y]=simGenerate(31,n,k);
 % RDPG2=GraphEncoderEvaluate(Adj,Y,opts);
 % RDPG3=GraphEncoderEvaluate(Adj,Y,opts2);
@@ -398,12 +422,12 @@ LFM=GraphEncoderEvaluate(Adj,Y,opts);
 % % GraphEncoder(Adj,Y,knum); %3341
 % Pek=GraphEncoderEvaluate(Adj,Y,opts);
 
-load('pubmedAdj.mat')
-% GraphEncoder(Adj,Y,knum); %7 
-indices = crossvalind('Kfold',Y,10);
-opts.indices=indices;opts2.indices=indices;
-Pub=GraphEncoderEvaluate(Adj,Y,opts);
-% Pub2=GraphEncoderEvaluate(Adj,Y,opts2);
+% load('pubmedAdj.mat')
+% % GraphEncoder(Adj,Y,knum); %7 
+% indices = crossvalind('Kfold',Y,10);
+% opts.indices=indices;opts2.indices=indices;
+% Pub=GraphEncoderEvaluate(Adj,Y,opts);
+% % Pub2=GraphEncoderEvaluate(Adj,Y,opts2);
 
 %%% AEN only:
 load('polblogs.mat') 

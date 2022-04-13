@@ -191,6 +191,8 @@ load('CoraAdj.mat') %AEL / GFN K=2
 GraphClusteringEvaluate(Adj,Y)
 load('email.mat') %k=42
 GraphClusteringEvaluate(Adj,Y)
+load('Gene.mat') %AEL / GFN K=2
+GraphClusteringEvaluate(Adj,Y)
 load('IIP.mat') %AEL / GFN K=2
 % GraphEncoder(Adj,Y,knum); %0
 GraphClusteringEvaluate(Adj,Y)
@@ -229,8 +231,6 @@ load('graphCElegans.mat')
 GraphClusteringEvaluate(Ag,vcols)
 load('adjnoun.mat')
 GraphClusteringEvaluate(Adj,Label)
-load('Gene.mat') %AEL / GFN K=2
-GraphClusteringEvaluate(Adj,Y)
 load('KKI.mat')
 GraphClusteringEvaluate(AdjOri,YOri)
 load('OHSU.mat')

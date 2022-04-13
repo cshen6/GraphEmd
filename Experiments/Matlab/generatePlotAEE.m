@@ -11,70 +11,75 @@ lw=3;
 
 opts = struct('DiagA',false,'Correlation',false,'Laplacian',false);
 if opt==-1;
-    load('AEETime0.mat')
-    figure('units','normalized','Position',[0 0 1 1]);
-    fs=30;lw=3;
-    ln1=1:ln;
-    subplot(1,2,1)
-    semilogy(ln1,mean(t2,2),'-','LineWidth',lw);
-    hold on
-    semilogy(ln1,mean(t1,2),'-','LineWidth',lw);
-    semilogy(ln1,mean(t3,2),'--','LineWidth',lw);
-    semilogy(ln1,mean(t4,2),'--','LineWidth',lw);
-    hold off
-    xlim([1,ln])
-    ylim([0.5e-3,3e4]);
-    xticks([1,ln/2,ln])
-    legend('AEE (edge)','AEE (matrix)', 'ASE (sparse SVD)','GCN (30 epoch)', 'Location','NorthWest');
-    xticklabels({'10^5','10^6','2*10^6'})
-    xlabel('Number of Edges')
-    ylabel('Running Time (log scale)')
-    title('Adjacency Encoder Embedding');
-    axis('square')
-    set(gca,'FontSize',fs);
-    
-    load('AEETime1.mat')
-    subplot(1,2,2)
-    semilogy(ln1,mean(t2,2),'-','LineWidth',lw);
-    hold on
-    semilogy(ln1,mean(t1,2),'-','LineWidth',lw);
-    semilogy(ln1,mean(t3,2),'--','LineWidth',lw);
-    hold off
-    xlim([1,ln])
-    ylim([0.5e-3,3e4]);
-    xticks([1,ln/2,ln])
-    % legend('AEE*NN','AEE*NNC','AEE*LDA','ASE*NN','ASE*LDA','Location','SouthWest');
-    legend('LEE (edge)','LEE (matrix)', 'LSE (sparse SVD)', 'Location','NorthWest');
-    xticklabels({'10^5','10^6','2*10^6'})
-    xlabel('Number of Edges') %xlabel('Sample Size')
-    ylabel('Running Time (log scale)')
-    title('Laplacian Encoder Embedding');
-    axis('square')
-    set(gca,'FontSize',fs);
-    
-    F.fname=strcat('C:\Work\Applications\GitHub\GraphNN\Experiments\Matlab\FigAEE4');
-    F.wh=[8 4]*2;
-    F.PaperPositionMode='auto';
-    print_fig(gcf,F)
+%     load('AEETime0.mat')
+%     figure('units','normalized','Position',[0 0 1 1]);
+%     fs=30;lw=3;
+%     ln1=1:ln;
+%     subplot(1,2,1)
+%     semilogy(ln1,mean(t2,2),'-','LineWidth',lw);
+%     hold on
+%     semilogy(ln1,mean(t1,2),'-','LineWidth',lw);
+%     semilogy(ln1,mean(t3,2),'--','LineWidth',lw);
+%     semilogy(ln1,mean(t4,2),'--','LineWidth',lw);
+%     hold off
+%     xlim([1,ln])
+%     ylim([0.5e-3,3e4]);
+%     xticks([1,ln/2,ln])
+%     legend('AEE (edge)','AEE (matrix)', 'ASE (sparse SVD)','GCN (30 epoch)', 'Location','NorthWest');
+%     xticklabels({'10^5','10^6','2*10^6'})
+%     xlabel('Number of Edges')
+%     ylabel('Running Time (log scale)')
+%     title('Adjacency Encoder Embedding');
+%     axis('square')
+%     set(gca,'FontSize',fs);
+%     
+%     load('AEETime1.mat')
+%     subplot(1,2,2)
+%     semilogy(ln1,mean(t2,2),'-','LineWidth',lw);
+%     hold on
+%     semilogy(ln1,mean(t1,2),'-','LineWidth',lw);
+%     semilogy(ln1,mean(t3,2),'--','LineWidth',lw);
+%     hold off
+%     xlim([1,ln])
+%     ylim([0.5e-3,3e4]);
+%     xticks([1,ln/2,ln])
+%     % legend('AEE*NN','AEE*NNC','AEE*LDA','ASE*NN','ASE*LDA','Location','SouthWest');
+%     legend('LEE (edge)','LEE (matrix)', 'LSE (sparse SVD)', 'Location','NorthWest');
+%     xticklabels({'10^5','10^6','2*10^6'})
+%     xlabel('Number of Edges') %xlabel('Sample Size')
+%     ylabel('Running Time (log scale)')
+%     title('Laplacian Encoder Embedding');
+%     axis('square')
+%     set(gca,'FontSize',fs);
+%     
+%     F.fname=strcat('C:\Work\Applications\GitHub\GraphNN\Experiments\Matlab\FigAEE4');
+%     F.wh=[8 4]*2;
+%     F.PaperPositionMode='auto';
+%     print_fig(gcf,F)
     
     load('AEETimeEdge.mat');
     figure('units','normalized','Position',[0 0 1 1]);
-    x=1:ln;fs=30;lw=4;
+    x=[10^3,5*10^3,10^4,5*10^4,10^5,5*10^5,10^6,5*10^6,10^7,5*10^7,10^8,5*10^8,10^9];fs=25;lw=3;
 %     x=1000*10.^(x-1);
-    semilogy(x,t1,'-','LineWidth',lw);
+    loglog(x,t1,'-','LineWidth',lw);
     hold on
-    semilogy(x,t2,'--','LineWidth',lw);
+    x=x(1:8);
+%     semilogy(x,t2,'--','LineWidth',lw);
+    loglog(x,t3,'--','LineWidth',lw);
+    loglog(x,t4,'--','LineWidth',lw);
+    loglog(x,t5,'--','LineWidth',lw);
     hold off
-    xlim([x(1),x(end)])
-    xticks([1,(ln+1)/2,ln])
+    xlim([10^3,10^9])
+    xticks([10^3,10^6,10^9])
     xticklabels({'10^3','10^6','10^9'})
-    legend('AEE(edge)','LEE (edge)','Location','NorthWest');
+    legend('AEE','ASE (sparse SVD)','GCN (30 epoch)','Node2Vec','Location','NorthWest');
     xlabel('Number of Edges (log scale)')
     ylabel('Running Time (log scale)')
     axis('square')
     set(gca,'FontSize',fs);
-    F.fname=strcat('C:\Work\Applications\GitHub\GraphNN\Experiments\Matlab\FigAEE6');
-    F.wh=[4 4]*2;
+    currentFolder = pwd;
+    F.fname=strcat(strcat(currentFolder,'FigAEE6'));
+    F.wh=[5 5]*2;
     F.PaperPositionMode='auto';
     print_fig(gcf,F)
     %xlim([1,ln])
@@ -209,7 +214,8 @@ axis('square')
 %xlabel(strcat('ARI = ',{' '}, num2str(round(RI_AEE*100)/100),{'; '}, 'Time = ',{' '},num2str(round(t_AEE*100)/100),{' '},'seconds'));
 set(gca,'FontSize',fs);
 
-F.fname=strcat('C:\Work\Applications\GitHub\GraphNN\Experiments\Matlab\FigAEE0');
+currentFolder = pwd;
+F.fname=strcat(strcat(currentFolder,'FigAEE0'));
 F.wh=[12 8]*2;
 F.PaperPositionMode='auto';
 print_fig(gcf,F)
@@ -346,7 +352,8 @@ hold off
 title('','FontSize',fs)
 set(gca,'FontSize',fs);
 
-F.fname=strcat('C:\Work\Applications\GitHub\GraphNN\Experiments\Matlab\FigAEE1');
+currentFolder = pwd;
+F.fname=strcat(strcat(currentFolder,'FigAEE1'));
 F.wh=[12 12]*2;
 F.PaperPositionMode='auto';
 print_fig(gcf,F)
@@ -631,7 +638,8 @@ xlabel('Normalized Embedding')
 set(gca,'FontSize',fs);
 axis('square')
 
-F.fname=strcat('C:\Work\Applications\GitHub\GraphNN\Experiments\Matlab\FigAEE2');
+currentFolder = pwd;
+F.fname=strcat(strcat(currentFolder,'FigAEE2'));
 F.wh=[12 12]*2;
 F.PaperPositionMode='auto';
 print_fig(gcf,F)
@@ -705,7 +713,8 @@ if opt==3
     set(gca,'FontSize',fs);
 %     ylabel('Resampled Adjacency');
     
-    F.fname=strcat('C:\Work\Applications\GitHub\GraphNN\Experiments\Matlab\FigAEE3');
+    currentFolder = pwd;
+F.fname=strcat(strcat(currentFolder,'FigAEE3'));
     F.wh=[8 8]*2;
     F.PaperPositionMode='auto';
     print_fig(gcf,F)
@@ -810,7 +819,8 @@ set(gca,'FontSize',fs);
 % title('','FontSize',fs)
 % set(gca,'FontSize',fs);
 
-F.fname=strcat('C:\Work\Applications\GitHub\GraphNN\Experiments\Matlab\FigAEE5');
+currentFolder = pwd;
+F.fname=strcat(strcat(currentFolder,'FigAEE5'));
 F.wh=[8 8]*2;
 F.PaperPositionMode='auto';
 print_fig(gcf,F)

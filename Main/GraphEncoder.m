@@ -1,5 +1,5 @@
 %% Compute the Adjacency Encoder Embedding.
-%% Running time is O(s) where s is number of edges.
+%% Running time is O(nK+s) where s is number of edges, n is number of vertices, and K is number of class.
 %% Reference: C. Shen and Q. Wang and C. E. Priebe, "Graph Encoder Embedding", 2021.
 %%            C. Shen et.al., "Graph Encoder Clustering", in preparation.
 %%
@@ -30,20 +30,23 @@ if nargin<2
     Y=2:5;
 end
 if nargin<3
-    opts = struct('DiagA',true,'Correlation',true,'Laplacian',false,'Learner',1,'LearnIter',0,'MaxIter',20,'MaxIterK',2,'Replicates',1,'Attributes',0);
+    opts = struct('DiagA',true,'Correlation',true,'Laplacian',false,'Learner',2,'LearnIter',0,'MaxIter',20,'MaxIterK',2,'Replicates',1,'Attributes',0,'Directed',1);
 end
 if ~isfield(opts,'DiagA'); opts.DiagA=true; end
 if ~isfield(opts,'Correlation'); opts.Correlation=true; end
 if ~isfield(opts,'Laplacian'); opts.Laplacian=false; end
-if ~isfield(opts,'Learner'); opts.Learner=1; end
+if ~isfield(opts,'Learner'); opts.Learner=2; end
 if ~isfield(opts,'LearnIter'); opts.LearnIter=0; end
 if ~isfield(opts,'MaxIter'); opts.MaxIter=20; end
 if ~isfield(opts,'MaxIterK'); opts.MaxIterK=2; end
 if ~isfield(opts,'Replicates'); opts.Replicates=1; end
 if ~isfield(opts,'Attributes'); opts.Attributes=0; end
+if ~isfield(opts,'Directed'); opts.Directed=1; end
 opts.neuron=20;
 opts.activation='poslin';
 U=opts.Attributes;
+% opts.Directed=3;
+di=opts.Directed;
 % if ~isfield(opts,'distance'); opts.distance='correlation'; end
 % opts.DiagA=true;
 % opts.Correlation=true;
@@ -106,7 +109,7 @@ if length(Y)==n
     Y(indT)=YTrn;
     YTrn2=onehotencode(categorical(YTrn),2)';
     K=max(Y);
-    Z=zeros(n,K*num);
+    Z=zeros(n,di*K*num);
     W=cell(1,num);
     if opts.Learner==2
         % initialize NN
@@ -120,7 +123,7 @@ if length(Y)==n
     end
     if opts.LearnIter<1
         for i=1:num
-            [Z(:,(i-1)*K+1:i*K),W{i}]=GraphEncoderEmbed(X{i},Y,n,opts);
+            [Z(:,(i-1)*K*di+1:i*K*di),W{i}]=GraphEncoderEmbed(X{i},Y,n,opts);
         end
         if attr==true
             Z=[Z,U];
@@ -148,7 +151,7 @@ if length(Y)==n
             for r=1:opts.LearnIter
                 %             i
                 for i=1:num
-                    [Z(:,(i-1)*K+1:i*K),W{i}]=GraphEncoderEmbed(X{i},Y1,n,opts); % discrete label version
+                    [Z(:,(i-1)*K*di+1:i*K*di),W{i}]=GraphEncoderEmbed(X{i},Y1,n,opts); % discrete label version
                     %[Z(:,(i-1)*K+1:i*K),W{i}]=GraphEncoderEmbed(X{i},Y2,n,opts); % probability version
                 end
 %                 [Z,W]=GraphEncoderEmbed(X,Y2,n,opts);
@@ -208,8 +211,9 @@ end
 function [Z,Y,W,minSS]=GraphEncoderCluster(X,K,n,num,attr,opts)
 
 if nargin<4
-    opts = struct('Correlation',true,'MaxIter',50,'MaxIterK',5,'Replicates',3);
+    opts = struct('Correlation',true,'MaxIter',50,'MaxIterK',5,'Replicates',3,'Directed',1);
 end
+di=opts.Directed;
 minSS=100;
 Z=zeros(n,K*num);
 Wt=cell(1,num);
@@ -218,7 +222,7 @@ for rep=1:opts.Replicates
     Y2=randi([1,K],[n,1]);
     for r=1:opts.MaxIter
         for i=1:num
-            [Zt(:,(i-1)*K+1:i*K),Wt{i}]=GraphEncoderEmbed(X{i},Y2,n,opts);
+            [Zt(:,(i-1)*K*di+1:i*K*di),Wt{i}]=GraphEncoderEmbed(X{i},Y2,n,opts);
         end
         if attr==true
             Zt=[Zt,U];
@@ -244,25 +248,26 @@ end
 %% Embedding Function
 function [Z,W]=GraphEncoderEmbed(X,Y,n,opts)
 if nargin<4
-    opts = struct('Correlation',true);
+    opts = struct('Correlation',true,'Directed',1);
 end
 prob=false;
+di=opts.Directed;
 
 s=size(X,1);
 if size(Y,2)>1
-    k=size(Y,2);
+    K=size(Y,2);
     prob=true;
 else
-    k=max(Y);
+    K=max(Y);
 end
-nk=zeros(1,k);
-W=zeros(n,k);
+nk=zeros(1,K);
+W=zeros(n,K);
 % indS=zeros(n,k);
 if prob==true
     nk=sum(Y);
     W=Y./repmat(nk,n,1);
 else
-    for i=1:k
+    for i=1:K
         ind=(Y==i);
         nk(i)=sum(ind);
         W(ind,i)=1/nk(i);
@@ -272,16 +277,17 @@ end
 % num=size(X,3);
 
 % Edge List Version in O(s)
-Z=zeros(n,k);
+Z=zeros(n,K*di);
 for i=1:s
     a=X(i,1);
     b=X(i,2);
     e=X(i,3);
     if prob==true
-        for j=1:k
+        for j=1:K
             Z(a,j)=Z(a,j)+W(b,j)*e;
             if a~=b
-               Z(b,j)=Z(b,j)+W(a,j)*e;
+               tmp=j+(di>1)*K;
+               Z(b,tmp)=Z(b,tmp)+W(a,j)*e;
             end
         end
     else
@@ -291,11 +297,14 @@ for i=1:s
             Z(a,d)=Z(a,d)+W(b,d)*e;
         end
         if c>0 && a~=b
-            Z(b,c)=Z(b,c)+W(a,c)*e;
+            tmp=c+(di>1)*K;
+            Z(b,tmp)=Z(b,tmp)+W(a,c)*e;
         end
     end
 end
-
+if di==3
+    Z(:,2*K+1:3*K)=Z(:,K+1:2*K)+Z(:,1:K);
+end
 if opts.Correlation==true
     Z = normalize(Z,2,'norm');
     Z(isnan(Z))=0;
