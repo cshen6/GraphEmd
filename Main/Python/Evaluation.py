@@ -2,6 +2,7 @@ from sklearn import metrics
 from sklearn.metrics import adjusted_rand_score
 from tensorflow.keras.utils import to_categorical
 import numpy as np
+from utils.create_test_case import Case
 from Main.Python.DataPreprocess import graph_encoder_embed
 
 class Evaluation:
@@ -70,26 +71,26 @@ if __name__ == '__main__':
     #
     # Y = np.array([[0,0,0,1,1]]).reshape((5,1))
     #
-    # print(A)
-    # print(Y)
+    # # print(A)
+    # # print(Y)
     #
     # Encoder_case5 = Encoder_case(A,Y,5)
     #
     # from Main.Python.DataPreprocess import DataPreprocess
     #
     # Dataset = DataPreprocess(Encoder_case5, Laplacian = False, DiagA = False)
-    # print(Dataset.X)
-    # print(Dataset.Y)
-    # print(Dataset.n)
-
+    # # print(Dataset.X)
+    # # print(Dataset.Y)
+    # # print(Dataset.n)
+    #
     # print("Running graph_encoder_embed()")
-
+    #
     # Z, W = graph_encoder_embed(Dataset.X[0], Dataset.Y, Dataset.n, Correlation = False)
-    # print(Z)
-    # print(W)
+    # print("Z:\n", Z)
+    # # print(W)
 
 
-    print("Loading custom input graph")
+    print("Loading custom Facebook graph")
 
     G_edgelist = np.loadtxt("../../Data/facebook_combined.txt")
 
@@ -98,8 +99,13 @@ if __name__ == '__main__':
 
     n = int(np.max(G_edgelist[:,1]) + 1) # Nr. vertices
 
-    Y = np.array([i % 10 for i in range(n)]).reshape((n, 1)) # Init Y to nonsense TODO change to random sampling
+    case = Case(n)
+    case_10 = case.case_10() # This is O(n^2)
+    case_10.summary()
 
-    Z, W = graph_encoder_embed(G_edgelist, Y, n, Correlation = False)
+    # Save generated Y to file so Ligra can also use it
+    case_10.Y[case_10.Y == -1] = 0
+
+    Z, W = graph_encoder_embed(G_edgelist, case_10.Y, n, Correlation = False)
     print(Z)
-    print(W)
+    # print(W)
