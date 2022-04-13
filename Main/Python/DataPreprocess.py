@@ -321,6 +321,8 @@ def graph_encoder_embed(X,Y,n,**kwargs):
     # # Copy Z to compare results. Is parallel correct?
     # Z_copy = Z.copy()
 
+    # np.random.shuffle(X) # TODO is result identical when X shuffled?
+
     for row in X: # Loop over edges once only?
         [v_i, v_j, edg_i_j] = row
         v_i = int(v_i)
@@ -335,9 +337,9 @@ def graph_encoder_embed(X,Y,n,**kwargs):
             label_j = Y[v_j][0]
 
             if label_j >= 0: # Why > 0 label?
-                Z[v_i, label_j] = Z[v_i, label_j] + W[v_j, label_j]*edg_i_j
+                Z[v_i, label_j] += W[v_j, label_j]*edg_i_j
             if (label_i >= 0) and (v_i != v_j):
-                Z[v_j, label_i] = Z[v_j, label_i] + W[v_i, label_i]*edg_i_j
+                Z[v_j, label_i] += W[v_i, label_i]*edg_i_j
 
     # Calculate each row's 2-norm (Euclidean distance).
     # e.g.row_x: [ele_i,ele_j,ele_k]. norm2 = sqr(sum(2^2+1^2+4^2))
