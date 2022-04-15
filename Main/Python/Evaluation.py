@@ -99,13 +99,19 @@ if __name__ == '__main__':
 
     n = int(np.max(G_edgelist[:,1]) + 1) # Nr. vertices
 
-    case = Case(n)
-    case_10 = case.case_10() # This is O(n^2)
-    case_10.summary()
+    # case = Case(n)
+    # case_10 = case.case_10() # This is O(n^2)
+    # case_10.summary()
 
     # Save generated Y to file so Ligra can also use it
-    case_10.Y[case_10.Y == -1] = 0
+    # case_10.Y[case_10.Y == -1] = 0
 
-    Z, W = graph_encoder_embed(G_edgelist, case_10.Y, n, Correlation = False)
+    # np.savetxt(Y)
+
+    # Load Y from file
+    Y = np.reshape(np.loadtxt("../../Data/Y-facebook-5percent.txt"), (n,1))
+    Y = Y.astype(int)
+
+    Z, W = graph_encoder_embed(G_edgelist, Y, n, Correlation = False)
     print(Z)
     # print(W)
