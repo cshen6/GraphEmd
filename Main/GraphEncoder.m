@@ -30,12 +30,12 @@ if nargin<2
     Y=2:5;
 end
 if nargin<3
-    opts = struct('DiagA',true,'Correlation',true,'Laplacian',false,'Learner',2,'LearnIter',0,'MaxIter',20,'MaxIterK',2,'Replicates',1,'Attributes',0,'Directed',1);
+    opts = struct('DiagA',true,'Correlation',true,'Laplacian',false,'Learner',1,'LearnIter',0,'MaxIter',20,'MaxIterK',2,'Replicates',1,'Attributes',0,'Directed',1);
 end
 if ~isfield(opts,'DiagA'); opts.DiagA=true; end
 if ~isfield(opts,'Correlation'); opts.Correlation=true; end
 if ~isfield(opts,'Laplacian'); opts.Laplacian=false; end
-if ~isfield(opts,'Learner'); opts.Learner=2; end
+if ~isfield(opts,'Learner'); opts.Learner=1; end
 if ~isfield(opts,'LearnIter'); opts.LearnIter=0; end
 if ~isfield(opts,'MaxIter'); opts.MaxIter=20; end
 if ~isfield(opts,'MaxIterK'); opts.MaxIterK=2; end
@@ -45,7 +45,7 @@ if ~isfield(opts,'Directed'); opts.Directed=1; end
 opts.neuron=20;
 opts.activation='poslin';
 U=opts.Attributes;
-% opts.Directed=3;
+% opts.Directed=1;
 di=opts.Directed;
 % if ~isfield(opts,'distance'); opts.distance='correlation'; end
 % opts.DiagA=true;
@@ -131,6 +131,7 @@ if length(Y)==n
         if sum(indT)<n
             if opts.Learner==1
                 mdl=fitcdiscr(Z(indT,:),YTrn,'DiscrimType','pseudoLinear');
+%                mdl=fitcknn(Z(indT,:),YTrn,'Distance','euclidean','NumNeighbors',5);
                 Y(~indT)=predict(mdl,Z(~indT,:));
             else
                 mdl = train(netGNN,Z(indT,:)',YTrn2);
@@ -306,7 +307,9 @@ if di==3
     Z(:,2*K+1:3*K)=Z(:,K+1:2*K)+Z(:,1:K);
 end
 if opts.Correlation==true
-    Z = normalize(Z,2,'norm');
+    for i=1:di
+       Z(:,(i-1)*K+1:i*K) = normalize(Z(:,(i-1)*K+1:i*K),2,'norm');
+    end
     Z(isnan(Z))=0;
 end
 

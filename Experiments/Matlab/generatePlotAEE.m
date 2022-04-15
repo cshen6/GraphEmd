@@ -359,6 +359,187 @@ F.PaperPositionMode='auto';
 print_fig(gcf,F)
 end
 
+if opt==3
+    n=1000;fs=30;
+    %[Adj,Y]=simGenerate(30,1000);
+    load('polblogs.mat'); Y=Label+1;
+    %load('lastfm.mat') %AEK K=7 %AEK K=7
+    [Adj2,Y2,pval,stat]=GraphResample(Adj,Y,n);
+    pval
+    ind=[];ind2=[];K=max(Y);
+    for i=1:K
+        ind=[ind;find(Y==i)];
+        ind2=[ind2;find(Y2==i)];
+    end
+    Adj=Adj(ind,ind);
+    Adj2=Adj2(ind2,ind2);
+    subplot(2,2,1)
+    heatmap(Adj,'GridVisible','off');
+    Ax = gca;
+    Ax.XDisplayLabels = nan(size(Ax.XDisplayData));
+    Ax.YDisplayLabels = nan(size(Ax.YDisplayData));
+    colorbar( 'off' )
+    colormap default
+    title('Blogs Network');
+    ylabel('Original Adjacency');
+    set(gca,'FontSize',fs);
+    subplot(2,2,3)
+    heatmap(Adj2,'GridVisible','off');
+    Ax = gca;
+    Ax.XDisplayLabels = nan(size(Ax.XDisplayData));
+    Ax.YDisplayLabels = nan(size(Ax.YDisplayData));
+    colorbar( 'off' )
+    colormap default
+%     pval=GraphTwoSampleTest(Adj,Adj2);
+    xlabel(strcat('Two-sample p-value is ',{' '}, num2str(ceil(pval*100)/100)));
+    ylabel('Resampled Adjacency');
+    set(gca,'FontSize',fs);
+    
+    load('email.mat')
+    [Adj2,Y2,pval,stat]=GraphResample(Adj,Y,n);
+    pval
+    ind=[];ind2=[];K=max(Y);
+    for i=1:K
+        ind=[ind;find(Y==i)];
+        ind2=[ind2;find(Y2==i)];
+    end
+    Adj=Adj(ind,ind);
+    Adj2=Adj2(ind2,ind2);
+    subplot(2,2,2)
+    heatmap(Adj,'GridVisible','off');
+    Ax = gca;
+    Ax.XDisplayLabels = nan(size(Ax.XDisplayData));
+    Ax.YDisplayLabels = nan(size(Ax.YDisplayData));
+    colorbar( 'off' )
+    colormap default
+    title('Email Network');
+    set(gca,'FontSize',fs);
+%     xlabel('Original Adjacency');
+    subplot(2,2,4)
+    heatmap(Adj2,'GridVisible','off');
+    Ax = gca;
+    Ax.XDisplayLabels = nan(size(Ax.XDisplayData));
+    Ax.YDisplayLabels = nan(size(Ax.YDisplayData));
+    colorbar( 'off' )
+    colormap default
+    %[pval,stat]=GraphTwoSampleTest(Adj,Adj2);
+    xlabel(strcat('Two-sample p-value is ',{' '}, num2str(ceil(pval*100)/100)));
+    set(gca,'FontSize',fs);
+%     ylabel('Resampled Adjacency');
+    
+    currentFolder = pwd;
+F.fname=strcat(strcat(currentFolder,'FigAEE3'));
+    F.wh=[8 8]*2;
+    F.PaperPositionMode='auto';
+    print_fig(gcf,F)
+end
+
+if opt==5;
+        load('polblogs.mat') 
+    n=size(Adj,1);fs=30;sz=12;
+figure('units','normalized','Position',[0 0 1 1]);
+    subplot(2,2,1)
+        G = graph(Adj,'upper');
+    colo=onehotencode(categorical(Y'),1);
+    colo=[colo(1,:);zeros(1,n);colo(2,:)];
+    plot(G,'-.dr','NodeColor',colo');
+% heatmap(Adj,'GridVisible','off');
+% Ax = gca;
+% Ax.XDisplayLabels = nan(size(Ax.XDisplayData));
+% Ax.YDisplayLabels = nan(size(Ax.YDisplayData));
+% colorbar( 'off' )
+% colormap default
+title('Blogs Network');
+
+ylabel('Graph Connection');
+% axis('square')
+set(gca,'FontSize',fs);
+[Z,~]=GraphEncoder(Adj,Y,opts);
+n2=1000;
+% [Adj2,Y2]=GraphResample(Adj,Y,n2);
+% D=sum(Adj,2); D=D./max(D);
+% dk=[mean(D(Y==1)),mean(D(Y==2))];
+subplot(2,2,3)
+plot(Z(Y==1,1),Z(Y==1,2),'o','MarkerSize',sz)
+hold on
+plot(Z(Y==2,1),Z(Y==2,2),'x','MarkerSize',sz)
+% title('Blogs Network','FontSize',fs);
+% axis('square')
+% plot(Z(Y==3,1),Z(Y==3,2),'bs');
+hold off
+ylabel('Encoder Embedding');
+% xlim([xl(1),xl(2)]);
+% ylim([yl(1),yl(2)]);
+% title('DC-SBM 1')
+% ylabel('n=1000')
+set(gca,'FontSize',fs);
+% Z=Z./repmat(D,1,2)./repmat(dk,n,1);
+
+% [U,S,V]=svd(Adj);d=2;
+% Z=U(:,1:d)*S(1:d,1:d)^0.5;
+% subplot(3,2,5)
+% plot(Z(Y==1,1),Z(Y==1,2),'o');
+% hold on
+% plot(Z(Y==2,1),Z(Y==2,2),'x');
+% % plot(Z(Y==3,1),Z(Y==3,2),'bs');
+% hold off
+% title('','FontSize',fs)
+% ylabel('Spectral Embedding')
+% set(gca,'FontSize',fs);
+
+load('Gene.mat')
+Adj=AdjOri;Y=YOri;
+    n=size(Adj,1);fs=30;
+[Z,~]=GraphEncoder(Adj,Y,opts);
+    subplot(2,2,2)
+    G = graph(Adj,'upper');
+    colo=onehotencode(categorical(Y'),1);
+    colo=[colo(1,:);zeros(1,n);colo(2,:)];
+    plot(G,'-.dr','NodeColor',colo');
+% heatmap(Adj,'GridVisible','off');
+% colormap default
+% Ax = gca;
+% Ax.XDisplayLabels = nan(size(Ax.XDisplayData));
+% Ax.YDisplayLabels = nan(size(Ax.YDisplayData));
+% colorbar( 'off' )
+title('Gene Network')
+% axis('square')
+set(gca,'FontSize',fs);
+
+D=sum(Adj,2); D=D./max(D);
+dk=[mean(D(Y==1)),mean(D(Y==2))];
+subplot(2,2,4)
+plot(Z(Y==1,1),Z(Y==1,2),'o','MarkerSize',sz)
+hold on
+plot(Z(Y==2,1),Z(Y==2,2),'x','MarkerSize',sz)
+% axis('square')
+% plot(Z(Y==3,1),Z(Y==3,2),'bs');
+hold off
+% title('Encoder Embedding','FontSize',fs)
+% xlim([xl(1),xl(2)]);
+% ylim([yl(1),yl(2)]);
+% title('DC-SBM 1')
+% ylabel('n=1000')
+set(gca,'FontSize',fs);
+
+% [U,S,V]=svd(Adj);d=2;
+% Z=U(:,1:d)*S(1:d,1:d)^0.5;
+% subplot(3,2,6)
+% plot(Z(Y==1,1),Z(Y==1,2),'o');
+% hold on
+% plot(Z(Y==2,1),Z(Y==2,2),'x');
+% % plot(Z(Y==3,1),Z(Y==3,2),'bs');
+% hold off
+% title('','FontSize',fs)
+% set(gca,'FontSize',fs);
+
+currentFolder = pwd;
+F.fname=strcat(strcat(currentFolder,'FigAEE5'));
+F.wh=[8 8]*2;
+F.PaperPositionMode='auto';
+print_fig(gcf,F)
+end
+
 if opt==2;
     figure('units','normalized','Position',[0 0 1 1]);
     n=3000;fs=40;K=2;
@@ -641,187 +822,6 @@ axis('square')
 currentFolder = pwd;
 F.fname=strcat(strcat(currentFolder,'FigAEE2'));
 F.wh=[12 12]*2;
-F.PaperPositionMode='auto';
-print_fig(gcf,F)
-end
-
-if opt==3
-    n=1000;fs=30;
-    %[Adj,Y]=simGenerate(30,1000);
-    load('polblogs.mat'); Y=Label+1;
-    %load('lastfm.mat') %AEK K=7 %AEK K=7
-    [Adj2,Y2,pval,stat]=GraphResample(Adj,Y,n);
-    pval
-    ind=[];ind2=[];K=max(Y);
-    for i=1:K
-        ind=[ind;find(Y==i)];
-        ind2=[ind2;find(Y2==i)];
-    end
-    Adj=Adj(ind,ind);
-    Adj2=Adj2(ind2,ind2);
-    subplot(2,2,1)
-    heatmap(Adj,'GridVisible','off');
-    Ax = gca;
-    Ax.XDisplayLabels = nan(size(Ax.XDisplayData));
-    Ax.YDisplayLabels = nan(size(Ax.YDisplayData));
-    colorbar( 'off' )
-    colormap default
-    title('Blogs Network');
-    ylabel('Original Adjacency');
-    set(gca,'FontSize',fs);
-    subplot(2,2,3)
-    heatmap(Adj2,'GridVisible','off');
-    Ax = gca;
-    Ax.XDisplayLabels = nan(size(Ax.XDisplayData));
-    Ax.YDisplayLabels = nan(size(Ax.YDisplayData));
-    colorbar( 'off' )
-    colormap default
-%     pval=GraphTwoSampleTest(Adj,Adj2);
-    xlabel(strcat('Two-sample p-value is ',{' '}, num2str(ceil(pval*100)/100)));
-    ylabel('Resampled Adjacency');
-    set(gca,'FontSize',fs);
-    
-    load('email.mat')
-    [Adj2,Y2,pval,stat]=GraphResample(Adj,Y,n);
-    pval
-    ind=[];ind2=[];K=max(Y);
-    for i=1:K
-        ind=[ind;find(Y==i)];
-        ind2=[ind2;find(Y2==i)];
-    end
-    Adj=Adj(ind,ind);
-    Adj2=Adj2(ind2,ind2);
-    subplot(2,2,2)
-    heatmap(Adj,'GridVisible','off');
-    Ax = gca;
-    Ax.XDisplayLabels = nan(size(Ax.XDisplayData));
-    Ax.YDisplayLabels = nan(size(Ax.YDisplayData));
-    colorbar( 'off' )
-    colormap default
-    title('Email Network');
-    set(gca,'FontSize',fs);
-%     xlabel('Original Adjacency');
-    subplot(2,2,4)
-    heatmap(Adj2,'GridVisible','off');
-    Ax = gca;
-    Ax.XDisplayLabels = nan(size(Ax.XDisplayData));
-    Ax.YDisplayLabels = nan(size(Ax.YDisplayData));
-    colorbar( 'off' )
-    colormap default
-    %[pval,stat]=GraphTwoSampleTest(Adj,Adj2);
-    xlabel(strcat('Two-sample p-value is ',{' '}, num2str(ceil(pval*100)/100)));
-    set(gca,'FontSize',fs);
-%     ylabel('Resampled Adjacency');
-    
-    currentFolder = pwd;
-F.fname=strcat(strcat(currentFolder,'FigAEE3'));
-    F.wh=[8 8]*2;
-    F.PaperPositionMode='auto';
-    print_fig(gcf,F)
-end
-
-if opt==5;
-        load('polblogs.mat') 
-    n=size(Adj,1);fs=30;sz=12;
-figure('units','normalized','Position',[0 0 1 1]);
-    subplot(2,2,1)
-        G = graph(Adj,'upper');
-    colo=onehotencode(categorical(Y'),1);
-    colo=[colo(1,:);zeros(1,n);colo(2,:)];
-    plot(G,'-.dr','NodeColor',colo');
-% heatmap(Adj,'GridVisible','off');
-% Ax = gca;
-% Ax.XDisplayLabels = nan(size(Ax.XDisplayData));
-% Ax.YDisplayLabels = nan(size(Ax.YDisplayData));
-% colorbar( 'off' )
-% colormap default
-title('Blogs Network');
-
-ylabel('Graph Connection');
-% axis('square')
-set(gca,'FontSize',fs);
-[Z,~]=GraphEncoder(Adj,Y,opts);
-n2=1000;
-% [Adj2,Y2]=GraphResample(Adj,Y,n2);
-% D=sum(Adj,2); D=D./max(D);
-% dk=[mean(D(Y==1)),mean(D(Y==2))];
-subplot(2,2,3)
-plot(Z(Y==1,1),Z(Y==1,2),'o','MarkerSize',sz)
-hold on
-plot(Z(Y==2,1),Z(Y==2,2),'x','MarkerSize',sz)
-% title('Blogs Network','FontSize',fs);
-% axis('square')
-% plot(Z(Y==3,1),Z(Y==3,2),'bs');
-hold off
-ylabel('Encoder Embedding');
-% xlim([xl(1),xl(2)]);
-% ylim([yl(1),yl(2)]);
-% title('DC-SBM 1')
-% ylabel('n=1000')
-set(gca,'FontSize',fs);
-% Z=Z./repmat(D,1,2)./repmat(dk,n,1);
-
-% [U,S,V]=svd(Adj);d=2;
-% Z=U(:,1:d)*S(1:d,1:d)^0.5;
-% subplot(3,2,5)
-% plot(Z(Y==1,1),Z(Y==1,2),'o');
-% hold on
-% plot(Z(Y==2,1),Z(Y==2,2),'x');
-% % plot(Z(Y==3,1),Z(Y==3,2),'bs');
-% hold off
-% title('','FontSize',fs)
-% ylabel('Spectral Embedding')
-% set(gca,'FontSize',fs);
-
-load('Gene.mat')
-Adj=AdjOri;Y=YOri;
-    n=size(Adj,1);fs=30;
-[Z,~]=GraphEncoder(Adj,Y,opts);
-    subplot(2,2,2)
-    G = graph(Adj,'upper');
-    colo=onehotencode(categorical(Y'),1);
-    colo=[colo(1,:);zeros(1,n);colo(2,:)];
-    plot(G,'-.dr','NodeColor',colo');
-% heatmap(Adj,'GridVisible','off');
-% colormap default
-% Ax = gca;
-% Ax.XDisplayLabels = nan(size(Ax.XDisplayData));
-% Ax.YDisplayLabels = nan(size(Ax.YDisplayData));
-% colorbar( 'off' )
-title('Gene Network')
-% axis('square')
-set(gca,'FontSize',fs);
-
-D=sum(Adj,2); D=D./max(D);
-dk=[mean(D(Y==1)),mean(D(Y==2))];
-subplot(2,2,4)
-plot(Z(Y==1,1),Z(Y==1,2),'o','MarkerSize',sz)
-hold on
-plot(Z(Y==2,1),Z(Y==2,2),'x','MarkerSize',sz)
-% axis('square')
-% plot(Z(Y==3,1),Z(Y==3,2),'bs');
-hold off
-% title('Encoder Embedding','FontSize',fs)
-% xlim([xl(1),xl(2)]);
-% ylim([yl(1),yl(2)]);
-% title('DC-SBM 1')
-% ylabel('n=1000')
-set(gca,'FontSize',fs);
-
-% [U,S,V]=svd(Adj);d=2;
-% Z=U(:,1:d)*S(1:d,1:d)^0.5;
-% subplot(3,2,6)
-% plot(Z(Y==1,1),Z(Y==1,2),'o');
-% hold on
-% plot(Z(Y==2,1),Z(Y==2,2),'x');
-% % plot(Z(Y==3,1),Z(Y==3,2),'bs');
-% hold off
-% title('','FontSize',fs)
-% set(gca,'FontSize',fs);
-
-currentFolder = pwd;
-F.fname=strcat(strcat(currentFolder,'FigAEE5'));
-F.wh=[8 8]*2;
 F.PaperPositionMode='auto';
 print_fig(gcf,F)
 end
