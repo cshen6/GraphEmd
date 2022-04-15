@@ -106,11 +106,14 @@ if __name__ == '__main__':
     # Save generated Y to file so Ligra can also use it
     # case_10.Y[case_10.Y == -1] = 0
 
-    # np.savetxt(Y)
+    # Remove 95% uniformly
+    # samp = np.random.randint(low=0, high=Y.shape[0], size=np.int(Y.shape[0]*.95))
+    # Y[samp] = 0
+    # np.savetxt("liveJournalY.txt", Y, fmt="%d")
 
     # Load Y from file
-    Y = np.reshape(np.loadtxt("../../Data/Y-facebook-5percent.txt"), (n,1))
-    Y = Y.astype(int)
+    Y = np.reshape(np.loadtxt("../../Data/liveJournalY.txt", dtype=np.int8), (n,1))
+    # Y = Y.astype(int)
 
     Z, W = graph_encoder_embed(G_edgelist, Y, n, Correlation = False)
     print(Z)
