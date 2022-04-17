@@ -460,4 +460,55 @@ n=300;
 [Adj,Y]=simGenerate(1,n);
 [SBM_acc_AEE,SBM_acc_AEE2,SBM_acc_ASE,SBM_t_AEE,SBM_t_AEE2,SBM_t_ASE,SBM_acc_ARE,SBM_t_ARE]=GraphEncoderEvaluate2(Adj,Y);
 
+%%%% Two-sample valid test using encoder embedding
+
+rep=500;p1=zeros(rep,20);p2=zeros(rep,20);
+for i=1:20;
+    n=20*i;k=10;
+    for r=1:rep;
+        [Adj,Y]=simGenerate(12,n);
+        SBM=GraphEncoder(Adj,Y);
+        [Adj,Y]=simGenerate(12,n);
+        SBM2=GraphEncoder(Adj,Y);
+        [~,p1(r,i)]=DCorFastTest([SBM;SBM2],[zeros(n,1);ones(n,1)]);
+        [Adj,Y]=simGenerate(22,n);
+        SBM3=GraphEncoder(Adj,Y);
+        [~,p2(r,i)]=DCorFastTest([SBM;SBM3],[zeros(n,1);ones(n,1)]);
+    end
+end
+power2=mean(p2<0.05);
+power1=mean(p1<0.05);
+plot(1:20,power1,'r-.','LineWidth',3)
+hold on
+plot(1:20,power2,'b-.','LineWidth',3)
+ylim([0,1.05])
+plot(1:20,0.05*ones(20,1),'k--','LineWidth',2)
+xlabel('Number of Vertices')
+ylabel('Testing Power')
+set(gca,'FontSize',15);
+xticks([1,10,20])
+% legend('AEE*NN','AEE*NNC','AEE*LDA','ASE*NN','ASE*LDA','Location','SouthWest');
+xticklabels({'20','200','400'})
+
+% using ASE instead
+
+rep=500;p1=zeros(rep,20);p2=zeros(rep,20);
+for i=1:20;
+    n=20*i;k=10;
+    for r=1:rep;
+        [Adj,Y]=simGenerate(12,n);
+        SBM=ASE(Adj,3);
+        [Adj,Y]=simGenerate(12,n);
+        SBM2=ASE(Adj,3);
+        [~,p1(r,i)]=DCorFastTest([SBM;SBM2],[zeros(n,1);ones(n,1)]);
+        [Adj,Y]=simGenerate(22,n);
+        SBM3=ASE(Adj,3);
+        [~,p2(r,i)]=DCorFastTest([SBM;SBM3],[zeros(n,1);ones(n,1)]);
+    end
+end
+power4=mean(p2<0.05);
+power3=mean(p1<0.05);
+
+
+
 
