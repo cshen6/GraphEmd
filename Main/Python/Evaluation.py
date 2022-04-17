@@ -63,6 +63,11 @@ class Encoder_case:
         Encoder_case.n = n
 
 
+
+# def generateYlabelsSBM():
+    
+
+
 if __name__ == '__main__':
     # A = np.ones((5,5))
     # A[0,4] = 0
@@ -90,9 +95,19 @@ if __name__ == '__main__':
     # # print(W)
 
 
-    print("Loading custom Facebook graph")
+    # print("Loading custom Facebook graph")
+    #
+    # G_edgelist = np.loadtxt("../../Data/facebook_combined.txt", dtype=np.int64)
+    #
+    # # Add column of ones - weights
+    # G_edgelist = np.hstack((G_edgelist, np.ones((G_edgelist.shape[0], 1))))
+    #
+    # n = int(np.max(G_edgelist[:,1]) + 1) # Nr. vertices
+    # Y = np.reshape(np.loadtxt("../../../../Downloads/Y-facebook-5percent.txt", dtype=np.int32), (4039, 1))
 
-    G_edgelist = np.loadtxt("../../Data/facebook_combined.txt")
+    print("Loading LiveJournal graph - 1GB")
+
+    G_edgelist = np.loadtxt("../../Data/soc-LiveJournal1.txt", dtype=np.int32)
 
     # Add column of ones - weights
     G_edgelist = np.hstack((G_edgelist, np.ones((G_edgelist.shape[0], 1))))
@@ -103,18 +118,47 @@ if __name__ == '__main__':
     # case_10 = case.case_10() # This is O(n^2)
     # case_10.summary()
 
-    # Save generated Y to file so Ligra can also use it
-    # case_10.Y[case_10.Y == -1] = 0
+    Y = np.reshape(np.loadtxt("../../../../Downloads/liveJournal-Y50-sparse.txt", dtype=np.int16), (4847571, 1))
 
-    # Remove 95% uniformly
-    # samp = np.random.randint(low=0, high=Y.shape[0], size=np.int(Y.shape[0]*.95))
-    # Y[samp] = 0
-    # np.savetxt("liveJournalY.txt", Y, fmt="%d")
 
-    # Load Y from file
-    Y = np.reshape(np.loadtxt("../../Data/liveJournalY.txt", dtype=np.int8), (n,1))
+    # print("Loading Twitch graph")
+    #
+    # G_edgelist = np.loadtxt("../../../../Downloads/large_twitch_edges.txt", delimiter=" ", dtype=np.int64)
+    #
+    # G_edgelist = G_edgelist[G_edgelist[:, 0].argsort()] # Sort by first column
+    #
+    # # Add column of ones - weights
+    # G_edgelist = np.hstack((G_edgelist, np.ones((G_edgelist.shape[0], 1))))
+    #
+    # n = int(np.max(G_edgelist[:,1]) + 1) # Nr. vertices
+    #
+    # Y = np.reshape(np.loadtxt("../../../../Downloads/twitchFullY-20-removed.txt", dtype=np.int32), (168114, 1))
+
+
+    # print("Loading Pokec graph - 400MB")
+    #
+    # G_edgelist = np.loadtxt("../../../../Downloads/soc-pokec-SNAP.txt", dtype=np.int32)
+    #
+    # # Add column of ones - weights
+    # G_edgelist = np.hstack((G_edgelist, np.ones((G_edgelist.shape[0], 1))))
+    #
+    # n = int(np.max(G_edgelist[:,1]) + 1) # Nr. vertices
+    # # #
+    # # case = Case(n)
+    # # case_10 = case.case_10() # This is O(n^2)
+    #
+    # # Load Y from file
+    # Y = np.reshape(np.loadtxt("../../../../Downloads/pokec-Y50-sparse.txt", dtype=np.int16), (1632804,1))
     # Y = Y.astype(int)
+    # case1 = Case(4847571)
+    #
+    # Ynew = case1.add_unknown_ariel(50, 4847571, .8, Y)
+    # #
+    # np.savetxt("pokec-Y50-sparse.txt", Ynew, fmt="%d")
+
+    print("Running GraphEncoderEmbed()")
 
     Z, W = graph_encoder_embed(G_edgelist, Y, n, Correlation = False)
-    print(Z)
+    # print(Z)
+    np.savetxt("liveJournalZResults.txt", Z, fmt="%f")
     # print(W)
