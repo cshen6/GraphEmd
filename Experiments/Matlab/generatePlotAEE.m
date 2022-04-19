@@ -224,7 +224,7 @@ end
 
 if opt==1
 
-n=500;fs=40;K=2;
+n=300;fs=40;K=2;
 [Adj,Y]=simGenerate(12,n,K);
 figure('units','normalized','Position',[0 0 1 1]);
 subplot(3,3,1)
@@ -240,9 +240,11 @@ title('SBM')
 ylabel('Adjacency Matrix')
 set(gca,'FontSize',fs);
 
-n=2000;fs=40;K=2;
+n=2000;
+fs=40;K=2;
 [Adj,Y]=simGenerate(12,n,K);
 [Z,~]=GraphEncoder(Adj,Y,opts);
+Z=Z/2;
 subplot(3,3,4)
 plot(Z(Y==1,1),Z(Y==1,2),'o');
 hold on
@@ -274,7 +276,7 @@ title('','FontSize',fs)
 ylabel('Spectral Embedding')
 set(gca,'FontSize',fs);
 
-n=500;
+n=300;
 [Adj,Y]=simGenerate(22,n,K);
 subplot(3,3,2)
 ind1=find(Y==1);ind2=find(Y==2);
@@ -291,6 +293,7 @@ set(gca,'FontSize',fs);
 n=2000;
 [Adj,Y]=simGenerate(22,n,K);
 [Z,~]=GraphEncoder(Adj,Y,opts);
+Z=Z/2;
 subplot(3,3,5)
 plot(Z(Y==1,1),Z(Y==1,2),'o');
 hold on
@@ -313,7 +316,7 @@ hold off
 title('','FontSize',fs)
 set(gca,'FontSize',fs);
 
-n=500;
+n=300;
 [Adj,Y]=simGenerate(32,n,K);
 subplot(3,3,3)
 ind1=find(Y==1);ind2=find(Y==2);
@@ -330,6 +333,7 @@ set(gca,'FontSize',fs);
 n=2000;
 [Adj,Y]=simGenerate(32,n,K);
 [Z,~]=GraphEncoder(Adj,Y,opts);
+Z=Z/2;
 subplot(3,3,6)
 plot(Z(Y==1,1),Z(Y==1,2),'o');
 hold on
@@ -353,7 +357,7 @@ title('','FontSize',fs)
 set(gca,'FontSize',fs);
 
 currentFolder = pwd;
-F.fname=strcat(strcat(currentFolder,'FigAEE1'));
+F.fname=strcat(strcat(currentFolder,'\FigAEE1'));
 F.wh=[12 12]*2;
 F.PaperPositionMode='auto';
 print_fig(gcf,F)
