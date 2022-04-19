@@ -105,21 +105,35 @@ if __name__ == '__main__':
     # n = int(np.max(G_edgelist[:,1]) + 1) # Nr. vertices
     # Y = np.reshape(np.loadtxt("../../../../Downloads/Y-facebook-5percent.txt", dtype=np.int32), (4039, 1))
 
-    print("Loading LiveJournal graph - 1GB")
+    # print("Loading LiveJournal graph - 1GB")
+    #
+    # G_edgelist = np.loadtxt("../../Data/soc-LiveJournal1.txt", dtype=np.int32)
+    #
+    # # Add column of ones - weights
+    # G_edgelist = np.hstack((G_edgelist, np.ones((G_edgelist.shape[0], 1))))
+    #
+    # n = int(np.max(G_edgelist[:,1]) + 1) # Nr. vertices
+    #
+    # # case = Case(n)
+    # # case_10 = case.case_10() # This is O(n^2)
+    # # case_10.summary()
+    #
+    # Y = np.reshape(np.loadtxt("../../../../Downloads/liveJournal-Y50-sparse.txt", dtype=np.int16), (4847571, 1))
 
-    G_edgelist = np.loadtxt("../../Data/soc-LiveJournal1.txt", dtype=np.int32)
+    print("Loading Orkut graph - 1.8GB")
+
+    G_edgelist = np.loadtxt("../../../../Downloads/orkut-svs.txt", dtype=np.int32)
 
     # Add column of ones - weights
     G_edgelist = np.hstack((G_edgelist, np.ones((G_edgelist.shape[0], 1))))
 
-    n = int(np.max(G_edgelist[:,1]) + 1) # Nr. vertices
+    n = int(np.max(G_edgelist[:, 1]) + 1)  # Nr. vertices
 
     # case = Case(n)
     # case_10 = case.case_10() # This is O(n^2)
     # case_10.summary()
 
-    Y = np.reshape(np.loadtxt("../../../../Downloads/liveJournal-Y50-sparse.txt", dtype=np.int16), (4847571, 1))
-
+    Y = np.reshape(np.loadtxt("../../../../Downloads/orkut-Y50-sparse.txt", dtype=np.int16), (3072441, 1))
 
     # print("Loading Twitch graph")
     #
