@@ -1,7 +1,7 @@
 function [result]=GraphEncoderEvaluate(X,Y,opts)
 
 if nargin < 3
-    opts = struct('indices',crossvalind('Kfold',Y,5),'Adjacency',1,'Laplacian',1,'Spectral',1,'LDA',1,'GFN',1,'GCN',0,'GNN',0,'knn',5,'dim',30,'neuron',20,'epoch',100,'training',0.05,'activation','poslin','Learner',1); % default parameters
+    opts = struct('indices',crossvalind('Kfold',Y,5),'Adjacency',1,'Laplacian',1,'Spectral',0,'LDA',1,'GFN',1,'GCN',0,'GNN',0,'knn',5,'dim',30,'dimGEE',0,'neuron',20,'epoch',100,'training',0.05,'activation','poslin','Learner',1); % default parameters
 end
 if ~isfield(opts,'indices'); opts.indices=crossvalind('Kfold',Y,5); end
 if ~isfield(opts,'Adjacency'); opts.Adjacency=1; end
@@ -15,6 +15,7 @@ if ~isfield(opts,'Learner'); opts.Learner=1; end
 if ~isfield(opts,'LearnIter'); opts.LearnIter=0; end
 if ~isfield(opts,'knn'); opts.knn=5; end
 if ~isfield(opts,'dim'); opts.dim=30; end
+if ~isfield(opts,'dimGEE'); opts.dimGEE=0; end
 % if ~isfield(opts,'deg'); opts.deg=0; end
 if ~isfield(opts,'neuron'); opts.neuron=20; end
 if ~isfield(opts,'epoch'); opts.epoch=100; end
@@ -38,6 +39,7 @@ ide=eye(n);
 klim=20;
 opts.knn=min(opts.knn,ceil(n/K/3));
 discrimType='pseudoLinear';
+opts.dimGEE = min(opts.dimGEE,K);
 % if k>10
 %     discrimType='diagLinear';
 % end
@@ -120,7 +122,7 @@ for i = 1:kfold
             YTrn=Y(trn);
             YTsn=Y(tsn);
             tic
-            oot=struct('Laplacian',false,'LearnIter',0,'Learner',opts.Learner);
+            oot=struct('Laplacian',false,'LearnIter',0,'Learner',opts.Learner,'Dim',opts.dimGEE);
             [Z,YTNew,~,indT]=GraphEncoder(X,YT,oot);
             ZTrn=Z(indT,:);
             ZTsn=Z(~indT,:);
@@ -205,7 +207,7 @@ for i = 1:kfold
         if opts.Laplacian==1
             YT=Y;
             YT(tsn)=-1;
-            oot=struct('Laplacian',true,'LearnIter',0,'Learner',opts.Learner);
+            oot=struct('Laplacian',true,'LearnIter',0,'Learner',opts.Learner,'Dim',opts.dimGEE);
             YTrn=Y(trn);
             YTsn=Y(tsn);
             tic
@@ -305,7 +307,7 @@ for i = 1:kfold
         YT(tsn)=-1;
         YTsn=Y(tsn);
         if opts.Adjacency==1
-            oot=struct('LearnIter',opts.LearnIter,'Learner',opts.Learner);
+            oot=struct('LearnIter',opts.LearnIter,'Learner',opts.Learner,'Dim',opts.dimGEE);
             tic
              [~,tt,~,~]=GraphEncoder(X,YT,oot);
             t_AEE_LDA(i)=toc;
@@ -344,7 +346,7 @@ for i = 1:kfold
             end
         end
         if opts.Laplacian==1
-            oot=struct('Laplacian',true,'LearnIter',opts.LearnIter,'Learner',opts.Learner);
+            oot=struct('Laplacian',true,'LearnIter',opts.LearnIter,'Learner',opts.Learner,'Dim',opts.dimGEE);
             tic
             [~,tt]=GraphEncoder(X,YT,oot);
             t_LEE_LDA(i)=toc;
