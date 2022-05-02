@@ -244,6 +244,33 @@ class Model:
         DataSet.Y = Y
         return DataSet
 
+    # Just add unknowns to Y, do not run the other O(n^2) operations
+    def add_unknown_ariel(self, Y_ori, unlabel_ratio, d, n):
+        # d = DataSet.d
+        # n = DataSet.n
+        u = unlabel_ratio  # unlabeled
+        l = 1 - u
+
+        # Y_ori = DataSet.Y
+        Y = np.copy(Y_ori)
+
+        # Y_1st_dim = Y.shape[0]
+
+        np.random.seed(0)
+
+        # stratified unlabel with given ratio
+        for i in range(d):
+            i_indices = np.argwhere(Y == i)[:, 0]
+            len_i = i_indices.shape[0]
+            i_ran_permu = np.random.permutation(len_i)  # randomly permute the indices of the i_indices
+            i_ran_permu = i_ran_permu[:math.floor(len_i * u)]  # pick the indices of i_indices by ratio u
+            unlabel_idx_i = i_indices[i_ran_permu]
+            Y[unlabel_idx_i, 0] = -1
+
+        # DataSet.Y_ori = Y_ori
+        # DataSet.Y = Y
+        return Y
+
 
     def for_cluster(self):
         """
@@ -301,8 +328,8 @@ class Model:
 
 class Case(Model):
     def case_10(self):
-        d = 3
-        pp = [0.2,0.3,0.5]
+        d = 1000
+        pp = [1/d]*d
 
         # posibilities between classes including the classes with themselves
         # bd is the probability within class
