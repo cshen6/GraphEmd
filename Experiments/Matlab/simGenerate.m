@@ -76,7 +76,7 @@ switch option
      case 12 % SBM with 3 classes
         fileName='SBM';
         d=2;
-        pp=[0.3,0.7];
+        pp=[0.5,0.5];
         Bl=zeros(d,d);
         %             Bl=rand(clas,clas);
         Bl(:,1)=[0.13,0.1];

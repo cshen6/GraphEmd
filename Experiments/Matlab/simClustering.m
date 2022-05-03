@@ -149,7 +149,7 @@ Dist='sqeuclidean';%Dist='cosine';
 % 
 
 %%% 1. Corr better
-n=5000;K=10;
+n=3000;K=10;
 [Adj,Y]=simGenerate(10,n);
 GraphClusteringEvaluate(Adj,Y)
 [Adj,Y]=simGenerate(11,n,K);
@@ -188,13 +188,18 @@ end
 % GraphClusteringEvaluate(Adj,Y)
 
 load('CoraAdj.mat') %AEL / GFN K=2
-GraphClusteringEvaluate(AdjOri,YOri)
+GraphClusteringEvaluate(Adj,Y)
 load('email.mat') %k=42
-GraphClusteringEvaluate(AdjOri,YOri)
+GraphClusteringEvaluate(Adj,Y)
+load('Gene.mat') %AEL / GFN K=2
+GraphClusteringEvaluate(Adj,Y)
+load('IIP.mat') %AEL / GFN K=2
+% GraphEncoder(Adj,Y,knum); %0
+GraphClusteringEvaluate(Adj,Y)
 load('lastfm.mat') %AEK K=17
-GraphClusteringEvaluate(AdjOri,YOri)
+GraphClusteringEvaluate(Adj,Y)
 load('polblogs.mat') %k=2
-GraphClusteringEvaluate(AdjOri,YOri)
+GraphClusteringEvaluate(Adj,Y)
 
 %% fusion
 load('Wiki_Data.mat')
@@ -226,11 +231,6 @@ load('graphCElegans.mat')
 GraphClusteringEvaluate(Ag,vcols)
 load('adjnoun.mat')
 GraphClusteringEvaluate(Adj,Label)
-load('Gene.mat') %AEL / GFN K=2
-GraphClusteringEvaluate(Adj,Y)
-load('IIP.mat') %AEL / GFN K=2
-% GraphEncoder(Adj,Y,knum); %0
-GraphClusteringEvaluate(Adj,Y)
 load('KKI.mat')
 GraphClusteringEvaluate(AdjOri,YOri)
 load('OHSU.mat')
