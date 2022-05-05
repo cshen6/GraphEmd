@@ -10,7 +10,7 @@
 %%        In case of partial known labels, Y should be a n*1 vector with unknown labels set to <=0 and known labels being >0. 
 %%        When there is no known label, set Y to be the number of clusters or a range of clusters.
 %% @param opts specifies options: 
-%%        DiagA = true means adding 1 to all diagonal entries (i.e., add self-loop to edgelist);
+%%        DiagA = true means adding 1 to all diagonal entries (i.e., add self-loop to edgelist), which can help sparse graphs. However, if graph weights are very close to 0, this option can introduce significant within-group bias.
 %%        Correlation specifies whether to use angle metric or Euclidean metric;
 %%        Laplacian specifies whether to uses graph Laplacian or adjacency matrix; 
 %%        Three integers for clustering: Replicates denotes the number of replicates for clustering, 
@@ -30,9 +30,9 @@ if nargin<2
     Y=2:5;
 end
 if nargin<3
-    opts = struct('DiagA',true,'Correlation',true,'Laplacian',false,'Learner',1,'LearnIter',0,'MaxIter',20,'MaxIterK',2,'Replicates',1,'Attributes',0,'Directed',1,'Dim',0);
+    opts = struct('DiagA',false,'Correlation',true,'Laplacian',false,'Learner',1,'LearnIter',0,'MaxIter',30,'MaxIterK',3,'Replicates',1,'Attributes',0,'Directed',1,'Dim',0);
 end
-if ~isfield(opts,'DiagA'); opts.DiagA=true; end
+if ~isfield(opts,'DiagA'); opts.DiagA=false; end
 if ~isfield(opts,'Correlation'); opts.Correlation=true; end
 if ~isfield(opts,'Laplacian'); opts.Laplacian=false; end
 if ~isfield(opts,'Learner'); opts.Learner=1; end
@@ -51,7 +51,7 @@ di=opts.Directed;
 % if ~isfield(opts,'distance'); opts.distance='correlation'; end
 % opts.DiagA=true;
 % opts.Correlation=false;
-% opts.Laplacian=false;
+% opts.Laplacian=true;
 
 %% pre-precess input to s*3 then diagonal augment
 if iscell(X)
@@ -101,7 +101,6 @@ if size(U,1)==n
 else
     attr=false;
 end
-
 %% partial or full known labels when label size matches vertex size, do embedding / classification directly
 if length(Y)==n
     indT=(Y>0);

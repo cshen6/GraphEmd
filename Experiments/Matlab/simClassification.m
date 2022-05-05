@@ -188,6 +188,7 @@ SBM2=GraphEncoderEvaluate(Adj,Y,opts);
 % RDPG2=GraphEncoderEvaluate(Adj,Y,opts);
 % RDPG3=GraphEncoderEvaluate(Adj,Y,opts2);
 % DC-SBM
+n=3000;k=10;
 [Adj,Y]=simGenerate(20,n);
 DCSBM=GraphEncoderEvaluate(Adj,Y,opts);
 % DCSBM0=GraphEncoderEvaluate(Adj,Y,opts2);

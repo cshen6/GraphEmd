@@ -1,9 +1,9 @@
 function [result]=GraphEncoderEvaluate(X,Y,opts)
 
 if nargin < 3
-    opts = struct('indices',crossvalind('Kfold',Y,5),'Adjacency',1,'Laplacian',1,'Spectral',0,'LDA',1,'GFN',1,'GCN',0,'GNN',0,'knn',5,'dim',30,'dimGEE',0,'neuron',20,'epoch',100,'training',0.05,'activation','poslin','Learner',1); % default parameters
+    opts = struct('indices',crossvalind('Kfold',Y,10),'Adjacency',1,'Laplacian',1,'Spectral',0,'LDA',1,'GFN',1,'GCN',0,'GNN',0,'knn',5,'dim',30,'dimGEE',0,'neuron',20,'epoch',100,'training',0.05,'activation','poslin','Learner',1); % default parameters
 end
-if ~isfield(opts,'indices'); opts.indices=crossvalind('Kfold',Y,5); end
+if ~isfield(opts,'indices'); opts.indices=crossvalind('Kfold',Y,10); end
 if ~isfield(opts,'Adjacency'); opts.Adjacency=1; end
 if ~isfield(opts,'Laplacian'); opts.Laplacian=1; end
 if ~isfield(opts,'Spectral'); opts.Spectral=0; end
