@@ -5,6 +5,6 @@ K=max(Y);
 hold on
 for k=1:K
     tmp=(Y==k);
-    plot(X(tmp,1),X(tmp,2),'.','MarkerSize',2)
+    plot(X(tmp,1),X(tmp,2),'.','MarkerSize',15)
 end
 hold off

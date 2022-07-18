@@ -25,7 +25,7 @@ warning('off','all');
 %met=[opts.AEE,opts.LDA,opts.GFN,opts.ASE,opts.LSE,opts.GCN,opts.GNN]; %AEE, LDA, GFN, ASE, GFN, ANN
 indices=opts.indices;
 if length(indices)~=length(Y)
-    indices=crossvalind('Kfold',Y,5);
+    indices=crossvalind('Kfold',Y,10);
 end
 
 kfold=max(indices);
@@ -122,7 +122,8 @@ for i = 1:kfold
             YTrn=Y(trn);
             YTsn=Y(tsn);
             tic
-            oot=struct('Laplacian',false,'LearnIter',0,'Learner',opts.Learner,'Dim',opts.dimGEE);
+            oot=opts;
+            oot.Laplacian=0; 
             [Z,YTNew,~,indT]=GraphEncoder(X,YT,oot);
             ZTrn=Z(indT,:);
             ZTsn=Z(~indT,:);
@@ -207,7 +208,9 @@ for i = 1:kfold
         if opts.Laplacian==1
             YT=Y;
             YT(tsn)=-1;
-            oot=struct('Laplacian',true,'LearnIter',0,'Learner',opts.Learner,'Dim',opts.dimGEE);
+            oot=opts;
+            oot.Laplacian=1; 
+%             oot=struct('Laplacian',true,'LearnIter',0,'Learner',opts.Learner,'Dim',opts.dimGEE);
             YTrn=Y(trn);
             YTsn=Y(tsn);
             tic
@@ -386,8 +389,8 @@ for i = 1:kfold
 end
 
 [~,ind]=min(mean(acc_ASE_NN,1));
-[h,p]=ttest(acc_AEE_NN, acc_ASE_NN(:,ind),'Tail','left')
-[h,p]=ttest(t_AEE_NN, t_ASE_NN(:,ind),'Tail','left')
+[h,p]=ttest(acc_AEE_NN, acc_ASE_NN(:,ind),'Tail','left');
+[h,p]=ttest(t_AEE_NN, t_ASE_NN(:,ind),'Tail','left');
 
 std_AEE_NN=std(acc_AEE_NN);
 acc_AEE_NN=1-mean(acc_AEE_NN);

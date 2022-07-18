@@ -9,7 +9,7 @@ switch option
     case 10 % SBM with 3 classes
         fileName='SBM';
         d=3;
-        bd=0.13; %0.13 at n=2000;0.12 at n=5000
+        bd=0.2; %0.13 at n=2000;0.12 at n=5000
         pp=[0.2,0.3,0.5];
         Bl=zeros(d,d);
         %             Bl=rand(clas,clas);
@@ -129,8 +129,8 @@ switch option
         pp=[0.5,0.5];
         Bl=zeros(d,d);
         %             Bl=rand(clas,clas);
-        Bl(:,1)=[0.2,0.1];
-        Bl(:,2)=[0.1,0.1];
+        Bl(:,1)=[0.1,0.05];
+        Bl(:,2)=[0.05,0.1];
         Dis=zeros(n,n);
         tt=rand([n,1]);
         Label=ones(n,1);
@@ -177,8 +177,8 @@ switch option
         pp=[0.5,0.5];
         Bl=zeros(d,d);
         %             Bl=rand(clas,clas);
-        Bl(:,1)=[0.1,0.2];
-        Bl(:,2)=[0.2,0.4];
+        Bl(:,1)=[0.05,0.05];
+        Bl(:,2)=[0.05,0.2];
         Dis=zeros(n,n);
         tt=rand([n,1]);
         Label=ones(n,1);
@@ -211,6 +211,38 @@ switch option
             Bl=0.1*ones(d,d);
             %             Bl=rand(clas,clas);
             Bl(k,k)=0.2;
+            Dis{k}=zeros(n,n);
+            for i=1:n
+                Dis{k}(i,i)=0;%diagonals are zeros
+                for j=i+1:n
+                    Dis{k}(i,j)=rand(1)<Bl(Label(i),Label(j));
+                    Dis{k}(j,i)=Dis{k}(i,j);
+                end
+            end
+        end
+        X=Dis;
+    case 19 % SBM with 2 classes
+        fileName='SBM';
+        d=4;
+        pp=[0.2,0.3,0.2,0.3];
+        Dis=cell(1,10);
+        tt=rand([n,1]);
+        Label=ones(n,1);
+        thres=0;
+        for i=1:size(pp,2)
+            thres=thres+pp(i);
+            Label=Label+(tt>thres); %determine the block of each data
+        end
+        Bl=0.1*ones(d,d);
+        %             Bl=rand(clas,clas);
+        for k=1:4
+            Bl(k,k)=0.2;
+        end
+        for k=1:10
+            Bl(1,1)=Bl(1,1)+0.01*(k-1);
+            Bl(1,2)=Bl(1,2)-0.005*(k-1);
+            Bl(2,1)=Bl(1,2);
+            Bl(2,2)=Bl(2,2)-0.005*(k-1);
             Dis{k}=zeros(n,n);
             for i=1:n
                 Dis{k}(i,i)=0;%diagonals are zeros
@@ -312,20 +344,22 @@ switch option
             end
         end
         X=Dis;
-   case 22 % DC-SBM with 3 classes
+   case 22 % DC-SBM with 4 classes
         fileName='DCSBM';
-        pp=[0.5,0.5];
-        d=2;
+        pp=[0.2,0.2,0.3,0.3];
+        d=4;
         Bl=zeros(d,d);
         %             Bl=rand(clas,clas);
-        Bl(:,1)=[0.9,0.1];
-        Bl(:,2)=[0.1,0.5];
+        Bl(:,1)=[0.3,0.1,0.1,0.1];
+        Bl(:,2)=[0.1,0.5,0.1,0.1];
+        Bl(:,3)=[0.1,0.1,0.7,0.1];
+        Bl(:,4)=[0.1,0.1,0.1,0.9];
         Dis=zeros(n,n);
         tt=rand([n,1]);
         Label=ones(n,1);
         thres=0;
-        %theta=betarnd(1,4,n,1);
-         theta=unifrnd(0.05,0.35,n,1);
+        theta=betarnd(1,4,n,1);
+        %theta=unifrnd(0.05,0.35,n,1);
 %         theta=theta;
         for i=1:d
             thres=thres+pp(i);
@@ -339,19 +373,20 @@ switch option
             end
         end
         X=theta;
-    case 25 % SBM with 2 classes
+    case 25 % SBM with 2 classes, better for normalize
         fileName='SBM';
         d=2;
         pp=[0.5,0.5];
         Bl=zeros(d,d);
         %             Bl=rand(clas,clas);
-        Bl(:,1)=[0.2,0.1];
-        Bl(:,2)=[0.1,0.1];
+        Bl(:,1)=[0.5,0.1];
+        Bl(:,2)=[0.1,0.5];
         Dis=zeros(n,n);
         tt=rand([n,1]);
         Label=ones(n,1);
         thres=0;
-        theta=unifrnd(0.1,0.5,n,1);%randi(10,n,1)/10;%betarnd(1,4,n,1); %0.2*ones(n,1);%
+        theta=betarnd(1,4,n,1);
+        %theta=unifrnd(0.1,0.5,n,1);%randi(10,n,1)/10;%betarnd(1,4,n,1); %0.2*ones(n,1);%
         for i=1:size(pp,2)
             thres=thres+pp(i);
             Label=Label+(tt>thres); %determine the block of each data
@@ -389,14 +424,14 @@ switch option
             end
         end
         X=theta;
-      case 27 % SBM with 2 classes
+      case 27 % SBM with 2 classes, better for no normalize
         fileName='SBM';
         d=2;
         pp=[0.5,0.5];
         Bl=zeros(d,d);
         %             Bl=rand(clas,clas);
-        Bl(:,1)=[0.1,0.2];
-        Bl(:,2)=[0.2,0.4];
+        Bl(:,1)=[0.1,0.1];
+        Bl(:,2)=[0.1,0.5];
         Dis=zeros(n,n);
         tt=rand([n,1]);
         Label=ones(n,1);
@@ -436,6 +471,39 @@ switch option
                 Dis{k}(i,i)=0;%diagonals are zeros
                 for j=i+1:n
                     Dis{k}(i,j)=rand(1)<theta(i)*theta(j)*Bl(Label(i),Label(j));
+                    Dis{k}(j,i)=Dis{k}(i,j);
+                end
+            end
+        end
+        X=Dis;
+    case 29 % SBM with 2 classes
+        fileName='SBM';
+        d=4;
+        pp=[0.2,0.3,0.2,0.3];
+        Dis=cell(1,10);
+        tt=rand([n,1]);
+        Label=ones(n,1);
+        thres=0;
+        theta=unifrnd(0.1,0.5,n,1);%randi(10,n,1)/10;%betarnd(1,4,n,1); %0.2*ones(n,1);%
+        for i=1:size(pp,2)
+            thres=thres+pp(i);
+            Label=Label+(tt>thres); %determine the block of each data
+        end
+        Bl=0.1*ones(d,d);
+        %             Bl=rand(clas,clas);
+        for k=1:4
+            Bl(k,k)=0.2;
+        end
+        for k=1:10
+            Bl(1,1)=Bl(1,1)+0.01*(k-1);
+            Bl(1,2)=Bl(1,2)-0.005*(k-1);
+            Bl(2,1)=Bl(1,2);
+            Bl(2,2)=Bl(2,2)-0.005*(k-1);
+            Dis{k}=zeros(n,n);
+            for i=1:n
+                Dis{k}(i,i)=0;%diagonals are zeros
+                for j=i+1:n
+                    Dis{k}(i,j)=rand(1)<(theta(i)*theta(j)*Bl(Label(i),Label(j)));
                     Dis{k}(j,i)=Dis{k}(i,j);
                 end
             end

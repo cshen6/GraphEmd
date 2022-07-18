@@ -1,14 +1,14 @@
 function [result]=GraphClusteringEvaluate(X,Y,opts)
 
 if nargin < 3
-    opts = struct('Adjacency',1,'Laplacian',1,'Spectral',0,'NN',0,'Dist','sqeuclidean','normalize',0,'dmax',30,'Dim',0); % default parameters
+    opts = struct('Adjacency',1,'Laplacian',1,'Spectral',0,'NN',0,'Dist','sqeuclidean','normalize',0,'dmax',30,'dimGEE',0); % default parameters
 end
 if ~isfield(opts,'Adjacency'); opts.Adjacency=1; end
 if ~isfield(opts,'Laplacian'); opts.Laplacian=1; end
 if ~isfield(opts,'Spectral'); opts.Spectral=0; end
 if ~isfield(opts,'NN'); opts.NN=0; end
 if ~isfield(opts,'Dist'); opts.Dist='sqeuclidean'; end
-if ~isfield(opts,'Dim'); opts.Dim=0; end
+if ~isfield(opts,'dimGEE'); opts.dimGEE=0; end
 % if ~isfield(opts,'deg'); opts.deg=0; end
 % if ~isfield(opts,'maxIter'); opts.maxIter=20; end
 if ~isfield(opts,'normalize'); opts.normalize=0; end
@@ -18,10 +18,10 @@ n=length(Y);
 [~,~,Y]=unique(Y);
 % n=length(Y);
 K=max(Y);
-opts.Dim = min(opts.Dim,K);
+opts.Dim = min(opts.dimGEE,K);
 
 ARI_AEE=0;t_AEE=0;ARI_LEE=0;t_LEE=0;ARI_AEE_GNN=0;t_AEE_GNN=0;ARI_ASE=0;t_ASE=0;ARI_LSE=0;t_LSE=0;
-
+minSSL=0;minSS=0;
 % tic
 % opts2=opts;opts2.deg=0;
 % [ind_AEE,~]=GraphClustering(X,K,opts2);
@@ -30,7 +30,7 @@ ARI_AEE=0;t_AEE=0;ARI_LEE=0;t_LEE=0;ARI_AEE_GNN=0;t_AEE_GNN=0;ARI_ASE=0;t_ASE=0;
 if iscell(X)
     opts.Spectral=0;
 end
-if opts.Spectral==1
+% if opts.Spectral==1
     if size(X,2)<=3
         X=X-min(min(X))+1;
         n=size(Y,1);
@@ -43,12 +43,13 @@ if opts.Spectral==1
         Adj=X;
         X=adj2edge(Adj);
     end
-end
+% end
 
 if opts.Adjacency==1
     tic
-    oot=struct('Dim',opts.Dim);
-    [~,ind_AEE]=GraphEncoder(X,K,oot);
+    oot=opts;
+    oot.Laplacian=false;
+    [~,ind_AEE,~,~,minSS]=GraphEncoder(X,K,oot);
     t_AEE=toc;
     ARI_AEE=RandIndex(Y,ind_AEE);
     
@@ -77,7 +78,7 @@ end
 
 if opts.Laplacian==1
     tic
-    [~,ind_LEE]=GraphEncoder(X,K,opts);
+    [~,ind_LEE,~,~,minSSL]=GraphEncoder(X,K,opts);
     t_LEE=toc;
     ARI_LEE=RandIndex(Y,ind_LEE);
     
@@ -104,9 +105,10 @@ if opts.Laplacian==1
 end
 
 accN=[ARI_AEE,ARI_ASE,ARI_AEE_GNN,ARI_LEE,ARI_LSE];
+MDRI=[minSS,0,0,minSSL,0];
 time=[t_AEE,t_ASE,t_AEE_GNN,t_LEE,t_LSE];
 
-result = array2table([accN; time], 'RowNames', {'ARI', 'time'},'VariableNames', {'AEE','ASE','AEE_GNN','LEE','LSE'});
+result = array2table([accN; time;MDRI], 'RowNames', {'ARI', 'time','MDRI'},'VariableNames', {'AEE','ASE','AEE_GNN','LEE','LSE'});
 % result = array2table([accN; time], 'RowNames', {'ARI', 'time'},'VariableNames', {'AEE', 'AEE_Deg','AEE_NN', 'ASE','LSE'});
 
 %% Adj to Edge Function
@@ -116,9 +118,13 @@ if size(Adj,2)<=3
     return;
 end
 n=size(Adj,1);
+ind=ones(n,1);
 Edge=zeros(sum(sum(Adj>0)),3);
 s=1;
 for i=1:n
+%     if sum(Adj(i,:))+sum(Adj(:,i))==0
+%         ind(i)=0;
+%     end
     for j=1:n
         if Adj(i,j)>0
             Edge(s,1)=i;
@@ -128,4 +134,5 @@ for i=1:n
         end
     end
 end
-s=s-1;
+Edge(s,1)=n;Edge(s,2)=n;Edge(s,3)=1;
+% s=s-1;
