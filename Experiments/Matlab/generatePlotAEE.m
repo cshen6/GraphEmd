@@ -8,7 +8,8 @@ rootDir=fpath(1:findex(end));
 pre=strcat(rootDir,'');% The folder to save figures
 fs=30;
 lw=3;
-
+map2 = brewermap(128,'PiYG'); % brewmap
+colormap(gca,map2);
 opts = struct('DiagA',false,'Correlation',false,'Laplacian',false);
 if opt==-1;
 %     load('AEETime0.mat')

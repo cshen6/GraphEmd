@@ -12,27 +12,29 @@ rep=100;
 opts0 = struct('DiagA',true,'Normalize',false,'Laplacian',false,'Replicates',1);
 opts1 = struct('DiagA',true,'Normalize',true,'Laplacian',false,'Replicates',1);
 opts2 = struct('DiagA',true,'Normalize',true,'Laplacian',false,'Replicates',10);
-if opt==0;
-    n=500;K=5;
-    [Adj,Y]=simGenerate(11,n,K);
-    subplot(1,2,1)
-    ind1=[];
-    for i=1:K
-        ind1=[ind1;find(Y==i)];
-    end
-    heatmap(Adj(ind1,ind1),'GridVisible','off');
-    Ax = gca;
-    Ax.XDisplayLabels = nan(size(Ax.XDisplayData));
-    Ax.YDisplayLabels = nan(size(Ax.YDisplayData));
-    colorbar( 'off' )
-    colormap default
-    title('Dense Graph')
-%     axis('square')
-    set(gca,'FontSize',fs);
+% map2 = brewermap(128,'PiYG'); % brewmap
+% colormap(gca,map2);
+if opt==0
+%     n=500;K=5;
+%     [Adj,Y]=simGenerate(11,n,K);
+%     subplot(1,2,1)
+%     ind1=[];
+%     for i=1:K
+%         ind1=[ind1;find(Y==i)];
+%     end
+%     heatmap(Adj(ind1,ind1),'GridVisible','off');
+%     Ax = gca;
+%     Ax.XDisplayLabels = nan(size(Ax.XDisplayData));
+%     Ax.YDisplayLabels = nan(size(Ax.YDisplayData));
+%     colorbar( 'off' )
+%     colormap default
+%     title('Dense Graph')
+% %     axis('square')
+%     set(gca,'FontSize',fs);
 
-    n=500;K=5;
-    [Adj,Y]=simGenerate(21,n,K);
-    subplot(1,2,2)
+    n=1000;K=5; fs=15; 
+    [Adj,Y]=simGenerate(25,n,2);
+    subplot(1,3,1)
     ind1=[];
     for i=1:K
         ind1=[ind1;find(Y==i)];
@@ -47,28 +49,150 @@ if opt==0;
 %     axis('square')
     set(gca,'FontSize',fs);
 
+    subplot(1,3,2)
+    Z=GraphEncoder(Adj,Y,opts0);
+    hold on
+    plot(Z(Y==1,1),Z(Y==1,2),'ro');
+    plot(Z(Y==2,1),Z(Y==2,2),'bx');
+    hold off
+    title('Raw Embedding')
+%     axis('square')
+    set(gca,'FontSize',fs);
+
+    subplot(1,3,3)
+    Z=GraphEncoder(Adj,Y,opts1);
+    hold on
+    plot(Z(Y==1,1),Z(Y==1,2),'ro');
+    plot(Z(Y==2,1),Z(Y==2,2),'bx');
+    hold off
+    title('Normalized Embedding')
+%     axis('square')
+    set(gca,'FontSize',fs);
+
     currentFolder = pwd;
     F.fname=strcat(strcat(currentFolder,'\FigImprove0'));
+    F.wh=[6 2]*2;
+    F.PaperPositionMode='auto';
+    print_fig(gcf,F)
+end
+
+% Normalize Experiment
+if opt==1
+    load('Improve\ClusteringChoice25.mat')
+    subplot(1,3,1)
+    hold on
+    ln=1:lim;
+    plot(ln,accMDRI(2,:),'-.','LineWidth',lw);
+    load('Improve\ClusteringChoice20.mat')
+    plot(ln,accMDRI(3,:),'-.','LineWidth',lw);
+    load('Improve\ClusteringChoice22.mat')
+    plot(ln,accMDRI(4,:),'-.','LineWidth',lw);
+    load('Improve\ClusteringChoice21.mat')
+    plot(ln,accMDRI(5,:),'-.','LineWidth',lw);
+    xlim([1,lim])
+    xticks([1,3,lim])
+    xticklabels({'1000','3000','5000'})
+    xlabel('Sample Size')
+    ylabel('Estimation Accuracy')
+    title('Cluster Choice via MRI');
+    ylim([0,1.05])
+    legend('Sim 1','Sim 2','Sim 3','Sim 4', 'Location','SouthEast');
+    hold off
+    axis('square')
+
+    load('Improve\ClusteringChoice21.mat')
+    subplot(1,3,2)
+    bar(2:kmax,scoreMDRI(2:kmax,lim))
+    xlim([2-0.5,kmax+0.5])
+    xlabel('Cluster Size')
+    ylabel('Minimum Rank Index')
+    title('Cluster Choice via MRI for Sim 4');
+    axis('square')
+
+    subplot(1,3,3)
+    bar(2:kmax,-scoreSI(2:kmax,lim))
+    xlim([2-0.5,kmax+0.5])
+    xlabel('Cluster Size')
+    ylabel('Silhouette Score')
+    title('Cluster Choice via SS for Sim 4');
+    axis('square')
+
+    currentFolder = pwd;
+    F.fname=strcat(strcat(currentFolder,'\FigImprove1'));
+    F.wh=[6 2]*2;
+    F.PaperPositionMode='auto';
+    print_fig(gcf,F)
+end
+
+if opt==2
+    fs=15;
+    load('polblogs.mat') %k=2
+    [Z2,Y2]=GraphEncoder(Adj,2,opts2);
+%     [Z2,Y2]=GraphEncoder(Adj,Y2,opts0);
+    subplot(1,2,1)
+    plot3(Z2(Y2==1,1),Z2(Y2==1,2),zeros(sum(Y2==1),1)','o');
+    hold on
+    plot3(Z2(Y2==2,1),Z2(Y2==2,2),zeros(sum(Y2==2),1)','x');
+    % plot(Z(Y==3,1),Z(Y==3,2),'bs');
+    hold off
+    title('GEE at K=2');
+    axis('square')
+    %title('DC-SBM Graph','FontSize',fs)
+    set(gca,'FontSize',fs);
+    [Z3,Y3]=GraphEncoder(Adj,3,opts2);
+%     [Z3,Y3]=GraphEncoder(Adj,Y3,opts0);
+    subplot(1,2,2)
+    plot3(Z3(Y3==1,1),Z3(Y3==1,2),Z3(Y3==1,3),'o');
+    hold on
+    plot3(Z3(Y3==2,1),Z3(Y3==2,2),Z3(Y3==2,3),'x');
+    plot3(Z3(Y3==3,1),Z3(Y3==3,2),Z3(Y3==3,3),'*');
+    % plot(Z(Y==3,1),Z(Y==3,2),'bs');
+    title('GEE at K=3');
+    axis('square')
+    set(gca,'FontSize',fs);
+    hold off
+
+    currentFolder = pwd;
+    F.fname=strcat(strcat(currentFolder,'\FigImprove2'));
     F.wh=[4 2]*2;
     F.PaperPositionMode='auto';
     print_fig(gcf,F)
 end
 
-if opt==1
-    [Adj,Y]=simGenerate(25,5000,2);
-%     [Adj,Y]=simGenerate(27,1000,2);
-opts.Laplacian=false;
-opts.Normalize=false; 
-    [Z,Y]=GraphEncoder(Adj,2,opts);
-    Z=Z/2;
-    plot(Z(Y==1,1),Z(Y==1,2),'o');
+if opt==3    
+    load('AEETimeEdge.mat');
+    load('AEETimeEdge2.mat');
+    figure('units','normalized','Position',[0 0 1 1]);
+    x=[10^3,5*10^3,10^4,5*10^4,10^5,5*10^5,10^6,5*10^6,10^7,5*10^7,10^8,5*10^8,10^9];fs=25;lw=3;
+%     x=1000*10.^(x-1);
+    loglog(x,t1,'-','LineWidth',lw);
     hold on
-    plot(Z(Y==2,1),Z(Y==2,2),'x');
+    x=x(1:8);
+%     semilogy(x,t2,'--','LineWidth',lw);
+    loglog(x,t3,'--','LineWidth',lw);
+    loglog(x,t4,'--','LineWidth',lw);
+    loglog(x,t5,'--','LineWidth',lw);
     hold off
+    xlim([10^3,10^9])
+    xticks([10^3,10^6,10^9])
+    xticklabels({'10^3','10^6','10^9'})
+    legend('AEE','ASE (sparse SVD)','GCN (30 epoch)','Node2Vec','Location','NorthWest');
+    xlabel('Number of Edges (log scale)')
+    ylabel('Running Time (log scale)')
+    axis('square')
+    set(gca,'FontSize',fs);
+    currentFolder = pwd;
+    F.fname=strcat(strcat(currentFolder,'FigAEE6'));
+    F.wh=[5 5]*2;
+    F.PaperPositionMode='auto';
+    print_fig(gcf,F)
+    %xlim([1,ln])
+    %ylim([0.5e-3,3e4]);
+    %xticks([1000,l000000,1000000000]);
 end
 
 % Normalize Experiment
-if opt==2;
+if opt==10
     %     result1=simRunClassify(20,opts0,opts2,100,1)
     %     result2=simRunClassify(21,opts0,opts2,100,1)
     %     result3=simRunClassify(22,opts0,opts2,100,1)
@@ -79,8 +203,8 @@ if opt==2;
 % %     simRunCluster(13,opts0,opts1,1000,10);
 % %     simRunCluster(15,opts0,opts3,500,10);
     simRunCluster(20,opts0,opts1,5000,rep);
-    simRunCluster(21,opts0,opts1,5000,rep);
-    simRunCluster(22,opts0,opts1,1000,rep);
+    simRunCluster(21,opts0,opts1,3000,rep);
+    simRunCluster(22,opts0,opts1,3000,rep);
     simRunCluster(25,opts0,opts1,3000,rep);
 %     %     result3=simRunCluster(26,opts0,opts3,1000,10)
 %     simRunCluster(27,opts0,opts1,1000,rep)
@@ -88,7 +212,7 @@ if opt==2;
 end
 
 % Replicates Experiment
-if opt==3;
+if opt==11
     rep=100;
     load('lastfm.mat') %AEK K=18
     simRunClusterReal2('lastFM',K,Adj,Y,opts1,opts2,rep);
@@ -98,13 +222,13 @@ if opt==3;
     simRunClusterReal2('Cora',K,Adj,Y,opts1,opts2,rep);
     load('email.mat') %k=42
     simRunClusterReal2('email',K,Adj,Y,opts1,opts2,rep);
-    [Adj,Y]=simGenerate(20,2000,3);
+    [Adj,Y]=simGenerate(20,5000,3);
     simRunClusterReal2('20',3,Adj,Y,opts1,opts2,rep);
-    [Adj,Y]=simGenerate(21,1000,5);
+    [Adj,Y]=simGenerate(21,3000,5);
     simRunClusterReal2('21',5,Adj,Y,opts1,opts2,rep);
-    [Adj,Y]=simGenerate(22,1000,4);
+    [Adj,Y]=simGenerate(22,3000,4);
     simRunClusterReal2('22',4,Adj,Y,opts1,opts2,rep);
-    [Adj,Y]=simGenerate(25,1000,2);
+    [Adj,Y]=simGenerate(25,3000,2);
     simRunClusterReal2('25',2,Adj,Y,opts1,opts2,rep);
 
 %     [Adj,Y]=simGenerate(10,1000,3);
@@ -118,11 +242,11 @@ if opt==3;
 end
 
 % Cluster Size Simulation
-if opt==4
-    rep=100;n=3000;
-% >
-%       simRunClusterChoice(17,n,rep) %2
-%       simRunClusterChoice(18,n,rep) %4
+if opt==12
+     rep=100;
+% % >
+% %       simRunClusterChoice(17,n,rep) %2
+% %       simRunClusterChoice(18,n,rep) %4
 load('lastfm.mat') %AEK K=18
 simRunClusterReal('lastFM',2,30,Adj,Y,opts2)
 load('polblogs.mat') %k=2
@@ -131,18 +255,53 @@ load('CoraAdj.mat') %AEL / GFN K=7
 simRunClusterReal('Cora',2,20,Adj,Y,opts2)
 load('email.mat') %k=42
 simRunClusterReal('email',10,50,Adj,Y,opts2)
+load('Gene.mat') %AEK K=18
+simRunClusterReal('gene',2,20,Adj,Y,opts2)
+load('IIP.mat') %AEL / GFN K=3
+simRunClusterReal('iip',2,20,Adj,Y,opts2)
 
-simRunClusterChoice(20,5000,rep,opts2); %3
-simRunClusterChoice(21,5000,rep,opts2); %5
-simRunClusterChoice(22,5000,rep,opts2); %4
-simRunClusterChoice(25,5000,rep,opts2); %2
-
+% simRunClusterChoice(20,5000,rep,opts2); %3 
+% simRunClusterChoice(21,3000,rep,opts2); %5 
+% simRunClusterChoice(22,3000,rep,opts2); %4 
+% simRunClusterChoice(25,3000,rep,opts2); %2 
+% simRunClusterChoice(13,450,rep,opts2); %4
 %       simRunClusterChoice(26,n,rep) %2
 %       simRunClusterChoice(27,n,rep) %2
 %       simRunClusterChoice(28,n,rep) %4
 %        simRunClusterChoice(29,n,rep) %4?
 %%%     result4=simRunClusterChoice(21,2000,10)
 %real data: lastFM
+end
+
+% running time benchmark
+if opt==13
+    %%% running time
+rep=1;nn=1000;ln=11;
+opts1 = struct('Replicates',1);
+opts2 = struct('Replicates',5);
+t6=zeros(ln,rep);
+t7=zeros(ln,rep);
+for i=1:ln
+    s=10^(floor((i-1)/2))*nn*5^(mod(i+1,2));
+    n=s/100;
+    for r=1:rep
+        
+        Edge=zeros(s,3);
+        Edge(:,1)=randi(n,1,s);
+        Edge(:,2)=randi(n,1,s);
+        Edge(:,3)=1;
+        [~,~,Y]=unique(randi(10,1,n));
+        
+        tic
+        GraphEncoder(Edge,3,opts1);
+        t6(i,r)=toc;
+
+        tic
+        GraphEncoder(Edge,3,opts2);
+        t7(i,r)=toc;
+    end
+    save(strcat('AEETimeEdge2.mat'),'t6','t7');
+end
 end
 
 % % Cluster Size Experiment

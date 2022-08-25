@@ -1,14 +1,15 @@
 %% Compute the Adjacency Encoder Embedding.
 %% Running time is O(nK+s) where s is number of edges, n is number of vertices, and K is number of class.
-%% Reference: C. Shen and Q. Wang and C. E. Priebe, "Graph Encoder Embedding", 2021.
-%%            C. Shen et.al., "Graph Encoder Clustering", in preparation.
+%% Reference: C. Shen and Q. Wang and C. E. Priebe, "Graph Encoder Embedding", 2022.
+%%            C. Shen and C. E. Priebe and Y. Park, "Graph Encoder Embedding for Refined Clustering", 2023.
 %%
 %% @param X is either n*n adjacency, or s*3 edge list. Vertex size should be >10.
 %%        Adjacency matrix can be weighted or unweighted, directed or undirected. It will be converted to s*3 edgelist.
 %%        Edgelist input can be either s*2 or s*3, and complexity in O(s).
 %% @param Y is either an n*1 class label vector, or a positive integer for number of clusters, or a range of potential cluster size, i.e., [2,10].
 %%        In case of partial known labels, Y should be a n*1 vector with unknown labels set to <=0 and known labels being >0.
-%%        When there is no known label, set Y to be the number of clusters or a range of clusters.
+%%        When there is no known label, set Y to be the number of clusters or a range of clusters. 
+%%        The maximum K should not be too large relative to n (ideally n/max(K)>15).
 %% @param opts specifies options:
 %%        DiagA = true means adding 1 to all diagonal entries (i.e., add self-loop to edgelist), which can help sparse graphs. However, if graph weights are very close to 0, this option can introduce significant within-group bias.
 %%        Normalize specifies whether to normalize each embedding by L2 norm;
@@ -19,18 +20,18 @@
 %%
 %% @return The n*k Encoder Embedding Z; the n*k Encoder Transformation: W; the n*1 label vector: Y;
 %% @return The n*1 boolean vector for known label: indT (only for classification);
-%% @return The minimum rank index (MRI): ranges in [0,1] and the smaller the better (only for clustering);
+%% @return The GEE Clustering Score (called Minimal Rank Index in paper): ranges in [0,1] and the smaller the better (only for clustering);
 %%
 %% @export
 %%
 
-function [Z,Y,W,indT,MRI]=GraphEncoder(X,Y,opts)
+function [Z,Y,W,indT,GCS]=GraphEncoder(X,Y,opts)
 warning ('off','all');
 if nargin<2
     Y=2:5;
 end
 if nargin<3
-    opts = struct('DiagA',true,'Normalize',true,'Laplacian',false,'Learner',1,'LearnIter',0,'MaxIter',30,'MaxIterK',3,'Replicates',1,'Attributes',0,'Directed',1,'Dim',0,'Weight',1,'Sparse',false);
+    opts = struct('DiagA',true,'Normalize',true,'Laplacian',false,'Learner',1,'LearnIter',0,'MaxIter',30,'MaxIterK',3,'Replicates',3,'Attributes',0,'Directed',1,'Dim',0,'Weight',1,'Sparse',false);
 end
 if ~isfield(opts,'DiagA'); opts.DiagA=true; end
 if ~isfield(opts,'Normalize'); opts.Normalize=true; end
@@ -51,6 +52,7 @@ opts.activation='poslin';
 U=opts.Attributes;
 % opts.Directed=1;
 di=opts.Directed;
+GCS=1;
 % if ~isfield(opts,'distance'); opts.distance='Normalize'; end
 % opts.DiagA=false;
 % opts.Normalize=false;
@@ -171,7 +173,7 @@ if length(Y)==n
     else
         %
         %         indNew=indT;
-        MRI=0;Y1=Y;
+        GCS=0;Y1=Y;
         for rep=1:opts.Replicates
             tmp=randi([1,K],[sum(~indT),1]);
             Y1(~indT)=tmp;
@@ -218,8 +220,8 @@ if length(Y)==n
                 end
             end
             minP=mean(prob1)-3*std(prob1);
-            if minP>MRI
-                MRI=minP;Y=Y1;
+            if minP>GCS
+                GCS=minP;Y=Y1;
             end
         end
     end
@@ -227,21 +229,22 @@ else
     %% otherwise do clustering
     indT=zeros(n,1);
     K=Y;
-    if n/max(K)<30
-        disp('Too many clusters at maximum. Result may bias towards large K when n/Kmax <30.')
+    if n/max(K)<10
+        disp('Too many clusters at maximum range. Result may bias towards large K when n/max(K) <10.')
     end
     %% when a given cluster size is specified
     if length(K)==1
-        [Z,Y,W,MRI]=GraphEncoderCluster(X,K,n,num,attr,opts);
+        [Z,Y,W,GCS]=GraphEncoderCluster(X,K,n,num,attr,opts);
     else
         %% when a range of cluster size is specified
+        K=sort(K); % ensure increasing K
         if length(K)<n/2 && max(K)<max(n/2,10)
-            minRI=1;Z=0;W=0;MRI=zeros(length(K),1);
+            tmpGCS=1;Z=0;W=0;GCS=zeros(length(K),1);
             for r=1:length(K)
                 [Zt,Yt,Wt,tmp]=GraphEncoderCluster(X,K(r),n,num,attr,opts);
-                MRI(r)=tmp;
-                if tmp<=minRI
-                    minRI=tmp;Y=Yt;Z=Zt;W=Wt;
+                GCS(r)=tmp;
+                if tmp<=tmpGCS
+                    tmpGCS=tmp;Y=Yt;Z=Zt;W=Wt;
                 end
             end
         end
@@ -249,14 +252,14 @@ else
 end
 
 %% Clustering Function
-function [Z,Y,W,MRI]=GraphEncoderCluster(X,K,n,num,attr,opts)
+function [Z,Y,W,GCS]=GraphEncoderCluster(X,K,n,num,attr,opts)
 
 % if nargin<4
 %     opts = struct('Normalize',true,'MaxIter',50,'MaxIterK',5,'Replicates',3,'Directed',1,'Dim',0);
 % end
 elbN=2;
 di=opts.Directed;
-MRI=1;
+GCS=1;
 if opts.Sparse==false
     Zt=zeros(n,K*num);
 else
@@ -270,6 +273,7 @@ if opts.Dim>0
     dim=min(opts.Dim,dim);
 end
 
+ens=0;
 for rep=1:opts.Replicates
     Y2=randi([1,K],[n,1]);
     for r=1:opts.MaxIter
@@ -291,31 +295,41 @@ for rep=1:opts.Replicates
         if attr==true
             Zt=[Zt,U];
         end
-        [Y3,~,~,D] = kmeans(Zt, K,'MaxIter',opts.MaxIterK,'Replicates',1,'Start','plus');
-        %         [Y3,~,tmp,D] = kmeans(Zt*WB, K,'MaxIter',opts.MaxIterK,'Replicates',1,'Start','plus');
+        Y3 = kmeans(Zt, K,'MaxIter',opts.MaxIterK,'Replicates',1,'Start','plus');
+        %[Y3] = kmeans(Zt*WB, K,'MaxIter',opts.MaxIterK,'Replicates',1,'Start','plus');
         %gmfit = fitgmdist(Z,k, 'CovarianceType','diagonal');%'RegularizationValue',0.00001); % Fitted GMM
-        %Y = cluster(gmfit,Z); % Cluster index
+        %Y3 = cluster(gmfit,Z); % Cluster index
         if RandIndex(Y2,Y3)==1
             break;
         else
             Y2=Y3;
         end
     end
-    % Compute MRI for each replicate
-    [~,tmpIdx]=min(D,[],2);
-    tmpRI=mean(tmpIdx~=Y3);
-%     tmpCount=accumarray(Y3,1);
-%     [tmpDist,tmpIdx]=mink(sum(D.^0.5),2,2);
-%     tmpDist=tmpDist(:,2);tmpIdx=tmpIdx(:,2);
-%     tmp=mean(tmp(:,1)./tmp(:,2))
-%   tmp=tmp./tmpCount./tmpDist'.*(tmpCount(tmpIdx)).*tmpCount/n;
-% %     tmp=tmp./tmpCount./(sum(D.^0.5)'-tmp).*(n-tmpCount).*tmpCount/n;
-% %2.    tmp=tmp.*(tmpCount/n);
-%     tmp=sum(tmp);
-%1.    tmp=mean(tmp)+2*std(tmp);
-    if tmpRI<=MRI
-        Z=Zt;W=Wt;MRI=tmpRI;Y=Y3;
+    % Re-Embed using final label Y3
+    for i=1:num
+        [tmpZ,Wt{i}]=GraphEncoderEmbed(X{i},Y3,n,opts);
+        Zt(:,(i-1)*K*di+1:i*K*di)=tmpZ*opts.Weight(i);
     end
+    % Compute GCS for each replicate
+    tmpGCS=calculateGCS(Zt,Y3,n,K);
+    if tmpGCS==GCS
+        Z=Z+Zt;
+        ens=ens+1;
+    end
+    if tmpGCS<GCS
+        Z=Zt;W=Wt;GCS=tmpGCS;Y=Y3;ens=1;
+    end
+end
+% If more than one optimal solution, used the ensemble embedding for another
+% k-means clustering
+if ens>1
+    Y = kmeans(Z, K,'MaxIter',opts.MaxIterK,'Replicates',1,'Start','plus');
+    % Final embed
+    for i=1:num
+        [tmpZ,W{i}]=GraphEncoderEmbed(X{i},Y3,n,opts);
+        Z(:,(i-1)*K*di+1:i*K*di)=tmpZ*opts.Weight(i);
+    end
+    GCS=calculateGCS(Z,Y,n,K);
 end
 
 %% Embedding Function
@@ -401,6 +415,28 @@ end
 %     tmp=(indS(:,j)==1);
 %     B(j,:)=mean(Z(tmp,:));
 % end
+
+%% Compute the GEE clustering score (the minimal rank index)
+function tmpGCS=calculateGCS(Zt,Y3,n,K)
+D=zeros(n,K);
+for i=1:K
+    D(1:n,i)=sum((Zt-repmat(mean(Zt(Y3==i,:),1),n,1)).^2,2);
+end
+[~,tmpIdx]=min(D,[],2);
+tmpGCS=mean(tmpIdx~=Y3);
+% tmp=zeros(K,1);
+% for i=1:K
+%     tmp(i)=sum(D(Y3==i,i));
+% end
+%     tmpCount=accumarray(Y3,1);
+%  %   [tmpDist,tmpIdx]=mink(sum(D),2,2);
+% %     tmpDist=tmpDist(:,2);tmpIdx=tmpIdx(:,2);
+% %     tmp=mean(tmp(:,1)./tmp(:,2))
+%   %%tmp=tmp./tmpCount./tmpDist.*(tmpCount(tmpIdx)).*tmpCount/n;
+%     tmp=tmp./tmpCount./(sum(D)'-tmp).*(n-tmpCount).*tmpCount/n;
+% % %2.    tmp=tmp.*(tmpCount/n);
+%     %tmpRI=sum(sum(tmp));
+%     tmpGCS=mean(tmp)+2*std(tmp);
 
 %% Adj to Edge Function
 function [Edge,s,n]=adj2edge(Adj)

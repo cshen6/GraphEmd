@@ -1,13 +1,13 @@
 %% A benchmark graph encoder clustering via Siluhouete score
 %%
 
-function [Z,Y,W,indT,meanSI]=GraphEncoderSil(X,Y,opts)
+function [Z,Y,W,indT,MRI]=GraphEncoderSil(X,Y,opts)
 warning ('off','all');
 if nargin<2
     Y=2:5;
 end
 if nargin<3
-    opts = struct('DiagA',true,'Normalize',true,'Laplacian',false,'Learner',1,'LearnIter',0,'MaxIter',30,'MaxIterK',3,'Replicates',1,'Attributes',0,'Directed',1,'Dim',0,'Weight',1,'Sparse',false);
+    opts = struct('DiagA',true,'Normalize',true,'Laplacian',false,'Learner',1,'LearnIter',0,'MaxIter',30,'MaxIterK',3,'Replicates',3,'Attributes',0,'Directed',1,'Dim',0,'Weight',1,'Sparse',false);
 end
 if ~isfield(opts,'DiagA'); opts.DiagA=true; end
 if ~isfield(opts,'Normalize'); opts.Normalize=true; end
@@ -28,6 +28,7 @@ opts.activation='poslin';
 U=opts.Attributes;
 % opts.Directed=1;
 di=opts.Directed;
+MRI=1;
 % if ~isfield(opts,'distance'); opts.distance='Normalize'; end
 % opts.DiagA=false;
 % opts.Normalize=false;
@@ -148,7 +149,7 @@ if length(Y)==n
     else
         %
         %         indNew=indT;
-        meanSI=0;Y1=Y;
+        MRI=0;Y1=Y;
         for rep=1:opts.Replicates
             tmp=randi([1,K],[sum(~indT),1]);
             Y1(~indT)=tmp;
@@ -195,8 +196,8 @@ if length(Y)==n
                 end
             end
             minP=mean(prob1)-3*std(prob1);
-            if minP>meanSI
-                meanSI=minP;Y=Y1;
+            if minP>MRI
+                MRI=minP;Y=Y1;
             end
         end
     end
@@ -204,37 +205,37 @@ else
     %% otherwise do clustering
     indT=zeros(n,1);
     K=Y;
-    if n/max(K)<30
-        disp('Too many clusters at maximum. Result may bias towards large K. Please make sure n/Kmax >30.')
+    if n/max(K)<15
+        disp('Too many clusters at maximum range. Result may bias towards large K when n/Kmax <15.')
     end
     %% when a given cluster size is specified
     if length(K)==1
-        [Z,Y,W,meanSI]=GraphEncoderCluster(X,K,n,num,attr,opts);
+        [Z,Y,W,MRI]=GraphEncoderCluster(X,K,n,num,attr,opts);
     else
         %% when a range of cluster size is specified
+        K=sort(K); % ensure increasing K
         if length(K)<n/2 && max(K)<max(n/2,10)
-            minSS=1;Z=0;W=0;meanSI=zeros(length(K),1);
+            minRI=1;Z=0;W=0;MRI=zeros(length(K),1);
             for r=1:length(K)
                 [Zt,Yt,Wt,tmp]=GraphEncoderCluster(X,K(r),n,num,attr,opts);
-                meanSI(r)=tmp;
-                if tmp<=minSS
-                    minSS=tmp;Y=Yt;Z=Zt;W=Wt;
+                MRI(r)=tmp;
+                if tmp<=minRI
+                    minRI=tmp;Y=Yt;Z=Zt;W=Wt;
                 end
             end
         end
     end
-    meanSI=-meanSI;
 end
 
 %% Clustering Function
-function [Z,Y,W,minSS]=GraphEncoderCluster(X,K,n,num,attr,opts)
+function [Z,Y,W,MRI]=GraphEncoderCluster(X,K,n,num,attr,opts)
 
 % if nargin<4
 %     opts = struct('Normalize',true,'MaxIter',50,'MaxIterK',5,'Replicates',3,'Directed',1,'Dim',0);
 % end
 elbN=2;
 di=opts.Directed;
-minSS=1;
+MRI=1;
 if opts.Sparse==false
     Zt=zeros(n,K*num);
 else
@@ -269,7 +270,7 @@ for rep=1:opts.Replicates
         if attr==true
             Zt=[Zt,U];
         end
-        [Y3,~,tmp,D] = kmeans(Zt, K,'MaxIter',opts.MaxIterK,'Replicates',1,'Start','plus');
+        [Y3,~,~,D] = kmeans(Zt, K,'MaxIter',opts.MaxIterK,'Replicates',1,'Start','plus');
         %         [Y3,~,tmp,D] = kmeans(Zt*WB, K,'MaxIter',opts.MaxIterK,'Replicates',1,'Start','plus');
         %gmfit = fitgmdist(Z,k, 'CovarianceType','diagonal');%'RegularizationValue',0.00001); % Fitted GMM
         %Y = cluster(gmfit,Z); % Cluster index
@@ -279,19 +280,19 @@ for rep=1:opts.Replicates
             Y2=Y3;
         end
     end
-%     tmpCount=accumarray(Y3,1);
-%     [tmpDist,tmpIdx]=mink(sum(D.^0.5),2,2);
-%     tmpDist=tmpDist(:,2);tmpIdx=tmpIdx(:,2);
+    % Re-Embed using final label Y3
+    for i=1:num
+        [tmpZ,Wt{i}]=GraphEncoderEmbed(X{i},Y3,n,opts);
+        Zt(:,(i-1)*K*di+1:i*K*di)=tmpZ*opts.Weight(i);
+    end
+    % Compute MRI for each replicate
     tmp = evalclusters(Zt,"kmeans","silhouette","KList",K);
-    tmp= -tmp.CriterionValues;
-%     tmp=mean(tmp(:,1)./tmp(:,2))
-%   tmp=tmp./tmpCount./tmpDist'.*(tmpCount(tmpIdx)).*tmpCount/n;
-% %     tmp=tmp./tmpCount./(sum(D.^0.5)'-tmp).*(n-tmpCount).*tmpCount/n;
-% %2.    tmp=tmp.*(tmpCount/n);
-%     tmp=sum(tmp);
-%1.    tmp=mean(tmp)+2*std(tmp);
-    if tmp<=minSS
-        Z=Zt;W=Wt;minSS=tmp;Y=Y3;
+    %tmp = evalclusters(Zt,"kmeans",'DaviesBouldin',"KList",K);
+    %tmp = evalclusters(Zt,"kmeans","CalinskiHarabasz","KList",K);
+%   tmp = evalclusters(Zt,"kmeans","gap","KList",K);
+    tmpRI= -tmp.CriterionValues;
+    if tmpRI<=MRI
+        Z=Zt;W=Wt;MRI=tmpRI;Y=Y3;
     end
 end
 
@@ -378,6 +379,24 @@ end
 %     tmp=(indS(:,j)==1);
 %     B(j,:)=mean(Z(tmp,:));
 % end
+
+%% Compute MRI statistic
+function tmpRI=calculateMRI(Zt,Y3,n,K)
+D=zeros(n,K);
+for i=1:K
+    D(1:n,i)=sum((Zt-repmat(mean(Zt(Y3==i,:),1),n,1)).^2,2);
+end
+[~,tmpIdx]=min(D,[],2);
+tmpRI=mean(tmpIdx~=Y3);
+%     tmpCount=accumarray(Y3,1);
+%     [tmpDist,tmpIdx]=mink(sum(D.^0.5),2,2);
+%     tmpDist=tmpDist(:,2);tmpIdx=tmpIdx(:,2);
+%     tmp=mean(tmp(:,1)./tmp(:,2))
+%   tmp=tmp./tmpCount./tmpDist'.*(tmpCount(tmpIdx)).*tmpCount/n;
+% %     tmp=tmp./tmpCount./(sum(D.^0.5)'-tmp).*(n-tmpCount).*tmpCount/n;
+% %2.    tmp=tmp.*(tmpCount/n);
+%     tmp=sum(tmp);
+%1.    tmp=mean(tmp)+2*std(tmp);
 
 %% Adj to Edge Function
 function [Edge,s,n]=adj2edge(Adj)
