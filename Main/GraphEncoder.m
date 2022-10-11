@@ -1,5 +1,5 @@
 %% Compute the Adjacency Encoder Embedding.
-%% Running time is O(s) where s is number of edges.
+%% Running time is O(nK+s) where s is number of edges, n is number of vertices, and K is number of class.
 %% Reference: C. Shen and Q. Wang and C. E. Priebe, "Graph Encoder Embedding", 2021.
 %%            C. Shen et.al., "Graph Encoder Clustering", in preparation.
 %%
@@ -30,24 +30,28 @@ if nargin<2
     Y=2:5;
 end
 if nargin<3
-    opts = struct('DiagA',true,'Correlation',true,'Laplacian',false,'Learner',1,'LearnIter',0,'MaxIter',50,'MaxIterK',5,'Replicates',3,'Attributes',0);
+    opts = struct('DiagA',true,'Correlation',true,'Laplacian',false,'Learner',1,'LearnIter',0,'MaxIter',20,'MaxIterK',2,'Replicates',1,'Attributes',0,'Directed',1,'Dim',0);
 end
 if ~isfield(opts,'DiagA'); opts.DiagA=true; end
 if ~isfield(opts,'Correlation'); opts.Correlation=true; end
 if ~isfield(opts,'Laplacian'); opts.Laplacian=false; end
 if ~isfield(opts,'Learner'); opts.Learner=1; end
 if ~isfield(opts,'LearnIter'); opts.LearnIter=0; end
-if ~isfield(opts,'MaxIter'); opts.MaxIter=50; end
-if ~isfield(opts,'MaxIterK'); opts.MaxIterK=5; end
-if ~isfield(opts,'Replicates'); opts.Replicates=3; end
+if ~isfield(opts,'MaxIter'); opts.MaxIter=20; end
+if ~isfield(opts,'MaxIterK'); opts.MaxIterK=2; end
+if ~isfield(opts,'Replicates'); opts.Replicates=1; end
 if ~isfield(opts,'Attributes'); opts.Attributes=0; end
+if ~isfield(opts,'Directed'); opts.Directed=1; end
+if ~isfield(opts,'Dim'); opts.Dim=0; end
 opts.neuron=20;
 opts.activation='poslin';
 U=opts.Attributes;
+% opts.Directed=1;
+di=opts.Directed;
 % if ~isfield(opts,'distance'); opts.distance='correlation'; end
-opts.DiagA=true;
-opts.Correlation=true;
-opts.Laplacian=false;
+% opts.DiagA=true;
+% opts.Correlation=false;
+% opts.Laplacian=false;
 
 %% pre-precess input to s*3 then diagonal augment
 if iscell(X)
@@ -56,14 +60,18 @@ else
     X={X};
     num=1;
 end
+
 for i=1:num
     [s,t]=size(X{i});
     if s==t % convert adjacency matrix to edgelist
         [X{i},s,n]=adj2edge(X{i});
-    end
-    if t==2 % enlarge the edgelist to s*3
-        X{i}=[X{i},ones(s,1)];
-%         t=3;
+    else
+        if t==2 % enlarge the edgelist to s*3
+            X{i}=[X{i},ones(s,1)];
+            %         n=max(max(X{i}));
+            %         t=3;
+        end
+        n=max(max(X{i}));
     end
 %     n=max(max(X{1}(:,1:2)));
     if opts.DiagA==true
@@ -102,11 +110,16 @@ if length(Y)==n
     Y(indT)=YTrn;
     YTrn2=onehotencode(categorical(YTrn),2)';
     K=max(Y);
-    Z=zeros(n,K*num);
+    dim=K;
+    if opts.Dim>0
+       dim=min(opts.Dim,dim);
+    end
+
+    Z=zeros(n,di*dim*num);
     W=cell(1,num);
     if opts.Learner==2
         % initialize NN
-        netGNN = patternnet(max(opts.neuron,K),'trainscg','crossentropy'); % number of neurons, Scaled Conjugate Gradient, cross entropy
+        netGNN = patternnet(max(opts.neuron,dim),'trainscg','crossentropy'); % number of neurons, Scaled Conjugate Gradient, cross entropy
 %         netGNN.layers{1}.transferFcn = opts.activation;
         netGNN.trainParam.showWindow = false;
         netGNN.trainParam.epochs=100;
@@ -116,19 +129,22 @@ if length(Y)==n
     end
     if opts.LearnIter<1
         for i=1:num
-            [Z(:,(i-1)*K+1:i*K),W{i}]=GraphEncoderEmbed(X{i},Y,n,opts);
+            [Z(:,(i-1)*dim*di+1:i*dim*di),W{i}]=GraphEncoderEmbed(X{i},Y,n,opts);
         end
         if attr==true
             Z=[Z,U];
         end
-        if opts.Learner==1
-            mdl=fitcdiscr(Z(indT,:),YTrn,'discrimType','pseudoLinear');
-            Y(~indT)=predict(mdl,Z(~indT,:));
-        else
-            mdl = train(netGNN,Z(indT,:)',YTrn2);
-            prob=mdl(Z(~indT,:)');
-            Y(~indT)=vec2ind(prob)';
-%             [~,Y(~indT)] = max(prob,[],1); % class-wise probability for tsting data
+        if sum(indT)<n
+            if opts.Learner==1
+                mdl=fitcdiscr(Z(indT,:),YTrn,'DiscrimType','pseudoLinear');
+%                mdl=fitcknn(Z(indT,:),YTrn,'Distance','euclidean','NumNeighbors',5);
+                Y(~indT)=predict(mdl,Z(~indT,:));
+            else
+                mdl = train(netGNN,Z(indT,:)',YTrn2);
+                prob=mdl(Z(~indT,:)');
+                Y(~indT)=vec2ind(prob)';
+                %             [~,Y(~indT)] = max(prob,[],1); % class-wise probability for tsting data
+            end
         end
     else
         %
@@ -142,7 +158,7 @@ if length(Y)==n
             for r=1:opts.LearnIter
                 %             i
                 for i=1:num
-                    [Z(:,(i-1)*K+1:i*K),W{i}]=GraphEncoderEmbed(X{i},Y1,n,opts); % discrete label version
+                    [Z(:,(i-1)*K*di+1:i*K*di),W{i}]=GraphEncoderEmbed(X{i},Y1,n,opts); % discrete label version
                     %[Z(:,(i-1)*K+1:i*K),W{i}]=GraphEncoderEmbed(X{i},Y2,n,opts); % probability version
                 end
 %                 [Z,W]=GraphEncoderEmbed(X,Y2,n,opts);
@@ -150,7 +166,7 @@ if length(Y)==n
                     Z=[Z,U];
                 end
                 if opts.Learner==1
-                    mdl=fitcdiscr(Z(indT,:),YTrn,'discrimType','pseudoLinear');
+                    mdl=fitcdiscr(Z(indT,:),YTrn,'DiscrimType','pseudoLinear');
                     [class,prob] = predict(mdl,Z(~indT,:));
                     prob1=max(prob,[],2);
                 else
@@ -202,17 +218,23 @@ end
 function [Z,Y,W,minSS]=GraphEncoderCluster(X,K,n,num,attr,opts)
 
 if nargin<4
-    opts = struct('Correlation',true,'MaxIter',50,'MaxIterK',5,'Replicates',3);
+    opts = struct('Correlation',true,'MaxIter',50,'MaxIterK',5,'Replicates',3,'Directed',1,'Dim',0);
 end
+di=opts.Directed;
 minSS=100;
 Z=zeros(n,K*num);
 Wt=cell(1,num);
-W=cell(1,num);              
+W=cell(1,num); 
+dim=K;
+if opts.Dim>0
+    dim=min(opts.Dim,dim);
+end
+
 for rep=1:opts.Replicates
     Y2=randi([1,K],[n,1]);
     for r=1:opts.MaxIter
         for i=1:num
-            [Zt(:,(i-1)*K+1:i*K),Wt{i}]=GraphEncoderEmbed(X{i},Y2,n,opts);
+            [Zt(:,(i-1)*dim*di+1:i*dim*di),Wt{i}]=GraphEncoderEmbed(X{i},Y2,n,opts);
         end
         if attr==true
             Zt=[Zt,U];
@@ -238,25 +260,26 @@ end
 %% Embedding Function
 function [Z,W]=GraphEncoderEmbed(X,Y,n,opts)
 if nargin<4
-    opts = struct('Correlation',true);
+    opts = struct('Correlation',true,'Directed',1,'Dim',1000);
 end
 prob=false;
+di=opts.Directed;
 
 s=size(X,1);
 if size(Y,2)>1
-    k=size(Y,2);
+    K=size(Y,2);
     prob=true;
 else
-    k=max(Y);
+    K=max(Y);
 end
-nk=zeros(1,k);
-W=zeros(n,k);
+nk=zeros(1,K);
+W=zeros(n,K);
 % indS=zeros(n,k);
 if prob==true
     nk=sum(Y);
     W=Y./repmat(nk,n,1);
 else
-    for i=1:k
+    for i=1:K
         ind=(Y==i);
         nk(i)=sum(ind);
         W(ind,i)=1/nk(i);
@@ -266,16 +289,17 @@ end
 % num=size(X,3);
 
 % Edge List Version in O(s)
-Z=zeros(n,k);
+Z=zeros(n,K*di);
 for i=1:s
     a=X(i,1);
     b=X(i,2);
     e=X(i,3);
     if prob==true
-        for j=1:k
+        for j=1:K
             Z(a,j)=Z(a,j)+W(b,j)*e;
             if a~=b
-               Z(b,j)=Z(b,j)+W(a,j)*e;
+               tmp=j+(di>1)*K;
+               Z(b,tmp)=Z(b,tmp)+W(a,j)*e;
             end
         end
     else
@@ -285,15 +309,31 @@ for i=1:s
             Z(a,d)=Z(a,d)+W(b,d)*e;
         end
         if c>0 && a~=b
-            Z(b,c)=Z(b,c)+W(a,c)*e;
+            tmp=c+int32(di>1)*K;
+            Z(b,tmp)=Z(b,tmp)+W(a,c)*e;
         end
     end
 end
+if di==3
+    Z(:,2*K+1:3*K)=Z(:,K+1:2*K)+Z(:,1:K);
+end
 
 if opts.Correlation==true
-    Z = normalize(Z,2,'norm');
+    for i=1:di
+       Z(:,(i-1)*K+1:i*K) = normalize(Z(:,(i-1)*K+1:i*K),2,'norm');
+    end
     Z(isnan(Z))=0;
 end
+
+%% Simple PCA
+if opts.Dim>0 && opts.Dim<K
+    [~,Z]=pca(Z,'NumComponents',opts.Dim);
+%     tmp
+%     Z=Z(:,1:opts.Dim);
+end
+% [~,Z]=pca(Z);
+% Z=sum(Z,2);
+% W=W(:,1:min(opts.Dim,K));
 
 % % Z=reshape(Z,n,size(Z,2)*num);
 % B=zeros(k,k);

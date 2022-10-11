@@ -1,13 +1,14 @@
 function [result]=GraphClusteringEvaluate(X,Y,opts)
 
 if nargin < 3
-    opts = struct('Adjacency',1,'Laplacian',1,'Spectral',0,'NN',0,'Dist','sqeuclidean','normalize',0,'dmax',30); % default parameters
+    opts = struct('Adjacency',1,'Laplacian',1,'Spectral',0,'NN',0,'Dist','sqeuclidean','normalize',0,'dmax',30,'Dim',0); % default parameters
 end
 if ~isfield(opts,'Adjacency'); opts.Adjacency=1; end
 if ~isfield(opts,'Laplacian'); opts.Laplacian=1; end
-if ~isfield(opts,'Spectral'); opts.Spectral=1; end
+if ~isfield(opts,'Spectral'); opts.Spectral=0; end
 if ~isfield(opts,'NN'); opts.NN=0; end
 if ~isfield(opts,'Dist'); opts.Dist='sqeuclidean'; end
+if ~isfield(opts,'Dim'); opts.Dim=0; end
 % if ~isfield(opts,'deg'); opts.deg=0; end
 % if ~isfield(opts,'maxIter'); opts.maxIter=20; end
 if ~isfield(opts,'normalize'); opts.normalize=0; end
@@ -17,6 +18,7 @@ n=length(Y);
 [~,~,Y]=unique(Y);
 % n=length(Y);
 K=max(Y);
+opts.Dim = min(opts.Dim,K);
 
 ARI_AEE=0;t_AEE=0;ARI_LEE=0;t_LEE=0;ARI_AEE_GNN=0;t_AEE_GNN=0;ARI_ASE=0;t_ASE=0;ARI_LSE=0;t_LSE=0;
 
@@ -45,7 +47,8 @@ end
 
 if opts.Adjacency==1
     tic
-    [~,ind_AEE]=GraphEncoder(X,K);
+    oot=struct('Dim',opts.Dim);
+    [~,ind_AEE]=GraphEncoder(X,K,oot);
     t_AEE=toc;
     ARI_AEE=RandIndex(Y,ind_AEE);
     
@@ -105,3 +108,24 @@ time=[t_AEE,t_ASE,t_AEE_GNN,t_LEE,t_LSE];
 
 result = array2table([accN; time], 'RowNames', {'ARI', 'time'},'VariableNames', {'AEE','ASE','AEE_GNN','LEE','LSE'});
 % result = array2table([accN; time], 'RowNames', {'ARI', 'time'},'VariableNames', {'AEE', 'AEE_Deg','AEE_NN', 'ASE','LSE'});
+
+%% Adj to Edge Function
+function [Edge,s,n]=adj2edge(Adj)
+if size(Adj,2)<=3
+    Edge=Adj;
+    return;
+end
+n=size(Adj,1);
+Edge=zeros(sum(sum(Adj>0)),3);
+s=1;
+for i=1:n
+    for j=1:n
+        if Adj(i,j)>0
+            Edge(s,1)=i;
+            Edge(s,2)=j;
+            Edge(s,3)=Adj(i,j);
+            s=s+1;
+        end
+    end
+end
+s=s-1;
