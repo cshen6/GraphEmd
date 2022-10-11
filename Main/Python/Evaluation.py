@@ -1,6 +1,6 @@
 from sklearn import metrics
 from sklearn.metrics import adjusted_rand_score
-from tensorflow.keras.utils import to_categorical
+# from tensorflow.keras.utils import to_categorical
 import numpy as np
 from utils.create_test_case import Case
 from Main.Python.DataPreprocess import graph_encoder_embed
@@ -122,7 +122,20 @@ if __name__ == '__main__':
 
     # print("Loading Orkut graph - 1.8GB")
     #
-    # G_edgelist = np.loadtxt("../../../../Downloads/orkut-svs.txt", dtype=np.int32)
+    # G_edgelist = np.loadtxt("../../../Thesis-Graph-Data/orkut-svs.txt", dtype=np.int32)
+    #
+    # # Add column of ones - weights
+    # G_edgelist = np.hstack((G_edgelist, np.ones((G_edgelist.shape[0], 1))))
+    #
+    # n = int(np.max(G_edgelist[:, 1]) + 1)  # Nr. vertices
+    #
+    # case = Case(n)
+    # case_10 = case.case_10() # This is O(n^2)
+    # case_10.summary()
+    #
+    # print("Loading Orkut-User2Group graph - 5.1GB")
+
+    # G_edgelist = np.loadtxt("../../../Downloads/Thesis-Graph-Data/aff-orkut-user2groups.edges", comments="%", dtype=np.int32)
     #
     # # Add column of ones - weights
     # G_edgelist = np.hstack((G_edgelist, np.ones((G_edgelist.shape[0], 1))))
@@ -133,24 +146,12 @@ if __name__ == '__main__':
     # case_10 = case.case_10() # This is O(n^2)
     # case_10.summary()
 
-    print("Loading Orkut-User2Group graph - 5.1GB")
-
-    G_edgelist = np.loadtxt("../../../Downloads/Thesis-Graph-Data/aff-orkut-user2groups.edges", comments="%", dtype=np.int32)
-
-    # Add column of ones - weights
-    G_edgelist = np.hstack((G_edgelist, np.ones((G_edgelist.shape[0], 1))))
-
-    n = int(np.max(G_edgelist[:, 1]) + 1)  # Nr. vertices
-
-    case = Case(n)
-    case_10 = case.case_10() # This is O(n^2)
-    case_10.summary()
-
     # Y = np.reshape(np.loadtxt("../../../../Downloads/orkut-Y50-sparse.txt", dtype=np.int16), (3072441, 1))
 
     # print("Loading Twitch graph")
     #
-    # G_edgelist = np.loadtxt("../../../../Downloads/large_twitch_edges.txt", delimiter=" ", dtype=np.int64)
+    # # G_edgelist = np.loadtxt("../../../Thesis-Graph-Data/twitch-SNAP.csv", delimiter=" ", dtype=np.int32)
+    # G_edgelist = np.loadtxt("../../../Thesis-Graph-Data/twitch-SNAP-bidir-manually", delimiter=" ", dtype=np.int32)
     #
     # G_edgelist = G_edgelist[G_edgelist[:, 0].argsort()] # Sort by first column
     #
@@ -159,7 +160,21 @@ if __name__ == '__main__':
     #
     # n = int(np.max(G_edgelist[:,1]) + 1) # Nr. vertices
     #
-    # Y = np.reshape(np.loadtxt("../../../../Downloads/twitchFullY-20-removed.txt", dtype=np.int32), (168114, 1))
+    # Y = np.reshape(np.loadtxt("../../../Thesis-Graph-Data/twitch-Y20-sparse.csv", dtype=np.int32), (168114, 1))
+
+
+    print("Loading Twitch weighted graph")
+
+    G_edgelist = np.loadtxt("../../../Thesis-Graph-Data/twitch-SNAP-weighted.csv", delimiter=" ", dtype=np.int32)
+
+    G_edgelist = G_edgelist[G_edgelist[:, 0].argsort()] # Sort by first column
+
+    # Add column of ones - weights
+    # G_edgelist = np.hstack((G_edgelist, np.ones((G_edgelist.shape[0], 1))))
+
+    n = int(np.max(G_edgelist[:,1]) + 1) # Nr. vertices
+
+    Y = np.reshape(np.loadtxt("../../../Thesis-Graph-Data/twitch-Y20-sparse.csv", dtype=np.int32), (168114, 1))
 
 
     # print("Loading Pokec graph - 400MB")
@@ -187,5 +202,5 @@ if __name__ == '__main__':
 
     Z, W = graph_encoder_embed(G_edgelist, Y, n, Correlation = False)
     # print(Z)
-    np.savetxt("liveJournalZResults.txt", Z, fmt="%f")
+    np.savetxt("Z_CorrectResults.csv", Z, fmt="%f")
     # print(W)

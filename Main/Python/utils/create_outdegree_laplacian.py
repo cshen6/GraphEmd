@@ -4,7 +4,7 @@
 
 import numpy as np
 
-G_edgelist = G_edgelist = np.loadtxt("../../../Thesis-Graph-Data/twitch-SNAP-weighted.csv", delimiter=" ", dtype=np.int32)
+G_edgelist = G_edgelist = np.loadtxt("../../../../Thesis-Graph-Data/twitch-SNAP-weighted.csv", delimiter=" ", dtype=np.int32)
 
 # First column of the edgelist = list of source vertices (not unique)
 all_source_vertices = G_edgelist[:, 0]
