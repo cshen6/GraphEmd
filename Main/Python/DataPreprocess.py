@@ -2,7 +2,7 @@ import copy
 
 import numpy as np
 from numpy import linalg as LA
-from tensorflow.keras.utils import to_categorical
+# from tensorflow.keras.utils import to_categorical
 
 
 class DataPreprocess:
@@ -272,6 +272,32 @@ class DataPreprocess:
         return NewSets
 
 
+
+def X_prep_laplacian(X, n):
+    """
+      input X is a single S3 edge list
+      this adds Diagnal augement and Laplacian normalization to the edge list
+      Taken from DataPreprocesss.single_X_prep()
+    """
+
+    s = X.shape[0] # get the row number of the edg list
+    # if kwargs["Laplacian"]:
+    D = np.zeros((n,1), dtype=np.int32)
+    for row in X: # Iterate over edges
+        # TODO What about self-edges at the end?
+        [v_i, v_j, edg_i_j] = row
+
+        D[v_i] += edg_i_j
+        if v_i != v_j: # Only fails for self-edges
+            D[v_j] += edg_i_j
+
+    D = np.power(D, -0.5)
+
+    for i in range(s):
+        X[i,2] *= D[int(X[i,0])] * D[int(X[i,1])]
+
+    return X
+
 ############------------graph_encoder_embed_start----------------###############
 def graph_encoder_embed(X,Y,n,**kwargs):
     """
@@ -297,8 +323,12 @@ def graph_encoder_embed(X,Y,n,**kwargs):
     nk = np.zeros((1,k))
     W = np.zeros((n,k))
 
+    if kwargs["Laplacian"]:
+        X = X_prep_laplacian(X, n)
+
     if possibility_detected:
         # sum Y (each row of Y is a vector of posibility for each class), then do element divid nk.
+        # Ariel: I think this is the Laplacian part
         nk=np.sum(Y, axis=0)
         W=Y/nk
     else:

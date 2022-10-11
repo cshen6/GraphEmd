@@ -167,14 +167,28 @@ if __name__ == '__main__':
 
     G_edgelist = np.loadtxt("../../../Thesis-Graph-Data/twitch-SNAP-weighted.csv", delimiter=" ", dtype=np.int32)
 
-    G_edgelist = G_edgelist[G_edgelist[:, 0].argsort()] # Sort by first column
+    # G_edgelist = G_edgelist[G_edgelist[:, 0].argsort()] # Sort by first column
 
     # Add column of ones - weights
     # G_edgelist = np.hstack((G_edgelist, np.ones((G_edgelist.shape[0], 1))))
 
-    n = int(np.max(G_edgelist[:,1]) + 1) # Nr. vertices
+    n = 168114 # int(np.max(G_edgelist[:,1]) + 1) # Nr. vertices
 
     Y = np.reshape(np.loadtxt("../../../Thesis-Graph-Data/twitch-Y20-sparse.csv", dtype=np.int32), (168114, 1))
+
+
+    # print("Loading Twitch weighted Laplacian graph")
+    #
+    # G_edgelist = np.loadtxt("../../../Thesis-Graph-Data/twitch_wgh_laplacian_outdeg_edgelist.csv", delimiter=" ", dtype=np.int32)
+    #
+    # # G_edgelist = G_edgelist[G_edgelist[:, 0].argsort()] # Sort by first column
+    #
+    # # Add column of ones - weights
+    # # G_edgelist = np.hstack((G_edgelist, np.ones((G_edgelist.shape[0], 1))))
+    #
+    # n = int(np.max(G_edgelist[:,1]) + 1) # Nr. vertices
+    #
+    # Y = np.reshape(np.loadtxt("../../../Thesis-Graph-Data/twitch-Y20-sparse.csv", dtype=np.int32), (168114, 1))
 
 
     # print("Loading Pokec graph - 400MB")
@@ -200,7 +214,7 @@ if __name__ == '__main__':
 
     print("Running GraphEncoderEmbed()")
 
-    Z, W = graph_encoder_embed(G_edgelist, Y, n, Correlation = False)
+    Z, W = graph_encoder_embed(G_edgelist, Y, n, Correlation = False, Laplacian = True)
     # print(Z)
     np.savetxt("Z_CorrectResults.csv", Z, fmt="%f")
     # print(W)
