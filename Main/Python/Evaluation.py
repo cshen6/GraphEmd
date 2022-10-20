@@ -148,34 +148,34 @@ if __name__ == '__main__':
 
     # Y = np.reshape(np.loadtxt("../../../../Downloads/orkut-Y50-sparse.txt", dtype=np.int16), (3072441, 1))
 
-    # print("Loading Twitch graph")
-    #
-    # # G_edgelist = np.loadtxt("../../../Thesis-Graph-Data/twitch-SNAP.csv", delimiter=" ", dtype=np.int32)
+    print("Loading Twitch graph")
+
+    G_edgelist = np.load("../../../Thesis-Graph-Data/twitch-SNAP.npy")
     # G_edgelist = np.loadtxt("../../../Thesis-Graph-Data/twitch-SNAP-bidir-manually", delimiter=" ", dtype=np.int32)
-    #
-    # G_edgelist = G_edgelist[G_edgelist[:, 0].argsort()] # Sort by first column
-    #
-    # # Add column of ones - weights
-    # G_edgelist = np.hstack((G_edgelist, np.ones((G_edgelist.shape[0], 1))))
-    #
-    # n = int(np.max(G_edgelist[:,1]) + 1) # Nr. vertices
-    #
-    # Y = np.reshape(np.loadtxt("../../../Thesis-Graph-Data/twitch-Y20-sparse.csv", dtype=np.int32), (168114, 1))
 
-
-    print("Loading Twitch weighted graph")
-
-    G_edgelist = np.loadtxt("../../../Thesis-Graph-Data/twitch-SNAP-weighted.csv", delimiter=" ", dtype=np.int32)
-
-    # G_edgelist = G_edgelist[G_edgelist[:, 0].argsort()] # Sort by first column
+    G_edgelist = G_edgelist[G_edgelist[:, 0].argsort()] # Sort by first column
 
     # Add column of ones - weights
-    # G_edgelist = np.hstack((G_edgelist, np.ones((G_edgelist.shape[0], 1))))
+    G_edgelist = np.hstack((G_edgelist, np.ones((G_edgelist.shape[0], 1)))).astype(np.int32)
 
-    n = 168114 # int(np.max(G_edgelist[:,1]) + 1) # Nr. vertices
+    n = int(np.max(G_edgelist[:,1]) + 1) # Nr. vertices
 
-    Y = np.reshape(np.loadtxt("../../../Thesis-Graph-Data/twitch-Y20-sparse.csv", dtype=np.int32), (168114, 1))
+    Y = np.load("../../../Thesis-Graph-Data/twitch-Y20-sparse.npy")
 
+
+    # print("Loading Twitch weighted graph")
+    #
+    # # np.loadtxt(csv) is super slow. np.load(npy) is almost instant
+    # G_edgelist = np.load("../../../Thesis-Graph-Data/twitch-SNAP-weighted.npy")
+    #
+    # # G_edgelist = G_edgelist[G_edgelist[:, 0].argsort()] # Sort by first column
+    #
+    # # Add column of ones - weights
+    # # G_edgelist = np.hstack((G_edgelist, np.ones((G_edgelist.shape[0], 1))))
+    #
+    # n = 168114 # int(np.max(G_edgelist[:,1]) + 1) # Nr. vertices
+    #
+    # Y = np.load("../../../Thesis-Graph-Data/twitch-Y20-sparse.npy")
 
     # print("Loading Twitch weighted Laplacian graph")
     #

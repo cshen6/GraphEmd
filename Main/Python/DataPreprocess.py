@@ -290,6 +290,7 @@ def X_prep_laplacian(X, n):
         D[v_i] += edg_i_j
         if v_i != v_j: # Only fails for self-edges
             D[v_j] += edg_i_j
+    # In Ligra, the above is calculated for us, and is present in v[i].getInDegree()/getOutDegree()
 
     D = np.power(D, -0.5)
 
