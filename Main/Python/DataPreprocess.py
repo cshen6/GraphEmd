@@ -2,6 +2,7 @@ import copy
 
 import numpy as np
 from numpy import linalg as LA
+from numba import jit
 # from tensorflow.keras.utils import to_categorical
 
 
@@ -272,7 +273,7 @@ class DataPreprocess:
         return NewSets
 
 
-
+# @jit(nopython=True)
 def X_prep_laplacian(X, n):
     """
       input X is a single S3 edge list
@@ -286,6 +287,9 @@ def X_prep_laplacian(X, n):
     for row in X: # Iterate over edges
         # TODO What about self-edges at the end?
         [v_i, v_j, edg_i_j] = row
+        v_i = int(v_i)
+        v_j = int(v_j)
+        edg_i_j = int(edg_i_j)
 
         D[v_i] += edg_i_j
         if v_i != v_j: # Only fails for self-edges
@@ -387,24 +391,6 @@ def graph_encoder_embed(X,Y,n,**kwargs):
 
     return Z, W
 
-def parallel_for(row, possibility_detected, k, Z, W, Y):
-    [v_i, v_j, edg_i_j] = row
-    v_i = int(v_i)
-    v_j = int(v_j)
-    if possibility_detected:
-        for label_j in range(k):
-            Z[v_i, label_j] = Z[v_i, label_j] + W[v_j, label_j]*edg_i_j
-            if v_i != v_j:
-                Z[v_j, label_j] = Z[v_j, label_j] + W[v_i, label_j]*edg_i_j
-    else:
-        label_i = Y[v_i][0]
-        label_j = Y[v_j][0]
-
-        if label_j >= 0:
-            # Modified for parallelism
-            return (v_i, label_j, Z[v_i, label_j] + W[v_j, label_j]*edg_i_j)
-        if (label_i >= 0) and (v_i != v_j):
-            return (v_j, label_i, Z[v_j, label_i] + W[v_i, label_i]*edg_i_j)
 
 def multi_graph_encoder_embed(DataSets, Y):
     """

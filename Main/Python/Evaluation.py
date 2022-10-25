@@ -156,7 +156,8 @@ if __name__ == '__main__':
     G_edgelist = G_edgelist[G_edgelist[:, 0].argsort()] # Sort by first column
 
     # Add column of ones - weights
-    G_edgelist = np.hstack((G_edgelist, np.ones((G_edgelist.shape[0], 1)))).astype(np.int32)
+    G_edgelist = np.hstack((G_edgelist, np.ones((G_edgelist.shape[0], 1))))#.astype(np.int32)
+    # Make sure G_edgelist isn't restricted to int-s
 
     n = int(np.max(G_edgelist[:,1]) + 1) # Nr. vertices
 
