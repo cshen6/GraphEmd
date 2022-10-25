@@ -273,7 +273,7 @@ class DataPreprocess:
         return NewSets
 
 
-# @jit(nopython=True)
+@jit(nopython=True)
 def X_prep_laplacian(X, n):
     """
       input X is a single S3 edge list
@@ -299,9 +299,38 @@ def X_prep_laplacian(X, n):
     D = np.power(D, -0.5)
 
     for i in range(s):
-        X[i,2] *= D[int(X[i,0])] * D[int(X[i,1])]
+        X[i,2] *= (D[int(X[i,0])] * D[int(X[i,1])])[0] # Turns from ndarray of 1 element to float
 
     return X
+
+
+@jit(nopython=True)
+def numba_main_embedding(X, Y, W, possibility_detected, n, k):
+    # Edge List Version in O(s)
+    Z = np.zeros((n,k))
+    i = 0
+
+
+    for row in X: # Loop over edges once only?
+        [v_i, v_j, edg_i_j] = row
+        v_i = int(v_i)
+        v_j = int(v_j)
+        if possibility_detected:
+            for label_j in range(k):
+                Z[v_i, label_j] = Z[v_i, label_j] + W[v_j, label_j]*edg_i_j
+                if v_i != v_j:
+                    Z[v_j, label_j] = Z[v_j, label_j] + W[v_i, label_j]*edg_i_j
+        else:
+            label_i = Y[v_i][0]
+            label_j = Y[v_j][0]
+
+            if label_j >= 0: # Why > 0 label?
+                Z[v_i, label_j] += W[v_j, label_j]*edg_i_j
+            if (label_i >= 0) and (v_i != v_j):
+                Z[v_j, label_i] += W[v_i, label_i]*edg_i_j
+
+    return Z
+
 
 ############------------graph_encoder_embed_start----------------###############
 def graph_encoder_embed(X,Y,n,**kwargs):
@@ -345,44 +374,12 @@ def graph_encoder_embed(X,Y,n,**kwargs):
             if k_i >=0:
                 W[i,k_i] = 1/nk[0,k_i]
 
-    # Edge List Version in O(s)
-    Z = np.zeros((n,k))
-    i = 0
-
-    # Ariel change
-    # from joblib import Parallel, delayed
-
-    # partials = Parallel(n_jobs=8)(delayed(parallel_for)(row, possibility_detected, k, Z, W, Y) for row in X)
-    # # Copy Z to compare results. Is parallel correct?
-    # Z_copy = Z.copy()
-
-    # np.random.shuffle(X) # TODO is result identical when X shuffled?
-
-    for row in X: # Loop over edges once only?
-        [v_i, v_j, edg_i_j] = row
-        v_i = int(v_i)
-        v_j = int(v_j)
-        if possibility_detected:
-            for label_j in range(k):
-                Z[v_i, label_j] = Z[v_i, label_j] + W[v_j, label_j]*edg_i_j
-                if v_i != v_j:
-                    Z[v_j, label_j] = Z[v_j, label_j] + W[v_i, label_j]*edg_i_j
-        else:
-            label_i = Y[v_i][0]
-            label_j = Y[v_j][0]
-
-            if label_j >= 0: # Why > 0 label?
-                Z[v_i, label_j] += W[v_j, label_j]*edg_i_j
-            if (label_i >= 0) and (v_i != v_j):
-                Z[v_j, label_i] += W[v_i, label_i]*edg_i_j
+    Z = numba_main_embedding(X, Y, W, possibility_detected, n, k)
 
     # Calculate each row's 2-norm (Euclidean distance).
     # e.g.row_x: [ele_i,ele_j,ele_k]. norm2 = sqr(sum(2^2+1^2+4^2))
     # then divide each element by their row norm
     # e.g. [ele_i/norm2,ele_j/norm2,ele_k/norm2]
-    #
-    # for item in partials:
-    #     Z_copy[item[0], item[1]] +=
 
     if kwargs['Correlation']:
         row_norm = LA.norm(Z, axis = 1)
