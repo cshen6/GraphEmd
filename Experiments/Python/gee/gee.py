@@ -41,6 +41,7 @@ class GraphEncoderEmbedding:
 		self.n_nodes = n_nodes
 
 
+	# Calls helper funcs. below
 	def fit(self, X, y):
 		"""
 		Input
@@ -55,32 +56,35 @@ class GraphEncoderEmbedding:
 
 		a, b = X.shape
 
+		# Add 3rd dimension of ones if 2D
 		if b == 2:
 			X = np.vstack((X, np.ones(a)))
 			b = 3
 
-		if b == 3:
+		if b == 3: # Set len nr. nodes (Unique?)
 			if self.n_nodes is None:
 				self.n_nodes = len(np.unique(np.concatenate((X[:, 0], X[:, 1]))))
 			edge_list = True
 
-		elif a == b:
+		elif a == b: # Square matrix
 			self.n_nodes = a
-			edge_list = False
+			edge_list = False # Probably means it's an Adjacency Matrix
 
 		self.W = np.zeros((self.n_nodes, len(self.classes)))
+		# One K-length vector per vertex
 		self.encoder_embedding = np.zeros((self.n_nodes, len(self.classes)))
 
+		# Find indices of classes?
 		for i, k in enumerate(self.classes):
 			inds = np.where(y == k)[0]
-			self.W[inds, i] = 1 / len(inds)
+			self.W[inds, i] = 1 / len(inds) # ?
 
-		if edge_list:
-			self._fit_edge_list(X, y)
+		if edge_list: # Not defined in all cases - missing an else{} above
+			self._fit_edge_list(X, y) # Edge list triples
 		else:
-			self._fit_matrix(X, y)
+			self._fit_matrix(X, y) # Adjacency matrix
 
-		self.pinv = np.linalg.pinv(self.encoder_embedding)
+		self.pinv = np.linalg.pinv(self.encoder_embedding) # TODO Ariel Why invert a matrix with all zeros?
 
 		return self
 
@@ -100,8 +104,39 @@ class GraphEncoderEmbedding:
 				self.encoder_embedding[j, y1_index] += edge_weight * self.W[i, y1_index]
 
 
+	def parallel_for(self, i, edge, y):
+		# Gather needed variables
+		node1 = int(edge[0])
+		node2 = int(edge[1])
+
+		y1 = y[node1]
+		y2 = y[node2]
+		edge_weight = edge[2]
+
+		y1_index = int(np.where(self.classes == y1)[0][0])
+		y2_index = int(np.where(self.classes == y2)[0][0])
+
+		# The actual fitting
+		self.encoder_embedding[node1, y2_index] += edge_weight * self.W[node2, y2_index]
+		self.encoder_embedding[node2, y1_index] += edge_weight * self.W[node1, y1_index]
+
+	# Ariel: I'm interested in this
+	# def _fit_edge_list_parallel(self, X, y):
+	# 	# TODO Ariel are for-iterations independent? Can we parallel-for?
+	#
+	# 	# Let's parallelize!
+	# 	from joblib import Parallel, delayed
+	#
+	# 	Parallel(n_jobs=8)(delayed(parallel_for)(i, edge, y) for i, edge in enumerate(X))
+
+
+	# Ariel: I'm interested in this
 	def _fit_edge_list(self, X, y):
-		for i, edge in enumerate(X):
+		# TODO Ariel are for-iterations independent? Can we parallel-for? No, they update same variable
+
+		# X = Adjacency Matrix? Have to load all in memory?
+		for i, edge in enumerate(X): # This should be the EdgeMap
+			# Gather needed variables
 			node1 = int(edge[0])
 			node2 = int(edge[1])
 
@@ -112,6 +147,7 @@ class GraphEncoderEmbedding:
 			y1_index = int(np.where(self.classes == y1)[0][0])
 			y2_index = int(np.where(self.classes == y2)[0][0])
 
+			# The actual fitting
 			self.encoder_embedding[node1, y2_index] += edge_weight * self.W[node2, y2_index]
 			self.encoder_embedding[node2, y1_index] += edge_weight * self.W[node1, y1_index]
 
