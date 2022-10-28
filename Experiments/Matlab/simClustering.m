@@ -150,22 +150,22 @@ Dist='sqeuclidean';%Dist='cosine';
 
 %%% 1. Corr better
 n=3000;K=10;
-[Adj,Y]=simGenerate(10,n);
-GraphClusteringEvaluate(Adj,Y)
-[Adj,Y]=simGenerate(11,n,K);
-GraphClusteringEvaluate(Adj,Y)
-[Adj,Y]=simGenerate(12,n,K);
-GraphClusteringEvaluate(Adj,Y)
+[Adj,Y]=simGenerate(10,n);opts.Dim=K;
+GraphClusteringEvaluate(Adj,Y,opts)
+[Adj,Y]=simGenerate(11,n,K);opts.Dim=K;
+GraphClusteringEvaluate(Adj,Y,opts)
+[Adj,Y]=simGenerate(12,n,K);opts.Dim=K;
+GraphClusteringEvaluate(Adj,Y,opts)
 % [Adj,Y]=simGenerate(15,n,k);
 % GraphClusteringEvaluate(Adj,Y)
 % [Adj,Y]=simGenerate(16,n,k);
 % GraphClusteringEvaluate(Adj,Y)
-[Adj,Y]=simGenerate(20,n);
-GraphClusteringEvaluate(Adj,Y)
-[Adj,Y]=simGenerate(21,n,K);
-GraphClusteringEvaluate(Adj,Y)
-[Adj,Y]=simGenerate(22,n,K);
-GraphClusteringEvaluate(Adj,Y)
+[Adj,Y]=simGenerate(20,n);opts.Dim=K;
+GraphClusteringEvaluate(Adj,Y,opts)
+[Adj,Y]=simGenerate(21,n,K);opts.Dim=K;
+GraphClusteringEvaluate(Adj,Y,opts)
+[Adj,Y]=simGenerate(22,n,K);opts.Dim=K;
+GraphClusteringEvaluate(Adj,Y,opts)
 %
 t=0;r=100;K=3;
 for i=1:r
@@ -188,29 +188,44 @@ end
 % GraphClusteringEvaluate(Adj,Y)
 
 load('CoraAdj.mat') %AEL / GFN K=2
-GraphClusteringEvaluate(Adj,Y)
+opts.Dim=K;
+GraphClusteringEvaluate(Adj,Y,opts)
 load('email.mat') %k=42
-GraphClusteringEvaluate(Adj,Y)
+opts.Dim=K;
+GraphClusteringEvaluate(Adj,Y,opts)
 load('Gene.mat') %AEL / GFN K=2
-GraphClusteringEvaluate(Adj,Y)
-load('IIP.mat') %AEL / GFN K=2
+opts.Dim=K;
+GraphClusteringEvaluate(Adj,Y,opts)
+load('IIP.mat') %AEL / GFN K=3
+opts.Dim=K;
 % GraphEncoder(Adj,Y,knum); %0
-GraphClusteringEvaluate(Adj,Y)
+GraphClusteringEvaluate(Adj,Y,opts)
 load('lastfm.mat') %AEK K=17
-GraphClusteringEvaluate(Adj,Y)
+opts.Dim=K;
+GraphClusteringEvaluate(Adj,Y,opts)
 load('polblogs.mat') %k=2
-GraphClusteringEvaluate(Adj,Y)
+opts.Dim=K;opts.Sparse=true;
+GraphClusteringEvaluate(Adj,Y,opts)
 
 %% fusion
+n=1000;K=10;
+[Adj,Y]=simGenerate(19,n);opts.Dim=K;
+GraphClusteringEvaluate(Adj,Y)
+n=1000;K=10;
+[Adj,Y]=simGenerate(29,n);opts.Dim=K;
+GraphClusteringEvaluate(Adj,Y)
+%%
 load('Wiki_Data.mat')
 Label=Label+1;
-GraphClusteringEvaluate(GEAdj,Label)
-GraphClusteringEvaluate(GFAdj,Label)
-GraphClusteringEvaluate(TE,Label)
-GraphClusteringEvaluate(TF,Label)
-GraphClusteringEvaluate({TE,TF},Label)
-GraphClusteringEvaluate({GEAdj,GFAdj},Label)
-GraphClusteringEvaluate({TE,TF,GEAdj,GFAdj},Label)
+opts.Weight=[1,0];
+GraphClusteringEvaluate(GEAdj,Label,opts)
+GraphClusteringEvaluate(GFAdj,Label,opts)
+GraphClusteringEvaluate(TE,Label,opts)
+GraphClusteringEvaluate(TF,Label,opts)
+GraphClusteringEvaluate({TE,TF},Label,opts)
+GraphClusteringEvaluate({TE,GE},Label,opts)
+GraphClusteringEvaluate({GEAdj,GFAdj},Label,opts)
+GraphClusteringEvaluate({TE,TF,GEAdj,GFAdj},Label,opts)
 load('graphCElegans.mat')
 GraphClusteringEvaluate(Ag,vcols)
 GraphClusteringEvaluate(Ac,vcols)
@@ -246,6 +261,13 @@ tic
 [~,Y1,~,~,score]=GraphEncoder(Adj,[2:10]);
 toc
 RandIndex(Y,Y1)
+% Try K choice
+kmax=10;
+score=zeros(kmax,1);ari=zeros(kmax,1);
+for r=2:kmax
+    [~,Y2,~,~,score(r)]=GraphEncoder(Adj,r);
+    ari(r)=RandIndex(Y2,Y+1);
+end
 %% n increase and mse
 n=100;K=5;kmax=20;nmax=50;
 score=zeros(kmax,nmax);
@@ -258,13 +280,17 @@ for i=1:nmax
     end
 end
 % Try K choice
-kmax=20;
+kmax=10;n=1000;K=5;type=11;rep=10;
 score=zeros(kmax,1);
 ari=zeros(kmax,1);
+[Adj,Y]=simGenerate(type,n,K);
+for i=1:rep
 for r=2:kmax
-    [~,Y2,~,~,score(r)]=GraphEncoder(Adj,r);
-    ari(r)=RandIndex(Y2,Y+1);
+    [~,Y2,~,~,tmp]=GraphEncoder(Adj,r);
+    ari(r)=ari(r)+RandIndex(Y2,Y+1)/rep;
 end
+end
+
 subplot(1,2,1);
 plot(2:kmax,1-score(2:kmax),'r-','LineWidth',2)
 title(strcat('1-MeanSS at K=',num2str(K)))
