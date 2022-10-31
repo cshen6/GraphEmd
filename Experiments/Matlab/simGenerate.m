@@ -811,6 +811,132 @@ switch option
                 Dis(j,i,3)=Dis(i,j,3);
             end
         end
+    case 60 % hierarchy SBM with 3 classes
+        fileName='SBM';
+        d=10;
+        diff=ceil(n/d);n=diff*d;
+        bd=0.3; %0.13 at n=2000;0.12 at n=5000
+        %pp=1/d*ones(d,1);
+        Bl=0.05*ones(d,d);
+        Dis=zeros(n,n);
+        Label=ones(n,3);
+        for i=1:d
+            Label((i-1)*diff+1:i*diff,3)=i;
+            Bl(i,i)=bd+0.03*d;
+        end
+        for i=1:d/2;
+            Label((i-1)*diff*2+1:i*diff*2,2)=i;
+        end
+        Label(1:4*diff,1)=1;Label(4*diff+1:end,1)=2;
+        for i=1:n
+            Dis(i,i)=0;%diagonals are zeros
+            for j=i+1:n
+                Dis(i,j)=rand(1)<Bl(Label(i,3),Label(j,3));
+                Dis(j,i)=Dis(i,j);
+            end
+        end
+        X=Dis;
+     case 61 % hierarchy SBM with 3 classes
+        fileName='SBM';
+        d=10;
+        diff=ceil(n/d);n=diff*d;
+        bd=0.2; %0.13 at n=2000;0.12 at n=5000
+        %pp=1/d*ones(d,1);
+        Bl=0.1*ones(d,d);
+        Dis=zeros(n,n);
+        Label=ones(n,3);
+        for i=1:d
+            Label((i-1)*diff+1:i*diff,3)=i;
+            Bl(i,i)=bd+0.01*d;
+        end
+        for i=1:d/2;
+            Label((i-1)*diff*2+1:i*diff*2,2)=i;
+        end
+        Label(1:4*diff,1)=1;Label(4*diff+1:end,1)=2;
+        for i=1:n
+            Dis(i,i)=0;%diagonals are zeros
+            for j=i+1:n
+                Dis(i,j)=rand(1)<Bl(Label(i,3),Label(j,3));
+                Dis(j,i)=Dis(i,j);
+            end
+        end
+        X=Dis;
+    case 70 % SBM outlier: 50 vertices affects all adjacency
+        fileName='SBM';
+        d=10;numm=30;
+        diff=ceil(n/d);n=diff*d;
+        bd=0.2; %0.13 at n=2000;0.12 at n=5000
+        %pp=1/d*ones(d,1);
+        Bl=0.1*ones(d,d);
+        Dis=zeros(n,n);
+        Label=ones(n,4);
+        theta=betarnd(1,4,n,1);
+%         theta=ones(n,1);
+        for i=1:d
+            Label((i-1)*diff+1:i*diff,3)=i;
+            Bl(i,i)=bd+0.01*d;
+        end
+        for i=1:d/2;
+            Label((i-1)*diff*2+1:i*diff*2,2)=i;
+        end
+        Label(1:4*diff,1)=1;Label(4*diff+1:end,1)=2;
+        for i=1:n
+            Dis(i,i)=0;%diagonals are zeros
+            for j=i+1:n
+                Dis(i,j)=rand(1)<theta(i)*theta(j)*Bl(Label(i,3),Label(j,3));
+                Dis(j,i)=Dis(i,j);
+            end
+        end
+        X=Dis;
+        Label(1:numm,4)=2;
+        outlier=find(Label(:,4)==2);
+        jend=n;
+        %jend=2*length(outlier);
+        for i=1:length(outlier)
+            for j=1:jend
+                Dis(outlier(i),j)=rand(1)<theta(i)*theta(j)*(Bl(Label(outlier(i),3),Label(j,3))+0.01);
+            end
+        end
+        X=[X,Dis];
+        Dis=X;
+    case 71 % SBM outlier: 30 vertices affects muln*30 adjacency
+        fileName='SBM';
+        d=10;numm=30; muln=5;
+        diff=ceil(n/d);n=diff*d;
+        bd=0.2; %0.13 at n=2000;0.12 at n=5000
+        %pp=1/d*ones(d,1);
+        Bl=0.1*ones(d,d);
+        Dis=zeros(n,n);
+        Label=ones(n,4);
+        theta=betarnd(1,4,n,1);
+%         theta=ones(n,1);
+        for i=1:d
+            Label((i-1)*diff+1:i*diff,3)=i;
+            Bl(i,i)=bd+0.01*d;
+        end
+        for i=1:d/2;
+            Label((i-1)*diff*2+1:i*diff*2,2)=i;
+        end
+        Label(1:4*diff,1)=1;Label(4*diff+1:end,1)=2;
+        for i=1:n
+            Dis(i,i)=0;%diagonals are zeros
+            for j=i+1:n
+                Dis(i,j)=rand(1)<theta(i)*theta(j)*Bl(Label(i,3),Label(j,3));
+                Dis(j,i)=Dis(i,j);
+            end
+        end
+        X=Dis;
+        Label(1:numm,4)=2;
+        outlier=find(Label(:,4)==2);
+        %jend=n;
+        jend=muln*length(outlier);
+        for i=1:length(outlier)
+            for j=1:jend
+                Dis(outlier(i),j)=rand(1)<theta(i)*theta(j)*(Bl(Label(outlier(i),3),Label(j,3))+0.05);
+            end
+        end
+        X=[X,Dis];
+        Dis=X;
 %         Dis=diag(sum(Dis))-Dis;
 %         X=Dis;
 %     case 33 % RDPG

@@ -1,11 +1,11 @@
 function [result]=GraphClusteringEvaluate(X,Y,opts)
 
 if nargin < 3
-    opts = struct('Adjacency',1,'Laplacian',1,'Spectral',0,'NN',0,'Dist','sqeuclidean','normalize',0,'dmax',30,'dimGEE',0); % default parameters
+    opts = struct('Adjacency',1,'Laplacian',1,'Spectral',1,'NN',0,'Dist','sqeuclidean','normalize',0,'dmax',30,'dimGEE',0); % default parameters
 end
 if ~isfield(opts,'Adjacency'); opts.Adjacency=1; end
 if ~isfield(opts,'Laplacian'); opts.Laplacian=1; end
-if ~isfield(opts,'Spectral'); opts.Spectral=0; end
+if ~isfield(opts,'Spectral'); opts.Spectral=1; end
 if ~isfield(opts,'NN'); opts.NN=0; end
 if ~isfield(opts,'Dist'); opts.Dist='sqeuclidean'; end
 if ~isfield(opts,'dimGEE'); opts.dimGEE=0; end
