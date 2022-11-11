@@ -45,13 +45,13 @@ if ~isfield(opts,'Attributes'); opts.Attributes=0; end
 if ~isfield(opts,'Directed'); opts.Directed=1; end
 if ~isfield(opts,'Dim'); opts.Dim=0; end
 if ~isfield(opts,'Weight'); opts.Weight=1; end
-if ~isfield(opts,'Sparse'); opts.Sparse=false; end
+% if ~isfield(opts,'Sparse'); opts.Sparse=false; end
 opts.neuron=20;
 elbN=2;
 opts.activation='poslin';
 U=opts.Attributes;
 % opts.Directed=1;
-di=opts.Directed;
+directed=opts.Directed;
 GCS=1;
 % if ~isfield(opts,'distance'); opts.distance='Normalize'; end
 % opts.DiagA=false;
@@ -123,11 +123,11 @@ if length(Y)==n
         dim=min(opts.Dim,dim);
     end
 
-    if opts.Sparse==false
-        Z=zeros(n,di*dim*num);
-    else
-        Z=sparse(n,di*dim*num);
-    end
+%     if opts.Sparse==false
+        Z=zeros(n,dim*num,directed);
+%     else
+%         Z=sparse(n,dim*num,directed);
+%     end
     W=cell(1,num);
     if opts.Learner==2
         % initialize NN
@@ -142,30 +142,32 @@ if length(Y)==n
     if opts.LearnIter<1
         for i=1:num
             [tmpZ,W{i}]=GraphEncoderEmbed(X{i},Y,n,opts);
-            Z(:,(i-1)*dim*di+1:i*dim*di)=tmpZ*opts.Weight(i);
+            Z(:,(i-1)*dim+1:i*dim,:)=tmpZ*opts.Weight(i);
         end
-        %% Simple PCA
-        if opts.Dim>0 && opts.Dim<=K
-            if opts.Sparse==true
-               Z=full(Z);
-            end
-            [coeff,Z]=pca(Z,'NumComponents',opts.Dim*di);
-            if opts.Dim==K
-                elb=getElbow(diag(coeff),elbN);
-                Z=Z(:,1:elb(elbN));
-            end
-        end
+%         %% Simple PCA
+%         if opts.Dim>0 && opts.Dim<=K
+%             if opts.Sparse==true
+%                Z=full(Z);
+%             end
+%             for i=1:directed
+%                 [coeff,Z]=pca(Z(:,:,i),'NumComponents',opts.Dim);
+%                 if opts.Dim==K
+%                     elb=getElbow(diag(coeff),elbN);
+%                     Z=Z(:,1:elb(elbN),i);
+%                 end
+%             end
+%         end
         if attr==true
-            Z=[Z,U];
+            Z=[Z,repmat(U,1,directed)];
         end
         if sum(indT)<n
             if opts.Learner==1
-                mdl=fitcdiscr(Z(indT,:),YTrn,'DiscrimType','pseudoLinear');
+                mdl=fitcdiscr(Z(indT,:,directed),YTrn,'DiscrimType','pseudoLinear');
                 %                mdl=fitcknn(Z(indT,:),YTrn,'Distance','euclidean','NumNeighbors',5);
-                Y(~indT)=predict(mdl,Z(~indT,:));
+                Y(~indT)=predict(mdl,Z(~indT,:,directed));
             else
-                mdl = train(netGNN,Z(indT,:)',YTrn2);
-                prob=mdl(Z(~indT,:)');
+                mdl = train(netGNN,Z(indT,:,directed)',YTrn2);
+                prob=mdl(Z(~indT,:,directed)');
                 Y(~indT)=vec2ind(prob)';
                 %             [~,Y(~indT)] = max(prob,[],1); % class-wise probability for tsting data
             end
@@ -183,31 +185,31 @@ if length(Y)==n
                 %             i
                 for i=1:num
                     [tmpZ,W{i}]=GraphEncoderEmbed(X{i},Y1,n,opts); % discrete label version
-                    Z(:,(i-1)*K*di+1:i*K*di)=tmpZ*opts.Weight(i);
+                    Z(:,(i-1)*K+1:i*K,directed)=tmpZ*opts.Weight(i);
                     %[Z(:,(i-1)*K+1:i*K),W{i}]=GraphEncoderEmbed(X{i},Y2,n,opts); % probability version
                 end
-                %% Simple PCA
-                if opts.Dim>0 && opts.Dim<=K
-                    if opts.Sparse==true
-                        Z=full(Z);
-                    end
-                    [coeff,Z]=pca(Z,'NumComponents',opts.Dim*di);
-                    if opts.Dim==K
-                        elb=getElbow(diag(coeff),elbN);
-                        Z=Z(:,1:elb(elbN));
-                    end
-                end
+%                 %% Simple PCA
+%                 if opts.Dim>0 && opts.Dim<=K
+%                     if opts.Sparse==true
+%                         Z=full(Z);
+%                     end
+%                     [coeff,Z]=pca(Z,'NumComponents',opts.Dim*directed);
+%                     if opts.Dim==K
+%                         elb=getElbow(diag(coeff),elbN);
+%                         Z=Z(:,1:elb(elbN));
+%                     end
+%                 end
                 %                 [Z,W]=GraphEncoderEmbed(X,Y2,n,opts);
-                if attr==true
-                    Z=[Z,U];
+                if attr==true && r==1
+                    Z=[Z,repmat(U,1,directed)];
                 end
                 if opts.Learner==1
-                    mdl=fitcdiscr(Z(indT,:),YTrn,'DiscrimType','pseudoLinear');
-                    [class,prob] = predict(mdl,Z(~indT,:));
+                    mdl=fitcdiscr(Z(indT,:,directed),YTrn,'DiscrimType','pseudoLinear');
+                    [class,prob] = predict(mdl,Z(~indT,:,directed));
                     prob1=max(prob,[],2);
                 else
-                    mdl = train(netGNN,Z(indT,:)',YTrn2);
-                    prob=mdl(Z(~indT,:)');
+                    mdl = train(netGNN,Z(indT,:,directed)',YTrn2);
+                    prob=mdl(Z(~indT,:,directed)');
                     %                     class=vec2ind(prob)';
                     [prob1,class] = max(prob,[],1); % class-wise probability for tsting data
                 end
@@ -258,13 +260,14 @@ function [Z,Y,W,GCS]=GraphEncoderCluster(X,K,n,num,attr,opts)
 %     opts = struct('Normalize',true,'MaxIter',50,'MaxIterK',5,'Replicates',3,'Directed',1,'Dim',0);
 % end
 elbN=2;
-di=opts.Directed;
+directed=opts.Directed;
 GCS=1;
-if opts.Sparse==false
-    Zt=zeros(n,K*num);
-else
-    Zt=sparse(n,K*num);
-end
+% if opts.Sparse==false
+    Zt=zeros(n,K*num,directed);
+%     ZtC=zeros(n,K*num,directed);
+% else
+%     Zt=sparse(n,K*num*directed);
+% end
 
 Wt=cell(1,num);
 W=cell(1,num);
@@ -275,43 +278,47 @@ end
 
 ens=0;
 for rep=1:opts.Replicates
-    Y2=randi([1,K],[n,1]);
+    Y2=randi([1,K],[n,1]);Y2=repmat(Y2,1,directed);Y3=randi([1,K],[n,directed]);
     for r=1:opts.MaxIter
         for i=1:num
-            [tmpZ,Wt{i}]=GraphEncoderEmbed(X{i},Y2,n,opts);
-            Zt(:,(i-1)*K*di+1:i*K*di)=tmpZ*opts.Weight(i);
+            [tmpZ,Wt{i}]=GraphEncoderEmbed(X{i},Y2(:,1),n,opts);
+            Zt(:,(i-1)*K+1:i*K,:)=tmpZ*opts.Weight(i);
         end
         %% Simple PCA
-        if opts.Dim>0 && opts.Dim<=K
-            if opts.Sparse==true
-               Zt=full(Zt);
-            end
-            [coeff,Zt]=pca(Zt,'NumComponents',opts.Dim*di);
-            if opts.Dim==K
-                elb=getElbow(diag(coeff),elbN);
-                Zt=Zt(:,1:elb(elbN));
-            end
+%         if opts.Dim>0 && opts.Dim<=K
+%             if opts.Sparse==true
+%                Zt=full(Zt);
+%             end
+%             [coeff,Zt]=pca(Zt,'NumComponents',opts.Dim*directed);
+%             if opts.Dim==K
+%                 elb=getElbow(diag(coeff),elbN);
+%                 Zt=Zt(:,1:elb(elbN));
+%             end
+%         end
+        if attr==true && r==1
+            Zt=[Zt,repmat(U,1,directed)];
         end
-        if attr==true
-            Zt=[Zt,U];
-        end
-        Y3 = kmeans(Zt, K,'MaxIter',opts.MaxIterK,'Replicates',1,'Start','plus');
-        %[Y3] = kmeans(Zt*WB, K,'MaxIter',opts.MaxIterK,'Replicates',1,'Start','plus');
-        %gmfit = fitgmdist(Z,k, 'CovarianceType','diagonal');%'RegularizationValue',0.00001); % Fitted GMM
-        %Y3 = cluster(gmfit,Z); % Cluster index
-        if RandIndex(Y2,Y3)==1
-            break;
-        else
-            Y2=Y3;
+        for i=1:directed
+            Y3(:,i) = kmeans(Zt(:,:,i), K,'MaxIter',opts.MaxIterK,'Replicates',1,'Start','plus');
+            %[Y3] = kmeans(Zt*WB, K,'MaxIter',opts.MaxIterK,'Replicates',1,'Start','plus');
+            %gmfit = fitgmdist(Z,k, 'CovarianceType','diagonal');%'RegularizationValue',0.00001); % Fitted GMM
+            %Y3 = cluster(gmfit,Z); % Cluster index
+            if RandIndex(Y2(:,i),Y3(:,i))==1
+                break;
+            else
+                Y2(:,i)=Y3(:,i);
+            end
         end
     end
     % Re-Embed using final label Y3
     for i=1:num
-        [tmpZ,Wt{i}]=GraphEncoderEmbed(X{i},Y3,n,opts);
-        Zt(:,(i-1)*K*di+1:i*K*di)=tmpZ*opts.Weight(i);
+        for j=1:directed
+            [tmpZ,Wt{i}]=GraphEncoderEmbed(X{i},Y3(:,j),n,opts);
+            Zt(:,(i-1)*K+1:i*K,j)=tmpZ(:,:,j)*opts.Weight(i);
+        end
     end
     % Compute GCS for each replicate
-    tmpGCS=calculateGCS(Zt,Y3,n,K);
+    tmpGCS=calculateGCS(Zt(:,:,directed),Y3(:,directed),n,K);
     if tmpGCS==GCS
         Z=Z+Zt;
         ens=ens+1;
@@ -323,13 +330,13 @@ end
 % If more than one optimal solution, used the ensemble embedding for another
 % k-means clustering
 if ens>1
-    Y = kmeans(Z, K,'MaxIter',opts.MaxIterK,'Replicates',1,'Start','plus');
+    Y = kmeans(Z(:,:,directed), K,'MaxIter',opts.MaxIterK,'Replicates',1,'Start','plus');
     % Final embed
     for i=1:num
         [tmpZ,W{i}]=GraphEncoderEmbed(X{i},Y3,n,opts);
-        Z(:,(i-1)*K*di+1:i*K*di)=tmpZ*opts.Weight(i);
+        Z(:,(i-1)*K+1:i*K,:)=tmpZ*opts.Weight(i);
     end
-    GCS=calculateGCS(Z,Y,n,K);
+    GCS=calculateGCS(Z(:,:,directed),Y,n,K);
 end
 
 %% Embedding Function
@@ -338,7 +345,7 @@ if nargin<4
     opts = struct('Normalize',true,'Directed',1);
 end
 prob=false;
-di=opts.Directed;
+directed=opts.Directed;
 
 s=size(X,1);
 if size(Y,2)>1
@@ -348,13 +355,13 @@ else
     K=max(Y);
 end
 nk=zeros(1,K);
-if opts.Sparse==false
+% if opts.Sparse==false
     W=zeros(n,K);
-    Z=zeros(n,K*di);
-else
-    W=sparse(n,K);
-    Z=sparse(n,K*di);
-end
+    Z=zeros(n,K*directed);
+% else
+%     W=sparse(n,K);
+%     Z=sparse(n,K*directed);
+% end
 % indS=zeros(n,k);
 if prob==true
     nk=sum(Y);
@@ -378,7 +385,7 @@ for i=1:s
         for j=1:K
             Z(a,j)=Z(a,j)+W(b,j)*e;
             if a~=b
-                tmp=j+(di>1)*K;
+                tmp=j+(directed>1)*K;
                 Z(b,tmp)=Z(b,tmp)+W(a,j)*e;
             end
         end
@@ -389,22 +396,24 @@ for i=1:s
             Z(a,d)=Z(a,d)+W(b,d)*e;
         end
         if c>0 && a~=b
-            tmp=c+(di>1)*K;
+            tmp=c+(directed>1)*K;
             Z(b,tmp)=Z(b,tmp)+W(a,c)*e;
         end
     end
 end
-if di==3
+if directed==3
     Z(:,2*K+1:3*K)=Z(:,K+1:2*K)+Z(:,1:K);
 end
 
 if opts.Normalize==true
-    for i=1:di
+    for i=1:directed
         Z(:,(i-1)*K+1:i*K) = normalize(Z(:,(i-1)*K+1:i*K),2,'norm');
     end
     Z(isnan(Z))=0;
 end
-
+if directed>1
+    Z=reshape(Z,n,K,directed);
+end
 % [~,Z]=pca(Z);
 % Z=sum(Z,2);
 % W=W(:,1:min(opts.Dim,K));
