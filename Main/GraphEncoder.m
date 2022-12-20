@@ -1,7 +1,6 @@
-%% Compute the Adjacency Encoder Embedding.
+%% Compute the Graph Encoder Embedding.
 %% Running time is O(nK+s) where s is number of edges, n is number of vertices, and K is number of class.
-%% Reference: C. Shen and Q. Wang and C. E. Priebe, "Graph Encoder Embedding", 2022.
-%%            C. Shen and C. E. Priebe and Y. Park, "Graph Encoder Embedding for Refined Clustering", 2023.
+%% Reference: C. Shen and Q. Wang and C. E. Priebe, "One-Hot Graph Encoder Embedding", 2022.
 %%
 %% @param X is either n*n adjacency, or s*3 edge list. Vertex size should be >10.
 %%        Adjacency matrix can be weighted or unweighted, directed or undirected. It will be converted to s*3 edgelist.
@@ -14,6 +13,7 @@
 %%        DiagA = true means adding 1 to all diagonal entries (i.e., add self-loop to edgelist), which can help sparse graphs. However, if graph weights are very close to 0, this option can introduce significant within-group bias.
 %%        Normalize specifies whether to normalize each embedding by L2 norm;
 %%        Laplacian specifies whether to uses graph Laplacian or adjacency matrix;
+%%        Directed specifices whether to output directed embedding: 1 means overall embedding, 2 means sender and receiver embedding, 3 has all 3 embedding.
 %%        Three integers for clustering: Replicates denotes the number of replicates for clustering,
 %%                                       MaxIter denotes the max iteration within each replicate for encoder embedding,
 %%                                       MaxIterK denotes the max iteration used within kmeans.
@@ -384,10 +384,10 @@ for i=1:s
     if prob==true
         for j=1:K
             Z(a,j)=Z(a,j)+W(b,j)*e;
-            if a~=b
+%             if a~=b
                 tmp=j+(directed>1)*K;
                 Z(b,tmp)=Z(b,tmp)+W(a,j)*e;
-            end
+%             end
         end
     else
         c=Y(a);
@@ -395,7 +395,7 @@ for i=1:s
         if d>0
             Z(a,d)=Z(a,d)+W(b,d)*e;
         end
-        if c>0 && a~=b
+        if c>0 %&& a~=b
             tmp=c+(directed>1)*K;
             Z(b,tmp)=Z(b,tmp)+W(a,c)*e;
         end

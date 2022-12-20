@@ -5,6 +5,7 @@ end
 if nargin<4
     edge=0;
 end
+repeat=1;
 switch option
     case 10 % SBM with 3 classes
         fileName='SBM';
@@ -861,21 +862,21 @@ switch option
             end
         end
         X=Dis;
-    case 70 % SBM outlier: 100 vertices have different sending pattern
+    case 70 % SBM outlier: 100 vertices global sending outliers
         fileName='SBM';
         diffSBM=d;
-        d=10;numOut=100;
+        d=20;numOut=100;
         diff=ceil(n/d);n=diff*d;
         bd=0.2; %0.13 at n=2000;0.12 at n=5000
         %pp=1/d*ones(d,1);
-        Bl=0.1*ones(d,d);
+        Bl=0.05*ones(d,d);
         Dis=zeros(n,n);
         Label=ones(n,4);
         theta=betarnd(1,4,n,1);
-%         theta=ones(n,1);
+        %theta=ones(n,1);
         for i=1:d
             Label((i-1)*diff+1:i*diff,3)=i;
-            Bl(i,i)=bd+0.01*d;
+            Bl(i,i)=bd;
         end
         for i=1:d/2;
             Label((i-1)*diff*2+1:i*diff*2,2)=i;
@@ -894,29 +895,38 @@ switch option
         outlier=find(Label(:,4)==2);
         jend=n;
         %jend=2*length(outlier);
+        if repeat==1
+            for i=1:n
+                for j=1:n
+                    Dis(i,j)=rand(1)<theta(i)*theta(j)*Bl(Label(i,3),Label(j,3));
+                    %                 Dis(j,i)=Dis(i,j);
+                end
+                Dis(i,i)=0;%diagonals are zeros
+            end
+        end
         for i=1:length(outlier)
             for j=1:jend
-                Dis(outlier(i),j)=rand(1)<theta(i)*theta(j)*(Bl(Label(outlier(i),3),Label(j,3))+diffSBM);
+                Dis(outlier(i),j)=rand(1)<theta(outlier(i))*theta(j)*(Bl(Label(outlier(i),3),Label(j,3))+diffSBM);
             end
             Dis(i,i)=0;%diagonals are zeros
         end
         X=[X,Dis];
         Dis=X;
-    case 71 % SBM outlier: 100 vertices have different receiving pattern
+    case 71 % SBM outlier: 100 vertices global receiving outliers
         fileName='SBM';
         diffSBM=d;
-        d=10;numOut=100;
+        d=20;numOut=100;
         diff=ceil(n/d);n=diff*d;
         bd=0.2; %0.13 at n=2000;0.12 at n=5000
         %pp=1/d*ones(d,1);
-        Bl=0.1*ones(d,d);
+        Bl=0.05*ones(d,d);
         Dis=zeros(n,n);
         Label=ones(n,4);
         theta=betarnd(1,4,n,1);
 %         theta=ones(n,1);
         for i=1:d
             Label((i-1)*diff+1:i*diff,3)=i;
-            Bl(i,i)=bd+0.01*d;
+            Bl(i,i)=bd;
         end
         for i=1:d/2;
             Label((i-1)*diff*2+1:i*diff*2,2)=i;
@@ -933,36 +943,45 @@ switch option
         per=randperm(n);
         Label(per(1:numOut),4)=2;
         outlier=find(Label(:,4)==2);
+        if repeat==1
+            for i=1:n
+                for j=1:n
+                    Dis(i,j)=rand(1)<theta(i)*theta(j)*Bl(Label(i,3),Label(j,3));
+                    %                 Dis(j,i)=Dis(i,j);
+                end
+                Dis(i,i)=0;%diagonals are zeros
+            end
+        end
         jend=n;
         %jend=2*length(outlier);
         for i=1:length(outlier)
             for j=1:jend
-                Dis(j,outlier(i))=rand(1)<theta(i)*theta(j)*(Bl(Label(j,3),Label(outlier(i),3))+diffSBM);
+                Dis(j,outlier(i))=rand(1)<theta(outlier(i))*theta(j)*(Bl(Label(j,3),Label(outlier(i),3))+diffSBM);
             end
-            Dis(i,i)=0;%diagonals are zeros
+            Dis(j,j)=0;%diagonals are zeros
         end
         X=[X,Dis];
         Dis=X;
-    case 72 % SBM outlier: 50 vertices affects all adjacency
+    case 72 % SBM outlier: 100 vertices global mixed outliers
         fileName='SBM';
         diffSBM=d;
-        d=2;numOut=100;
+        d=20;numOut=100;
         diff=ceil(n/d);n=diff*d;
         bd=0.2; %0.13 at n=2000;0.12 at n=5000
         %pp=1/d*ones(d,1);
-        Bl=0.1*ones(d,d);
+        Bl=0.05*ones(d,d);
         Dis=zeros(n,n);
         Label=ones(n,4);
         theta=betarnd(1,4,n,1);
 %         theta=ones(n,1);
         for i=1:d
             Label((i-1)*diff+1:i*diff,3)=i;
-            Bl(i,i)=bd+0.01*d;
+            Bl(i,i)=bd;
         end
-%         for i=1:d/2;
-%             Label((i-1)*diff*2+1:i*diff*2,2)=i;
-%         end
-%         Label(1:4*diff,1)=1;Label(4*diff+1:end,1)=2;
+        for i=1:d/2;
+            Label((i-1)*diff*2+1:i*diff*2,2)=i;
+        end
+        Label(1:4*diff,1)=1;Label(4*diff+1:end,1)=2;
         for i=1:n
             for j=1:n
                 Dis(i,j)=rand(1)<theta(i)*theta(j)*Bl(Label(i,3),Label(j,3));
@@ -974,8 +993,47 @@ switch option
         per=randperm(n);
         Label(per(1:numOut),4)=2;
         outlier=find(Label(:,4)==2);
+        if repeat==1
+            for i=1:n
+                for j=1:n
+                    Dis(i,j)=rand(1)<theta(i)*theta(j)*Bl(Label(i,3),Label(j,3));
+                    %                 Dis(j,i)=Dis(i,j);
+                end
+                Dis(i,i)=0;%diagonals are zeros
+            end
+        end
         jend=n;
         %jend=2*length(outlier);
+        for i=1:length(outlier)
+            for j=1:jend
+                Dis(j,outlier(i))=rand(1)<theta(j)*theta(outlier(i))*(Bl(Label(j,3),Label(outlier(i),3))+diffSBM);
+                Dis(outlier(i),j)=rand(1)<theta(j)*theta(outlier(i))*(Bl(Label(outlier(i),3),Label(j,3))+diffSBM);
+            end
+            Dis(i,i)=0;%diagonals are zeros
+            Dis(j,j)=0;%diagonals are zeros
+        end
+        X=[X,Dis];
+        Dis=X;
+    case 73 % SBM outlier: 100 vertices local sending outliers
+        fileName='SBM';
+        diffSBM=d;
+        d=20;numOut=100;
+        diff=ceil(n/d);n=diff*d;
+        bd=0.2; %0.13 at n=2000;0.12 at n=5000
+        %pp=1/d*ones(d,1);
+        Bl=0.05*ones(d,d);
+        Dis=zeros(n,n);
+        Label=ones(n,4);
+        theta=betarnd(1,4,n,1);
+%         theta=ones(n,1);
+        for i=1:d
+            Label((i-1)*diff+1:i*diff,3)=i;
+            Bl(i,i)=bd;
+        end
+        for i=1:d/2;
+            Label((i-1)*diff*2+1:i*diff*2,2)=i;
+        end
+        Label(1:4*diff,1)=1;Label(4*diff+1:end,1)=2;
         for i=1:n
             for j=1:n
                 Dis(i,j)=rand(1)<theta(i)*theta(j)*Bl(Label(i,3),Label(j,3));
@@ -983,29 +1041,151 @@ switch option
             end
             Dis(i,i)=0;%diagonals are zeros
         end
-        for i=1:length(outlier)
-            for j=1:jend
-                Dis(j,outlier(i))=rand(1)<theta(i)*theta(j)*(Bl(Label(j,3),Label(outlier(i),3))+diffSBM);
+        X=Dis;
+        per=randperm(n);
+        Label(per(1:numOut),4)=2;
+        outlier=find(Label(:,4)==2);
+        %jend=2*length(outlier);
+        if repeat==1
+            for i=1:n
+                for j=1:n
+                    Dis(i,j)=rand(1)<theta(i)*theta(j)*Bl(Label(i,3),Label(j,3));
+                    %                 Dis(j,i)=Dis(i,j);
+                end
+                Dis(i,i)=0;%diagonals are zeros
             end
-            Dis(i,i)=0;%diagonals are zeros
+        end
+        jend=n;
+        per2=randperm(n);
+        per2=per2(1:n/5);
+        for i=1:length(outlier)
+            for j=1:length(per2)
+                Dis(outlier(i),per2(j))=rand(1)<theta(outlier(i))*theta(per2(j))*(Bl(Label(outlier(i),3),Label(per2(j),3))+diffSBM);
+            end
+            Dis(outlier(i),outlier(i))=0;%diagonals are zeros
         end
         X=[X,Dis];
         Dis=X;
-    case 73 % SBM outlier: 30 vertices affects muln*30 adjacency
+    case 74 % SBM outlier: 100 vertices local receiving outliers
+        fileName='SBM';
+        diffSBM=d;
+        d=20;numOut=100;
+        diff=ceil(n/d);n=diff*d;
+        bd=0.2; %0.13 at n=2000;0.12 at n=5000
+        %pp=1/d*ones(d,1);
+        Bl=0.05*ones(d,d);
+        Dis=zeros(n,n);
+        Label=ones(n,4);
+        theta=betarnd(1,4,n,1);
+%         theta=ones(n,1);
+        for i=1:d
+            Label((i-1)*diff+1:i*diff,3)=i;
+            Bl(i,i)=bd;
+        end
+        for i=1:d/2;
+            Label((i-1)*diff*2+1:i*diff*2,2)=i;
+        end
+        Label(1:4*diff,1)=1;Label(4*diff+1:end,1)=2;
+        for i=1:n
+            for j=1:n
+                Dis(i,j)=rand(1)<theta(i)*theta(j)*Bl(Label(i,3),Label(j,3));
+%                 Dis(j,i)=Dis(i,j);
+            end
+            Dis(i,i)=0;%diagonals are zeros
+        end
+        X=Dis;
+        per=randperm(n);
+        Label(per(1:numOut),4)=2;
+        outlier=find(Label(:,4)==2);
+        if repeat==1
+            for i=1:n
+                for j=1:n
+                    Dis(i,j)=rand(1)<theta(i)*theta(j)*Bl(Label(i,3),Label(j,3));
+                    %                 Dis(j,i)=Dis(i,j);
+                end
+                Dis(i,i)=0;%diagonals are zeros
+            end
+        end
+        jend=n;
+        %jend=2*length(outlier);
+        per2=randperm(n);
+        per2=per2(1:n/5);
+        for i=1:length(outlier)
+            for j=1:length(per2)
+                Dis(per2(j),outlier(i))=rand(1)<theta(outlier(i))*theta(per2(j))*(Bl(Label(per2(j),3),Label(outlier(i),3))+diffSBM);
+            end
+            Dis(outlier(i),outlier(i))=0;%diagonals are zeros
+        end
+        X=[X,Dis];
+        Dis=X;
+    case 75 % SBM outlier: 100 vertices local mixed outliers
+        fileName='SBM';
+        diffSBM=d;
+        d=20;numOut=100;
+        diff=ceil(n/d);n=diff*d;
+        bd=0.2; %0.13 at n=2000;0.12 at n=5000
+        %pp=1/d*ones(d,1);
+        Bl=0.05*ones(d,d);
+        Dis=zeros(n,n);
+        Label=ones(n,4);
+        theta=betarnd(1,4,n,1);
+%         theta=ones(n,1);
+        for i=1:d
+            Label((i-1)*diff+1:i*diff,3)=i;
+            Bl(i,i)=bd;
+        end
+        for i=1:d/2;
+            Label((i-1)*diff*2+1:i*diff*2,2)=i;
+        end
+        Label(1:4*diff,1)=1;Label(4*diff+1:end,1)=2;
+        for i=1:n
+            for j=1:n
+                Dis(i,j)=rand(1)<theta(i)*theta(j)*Bl(Label(i,3),Label(j,3));
+%                 Dis(j,i)=Dis(i,j);
+            end
+            Dis(i,i)=0;%diagonals are zeros
+        end
+        X=Dis;
+        per=randperm(n);
+        Label(per(1:numOut),4)=2;
+        outlier=find(Label(:,4)==2);
+        if repeat==1
+            for i=1:n
+                for j=1:n
+                    Dis(i,j)=rand(1)<theta(i)*theta(j)*Bl(Label(i,3),Label(j,3));
+                    %                 Dis(j,i)=Dis(i,j);
+                end
+                Dis(i,i)=0;%diagonals are zeros
+            end
+        end
+        jend=n;
+        per2=randperm(n);per2=per2(1:n/5);
+        per3=randperm(n);per3=per3(1:n/5);
+        %jend=2*length(outlier);
+        for i=1:length(outlier)
+            for j=1:length(per2)
+                Dis(outlier(i),per2(j))=rand(1)<theta(outlier(i))*theta(per2(j))*(Bl(Label(outlier(i),3),Label(per2(j),3))+diffSBM);
+                Dis(per3(j),outlier(i))=rand(1)<theta(outlier(i))*theta(per3(j))*(Bl(Label(per3(j),3),Label(outlier(i),3))+diffSBM);
+            end
+            Dis(outlier(i),outlier(i))=0;%diagonals are zeros
+        end
+        X=[X,Dis];
+        Dis=X;
+    case 76 % SBM outlier: 30 vertices affects muln*30 adjacency
         fileName='SBM';
         diffSBM=d;
         d=5;numOut=100; muln=5;
         diff=ceil(n/d);n=diff*d;
         bd=0.2; %0.13 at n=2000;0.12 at n=5000
         %pp=1/d*ones(d,1);
-        Bl=0.1*ones(d,d);
+        Bl=0.05*ones(d,d);
         Dis=zeros(n,n);
         Label=ones(n,4);
-        theta=betarnd(1,4,n,1);
-%         theta=ones(n,1);
+%         theta=betarnd(1,4,n,1);
+        theta=ones(n,1);
         for i=1:d
             Label((i-1)*diff+1:i*diff,3)=i;
-            Bl(i,i)=bd+0.01*d;
+            Bl(i,i)=bd;
         end
 %         for i=1:d/2;
 %             Label((i-1)*diff*2+1:i*diff*2,2)=i;
@@ -1013,7 +1193,7 @@ switch option
 %         Label(1:4*diff,1)=1;Label(4*diff+1:end,1)=2;
         for i=1:n
             for j=1:n
-                Dis(i,j)=rand(1)<theta(i)*theta(j)*Bl(Label(i,1),Label(j,1));
+                Dis(i,j)=rand(1)<theta(i)*theta(j)*Bl(Label(i,3),Label(j,3));
 %                 Dis(j,i)=Dis(i,j);
             end
             Dis(i,i)=0;%diagonals are zeros
@@ -1022,13 +1202,123 @@ switch option
         per=randperm(n);
         Label(per(1:numOut),4)=2;
         outlier=find(Label(:,4)==2);
-        %jend=n;
-        jend=muln*length(outlier);
+        jend=n;
+%         if repeat==1
+            for i=1:n
+                for j=1:n
+                    Dis(i,j)=rand(1)<theta(i)*theta(j)*Bl(Label(i,3),Label(j,3));
+                    %                 Dis(j,i)=Dis(i,j);
+                end
+                Dis(i,i)=0;%diagonals are zeros
+            end
+%         end
+%         jend=muln*length(outlier);
         for i=1:length(outlier)
             for j=1:jend
-                Dis(j,outlier(i))=rand(1)<theta(i)*theta(j)*(Bl(Label(outlier(i),1),Label(j,1))+diffSBM);
+                Dis(outlier(i),j)=rand(1)<theta(outlier(i))*theta(j)*(Bl(Label(outlier(i),3),Label(j,3))+diffSBM);
+            end
+            Dis(outlier(i),outlier(i))=0;%diagonals are zeros
+        end
+        X=[X,Dis];
+        Dis=X;
+     case 77 % SBM outlier: 30 vertices affects muln*30 adjacency
+        fileName='SBM';
+        diffSBM=d;
+        d=5;numOut=100; muln=5;
+        diff=ceil(n/d);n=diff*d;
+        bd=0.2; %0.13 at n=2000;0.12 at n=5000
+        %pp=1/d*ones(d,1);
+        Bl=0.05*ones(d,d);
+        Dis=zeros(n,n);
+        Label=ones(n,4);
+%         theta=betarnd(1,4,n,1);
+        theta=ones(n,1);
+        for i=1:d
+            Label((i-1)*diff+1:i*diff,3)=i;
+            Bl(i,i)=bd;
+        end
+%         for i=1:d/2;
+%             Label((i-1)*diff*2+1:i*diff*2,2)=i;
+%         end
+%         Label(1:4*diff,1)=1;Label(4*diff+1:end,1)=2;
+        for i=1:n
+            for j=1:n
+                Dis(i,j)=rand(1)<theta(i)*theta(j)*Bl(Label(i,3),Label(j,3));
+%                 Dis(j,i)=Dis(i,j);
             end
             Dis(i,i)=0;%diagonals are zeros
+        end
+        X=Dis;
+        per=randperm(n);
+        Label(per(1:numOut),4)=2;
+        outlier=find(Label(:,4)==2);
+        jend=n;
+%         if repeat==1
+            for i=1:n
+                for j=1:n
+                    Dis(i,j)=rand(1)<theta(i)*theta(j)*Bl(Label(i,3),Label(j,3));
+                    %                 Dis(j,i)=Dis(i,j);
+                end
+                Dis(i,i)=0;%diagonals are zeros
+            end
+%         end
+%         jend=muln*length(outlier);
+        for i=1:length(outlier)
+            for j=1:jend
+                Dis(j,outlier(i))=rand(1)<theta(outlier(j))*theta(i)*(Bl(Label(outlier(i),3),Label(j,3))+diffSBM);
+            end
+            Dis(outlier(i),outlier(i))=0;%diagonals are zeros
+        end
+        X=[X,Dis];
+        Dis=X;
+     case 78 % SBM outlier: 30 vertices affects muln*30 adjacency
+        fileName='SBM';
+        diffSBM=d;
+        d=5;numOut=100; muln=5;
+        diff=ceil(n/d);n=diff*d;
+        bd=0.2; %0.13 at n=2000;0.12 at n=5000
+        %pp=1/d*ones(d,1);
+        Bl=0.05*ones(d,d);
+        Dis=zeros(n,n);
+        Label=ones(n,4);
+%         theta=betarnd(1,4,n,1);
+        theta=ones(n,1);
+        for i=1:d
+            Label((i-1)*diff+1:i*diff,3)=i;
+            Bl(i,i)=bd;
+        end
+%         for i=1:d/2;
+%             Label((i-1)*diff*2+1:i*diff*2,2)=i;
+%         end
+%         Label(1:4*diff,1)=1;Label(4*diff+1:end,1)=2;
+        for i=1:n
+            for j=1:n
+                Dis(i,j)=rand(1)<theta(i)*theta(j)*Bl(Label(i,3),Label(j,3));
+%                 Dis(j,i)=Dis(i,j);
+            end
+            Dis(i,i)=0;%diagonals are zeros
+        end
+        X=Dis;
+        per=randperm(n);
+        Label(per(1:numOut),4)=2;
+        outlier=find(Label(:,4)==2);
+        jend=n;
+%         if repeat==1
+            for i=1:n
+                for j=1:n
+                    Dis(i,j)=rand(1)<theta(i)*theta(j)*Bl(Label(i,3),Label(j,3));
+                    %                 Dis(j,i)=Dis(i,j);
+                end
+                Dis(i,i)=0;%diagonals are zeros
+            end
+%         end
+%         jend=muln*length(outlier);
+        for i=1:length(outlier)
+            for j=1:jend
+                Dis(outlier(i),j)=rand(1)<theta(outlier(i))*theta(j)*(Bl(Label(outlier(i),3),Label(j,3))+diffSBM);
+                Dis(j,outlier(i))=rand(1)<theta(outlier(j))*theta(i)*(Bl(Label(outlier(i),3),Label(j,3))+diffSBM);
+            end
+            Dis(outlier(i),outlier(i))=0;%diagonals are zeros
         end
         X=[X,Dis];
         Dis=X;
