@@ -12,7 +12,7 @@ rep=100;
 opts0 = struct('DiagA',true,'Normalize',false,'Laplacian',false,'Replicates',1);
 opts1 = struct('DiagA',true,'Normalize',true,'Laplacian',false,'Replicates',1);
 opts2 = struct('DiagA',true,'Normalize',true,'Laplacian',false,'Replicates',10);
-% map2 = brewermap(128,'PiYG'); % brewmap
+map2 = brewermap(128,'PuBuGn'); % brewmap
 % colormap(gca,map2);
 if opt==0
 %     n=500;K=5;
@@ -39,12 +39,14 @@ if opt==0
     for i=1:K
         ind1=[ind1;find(Y==i)];
     end
-    heatmap(Adj(ind1,ind1),'GridVisible','off');
+%     G=graph(Adj,'omitselfloops');
+%     plot(G)
+    heatmap(Adj(ind1,ind1),'ColorMap',map2,'GridVisible','off');
     Ax = gca;
     Ax.XDisplayLabels = nan(size(Ax.XDisplayData));
     Ax.YDisplayLabels = nan(size(Ax.YDisplayData));
     colorbar( 'off' )
-    colormap default
+%     colormap default
     title('Sparse Graph')
 %     axis('square')
     set(gca,'FontSize',fs);
@@ -55,7 +57,8 @@ if opt==0
     plot(Z(Y==1,1),Z(Y==1,2),'ro');
     plot(Z(Y==2,1),Z(Y==2,2),'bx');
     hold off
-    title('Raw Embedding')
+    Y2=kmeans(Z,2);
+    title(strcat('ARI = ',{' '},num2str(floor(RandIndex(Y,Y2)*100)/100)));
 %     axis('square')
     set(gca,'FontSize',fs);
 
@@ -65,7 +68,8 @@ if opt==0
     plot(Z(Y==1,1),Z(Y==1,2),'ro');
     plot(Z(Y==2,1),Z(Y==2,2),'bx');
     hold off
-    title('Normalized Embedding')
+    Y2=kmeans(Z,2);
+    title(strcat('ARI = ',{' '},num2str(floor(RandIndex(Y,Y2)*100)/100)));
 %     axis('square')
     set(gca,'FontSize',fs);
 
@@ -130,9 +134,9 @@ if opt==2
     [Z2,Y2]=GraphEncoder(Adj,2,opts2);
 %     [Z2,Y2]=GraphEncoder(Adj,Y2,opts0);
     subplot(1,2,1)
-    plot3(Z2(Y2==1,1),Z2(Y2==1,2),zeros(sum(Y2==1),1)','o');
+    plot3(Z2(Y2==1,1),Z2(Y2==1,2),zeros(sum(Y2==1),1)','ro');
     hold on
-    plot3(Z2(Y2==2,1),Z2(Y2==2,2),zeros(sum(Y2==2),1)','x');
+    plot3(Z2(Y2==2,1),Z2(Y2==2,2),zeros(sum(Y2==2),1)','bx');
     % plot(Z(Y==3,1),Z(Y==3,2),'bs');
     hold off
     title('GEE at K=2');
@@ -142,10 +146,10 @@ if opt==2
     [Z3,Y3]=GraphEncoder(Adj,3,opts2);
 %     [Z3,Y3]=GraphEncoder(Adj,Y3,opts0);
     subplot(1,2,2)
-    plot3(Z3(Y3==1,1),Z3(Y3==1,2),Z3(Y3==1,3),'o');
+    plot3(Z3(Y3==1,1),Z3(Y3==1,2),Z3(Y3==1,3),'ro');
     hold on
-    plot3(Z3(Y3==2,1),Z3(Y3==2,2),Z3(Y3==2,3),'x');
-    plot3(Z3(Y3==3,1),Z3(Y3==3,2),Z3(Y3==3,3),'*');
+    plot3(Z3(Y3==2,1),Z3(Y3==2,2),Z3(Y3==2,3),'bx');
+    plot3(Z3(Y3==3,1),Z3(Y3==3,2),Z3(Y3==3,3),'g*');
     % plot(Z(Y==3,1),Z(Y==3,2),'bs');
     title('GEE at K=3');
     axis('square')

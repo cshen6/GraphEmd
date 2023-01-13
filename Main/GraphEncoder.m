@@ -70,6 +70,7 @@ if length(opts.Weight)~=num
     opts.Weight=ones(num,1);
 end
 
+n=1;
 for i=1:num
     [s,t]=size(X{i});
     if s==t % convert adjacency matrix to edgelist
@@ -80,7 +81,7 @@ for i=1:num
             %         n=max(max(X{i}));
             %         t=3;
         end
-        n=max(max(X{i}));
+        n=max(max(max(X{i})),n);
     end
     %     n=max(max(X{1}(:,1:2)));
     if opts.DiagA==true

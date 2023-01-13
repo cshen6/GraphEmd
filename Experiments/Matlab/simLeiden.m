@@ -65,12 +65,12 @@ plotUMAP(X,Y);
 plotUMAP(X,Y);
 
 
-load('phone.mat')
+load('smartphone.mat');YL=label;
 % Phone=GraphEncoderEvaluate(Edge,YL);
 oot=struct('Laplacian',false,'Dim',0,'DiagA',true);
-[Z]=GraphEncoder(Edge,YL,oot);
+[Z]=GraphEncoder(G,YL,oot);
 [X]=run_umap([Z,YL],'label_column','end','contour_percent',0, 'verbose','none','randomize',false);
-plotUMAP(X,Y);fs=15;
+plotUMAP(X,YL);fs=15;
 % hold on
 % text(X(58,1),X(58,2),'Apple','FontSize',fs)
 % text(X(99,1),X(99,2),'Blackberry','FontSize',fs)
