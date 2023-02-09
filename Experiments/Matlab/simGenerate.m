@@ -1322,6 +1322,53 @@ switch option
         end
         X=[X,Dis];
         Dis=X;
+   case 101 % DC-SBM with 20 classes
+        fileName='DCSBM';
+        pp=1/d*ones(d,1);
+        Bl=0.1*ones(d,d);
+        %             Bl=rand(clas,clas);
+        for i=1:d
+            Bl(i,i)=0.5;
+        end
+        if edge==0
+           Dis=zeros(n,n);
+        else
+            Dis=[];
+        end
+        tt=rand([n,1]);
+        Label=ones(n,1);
+        thres=0;
+%         theta=betarnd(1,10,n,1);
+%         ind=(Label==2);
+%         theta(ind)= betarnd(10,10,sum(ind),1);
+%         ind=(Label==3);
+%         theta(ind)= betarnd(10,1,sum(ind),1);
+        theta=betarnd(1,4,n,1);
+%         theta=theta;
+        for i=1:d
+            thres=thres+pp(i);
+            Label=Label+(tt>thres); %determine the block of each data
+        end
+        if edge==0
+            for i=1:n
+                Dis(i,i)=0;%diagonals are zeros
+                for j=i+1:n
+                    weight=1;%randi(10);
+                    Dis(i,j)=weight*(rand(1)<theta(i)*theta(j)*Bl(Label(i),Label(j)));
+                    Dis(j,i)=Dis(i,j);
+                end
+            end
+        else
+            for i=1:n
+                for j=i+1:n
+                    tmp=weight*(rand(1)<theta(i)*theta(j)*Bl(Label(i),Label(j)));
+                    if tmp==1;
+                        Dis=[Dis;i,j,1];
+                    end
+                end
+            end
+        end
+        X=Dis;
 %         Dis=diag(sum(Dis))-Dis;
 %         X=Dis;
 %     case 33 % RDPG

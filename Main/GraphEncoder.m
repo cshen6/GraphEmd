@@ -5,6 +5,7 @@
 %% @param X is either n*n adjacency, or s*3 edge list. Vertex size should be >10.
 %%        Adjacency matrix can be weighted or unweighted, directed or undirected. It will be converted to s*3 edgelist.
 %%        Edgelist input can be either s*2 or s*3, and complexity in O(s).
+%%        If some vertex, say the ith vertex is present in Y but not in X, please add (i,i,0) to the s*3 edgelist. 
 %% @param Y is either an n*1 class label vector, or a positive integer for number of clusters, or a range of potential cluster size, i.e., [2,10].
 %%        In case of partial known labels, Y should be a n*1 vector with unknown labels set to <=0 and known labels being >0.
 %%        When there is no known label, set Y to be the number of clusters or a range of clusters. 
@@ -81,7 +82,10 @@ for i=1:num
             %         n=max(max(X{i}));
             %         t=3;
         end
-        n=max(max(max(X{i})),n);
+        n=max(max(max(X{i}(:,1:2))),n);
+    end
+    if length(Y)>n
+        n=length(Y);
     end
     %     n=max(max(X{1}(:,1:2)));
     if opts.DiagA==true
@@ -123,7 +127,6 @@ if length(Y)==n
     if opts.Dim>0
         dim=min(opts.Dim,dim);
     end
-
 %     if opts.Sparse==false
         Z=zeros(n,dim*num,directed);
 %     else
