@@ -1331,7 +1331,11 @@ switch option
             Bl(i,i)=0.5;
         end
         if edge==0
-           Dis=zeros(n,n);
+%             if n>30000
+%            Dis=sparse(n,n);
+%             else
+                Dis=zeros(n,n);
+%             end
         else
             Dis=[];
         end

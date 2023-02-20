@@ -1,6 +1,9 @@
 This folder consists of simulated and real data experiments for the following papers: 
 1. C. Shen and Q. Wang and C. E. Priebe, **"One-Hot Graph Encoder Embedding"**, IEEE Transactions on Pattern Analysis and Machine Intelligence, accepted, 2023. arXiv:2109.13098
 2. C. Shen and Y. Park and C. E. Priebe, **"Graph Encoder Ensemble for Simultaneous Vertex Embedding and Community Detection"**, submitted, 2023. arXiv:2301.11290
+3. C. Shen, J. Larson, H. Trinh, X. Qin, Y. Park, and C. E. Priebe, **"Discovering Communication Pattern Shifts in Large-Scale Networks using Encoder Embedding and Vertex Dynamics
+"**, to be submitted, 2023. 
+
 
 All experiments in the paper are carried out in MATLAB2022a, located under Experiments/Matlab.
 
@@ -62,3 +65,13 @@ All experiments in paper 2 are in simImprove.m:
 > simImprove(i) 
 
 for i=0,1,2,3 will generate the figures in paper.
+
+-----------------------------------------------------------------------------------
+**Paper 3**:
+
+All experiments and plots in paper 3 are in simDynamicPlot.m:
+
+> simDynamicPlot(i) 
+
+for i=1,2 will generate the simulation figures in paper.
+Option 3,4,5 is for the Microsoft data, which is not publically available but can be available for individual upon request.
