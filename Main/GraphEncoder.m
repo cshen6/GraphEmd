@@ -14,12 +14,13 @@
 %%        DiagA = true means adding 1 to all diagonal entries (i.e., add self-loop to edgelist), which can help sparse graphs. However, if graph weights are very close to 0, this option can introduce significant within-group bias.
 %%        Normalize specifies whether to normalize each embedding by L2 norm;
 %%        Laplacian specifies whether to uses graph Laplacian or adjacency matrix;
+%%        Sparse used a more memory efficient storage
 %%        Directed specifices whether to output directed embedding: 1 means overall embedding, 2 means sender and receiver embedding, 3 has all 3 embedding.
 %%        Three integers for clustering: Replicates denotes the number of replicates for clustering,
 %%                                       MaxIter denotes the max iteration within each replicate for encoder embedding,
 %%                                       MaxIterK denotes the max iteration used within kmeans.
 %%
-%% @return The n*k Encoder Embedding Z; the n*k Encoder Transformation: W; the n*1 label vector: Y;
+%% @return The n*k Encoder Embedding Z; the n*1 label vector Y; the weighted one-hot matrix W (which equals Y in case sparse is true)
 %% @return The n*1 boolean vector for known label: indT (only for classification);
 %% @return The GEE Clustering Score (called Minimal Rank Index in paper): ranges in [0,1] and the smaller the better (only for clustering);
 %%
@@ -32,12 +33,12 @@ if nargin<2
     Y=2:5;
 end
 if nargin<3
-    opts = struct('DiagA',true,'Normalize',true,'Laplacian',false,'Learner',1,'LearnIter',0,'MaxIter',30,'MaxIterK',3,'Replicates',3,'Attributes',0,'Directed',1,'Dim',0,'Weight',1,'Sparse',false);
+    opts = struct('DiagA',true,'Normalize',true,'Laplacian',false,'Learner',0,'LearnIter',0,'MaxIter',30,'MaxIterK',3,'Replicates',3,'Attributes',0,'Directed',1,'Dim',0,'Weight',1,'Sparse',true);
 end
 if ~isfield(opts,'DiagA'); opts.DiagA=true; end
 if ~isfield(opts,'Normalize'); opts.Normalize=true; end
 if ~isfield(opts,'Laplacian'); opts.Laplacian=false; end
-if ~isfield(opts,'Learner'); opts.Learner=1; end
+if ~isfield(opts,'Learner'); opts.Learner=0; end
 if ~isfield(opts,'LearnIter'); opts.LearnIter=0; end
 if ~isfield(opts,'MaxIter'); opts.MaxIter=20; end
 if ~isfield(opts,'MaxIterK'); opts.MaxIterK=2; end
@@ -46,7 +47,7 @@ if ~isfield(opts,'Attributes'); opts.Attributes=0; end
 if ~isfield(opts,'Directed'); opts.Directed=1; end
 if ~isfield(opts,'Dim'); opts.Dim=0; end
 if ~isfield(opts,'Weight'); opts.Weight=1; end
-% if ~isfield(opts,'Sparse'); opts.Sparse=false; end
+if ~isfield(opts,'Sparse'); opts.Sparse=true; end
 opts.neuron=20;
 elbN=2;
 opts.activation='poslin';
@@ -58,7 +59,7 @@ GCS=1;
 % opts.DiagA=false;
 % opts.Normalize=false;
 % opts.Laplacian=true;
-% opts.Sparse=true;
+% opts.Sparse=false;
 
 %% pre-precess input to s*3 then diagonal augment
 if iscell(X)
@@ -121,116 +122,117 @@ if length(Y)==n
     YTrn=Y(indT);
     [~,~,YTrn]=unique(YTrn);
     Y(indT)=YTrn;
-    YTrn2=onehotencode(categorical(YTrn),2)';
+%     YTrn2=onehotencode(categorical(YTrn),2)';
     K=max(Y);
     dim=K;
     if opts.Dim>0
         dim=min(opts.Dim,dim);
     end
-%     if opts.Sparse==false
-        Z=zeros(n,dim*num,directed);
-%     else
-%         Z=sparse(n,dim*num,directed);
-%     end
+    %     if opts.Sparse==false
+    Z=zeros(n,dim*num,directed);
     W=cell(1,num);
-    if opts.Learner==2
-        % initialize NN
-        netGNN = patternnet(max(opts.neuron,dim),'trainscg','crossentropy'); % number of neurons, Scaled Conjugate Gradient, cross entropy
-        %         netGNN.layers{1}.transferFcn = opts.activation;
-        netGNN.trainParam.showWindow = false;
-        netGNN.trainParam.epochs=100;
-        netGNN.divideParam.trainRatio = 0.9;
-        netGNN.divideParam.valRatio   = 0.1;
-        netGNN.divideParam.testRatio  = 0;
+    %     if opts.Learner==2
+    %         % initialize NN
+    %         netGNN = patternnet(max(opts.neuron,dim),'trainscg','crossentropy'); % number of neurons, Scaled Conjugate Gradient, cross entropy
+    %         %         netGNN.layers{1}.transferFcn = opts.activation;
+    %         netGNN.trainParam.showWindow = false;
+    %         netGNN.trainParam.epochs=100;
+    %         netGNN.divideParam.trainRatio = 0.9;
+    %         netGNN.divideParam.valRatio   = 0.1;
+    %         netGNN.divideParam.testRatio  = 0;
+    %     end
+    for i=1:num
+        [tmpZ,W{i}]=GraphEncoderEmbed(X{i},Y,n,opts);
+        Z(:,(i-1)*dim+1:i*dim,:)=tmpZ*opts.Weight(i);
     end
-    if opts.LearnIter<1
-        for i=1:num
-            [tmpZ,W{i}]=GraphEncoderEmbed(X{i},Y,n,opts);
-            Z(:,(i-1)*dim+1:i*dim,:)=tmpZ*opts.Weight(i);
-        end
-%         %% Simple PCA
-%         if opts.Dim>0 && opts.Dim<=K
-%             if opts.Sparse==true
-%                Z=full(Z);
-%             end
-%             for i=1:directed
-%                 [coeff,Z]=pca(Z(:,:,i),'NumComponents',opts.Dim);
-%                 if opts.Dim==K
-%                     elb=getElbow(diag(coeff),elbN);
-%                     Z=Z(:,1:elb(elbN),i);
-%                 end
+%     if opts.LearnIter<1
+%         for i=1:num
+%             [tmpZ,W{i}]=GraphEncoderEmbed(X{i},Y,n,opts);
+%             Z(:,(i-1)*dim+1:i*dim,:)=tmpZ*opts.Weight(i);
+%         end
+% %         %% Simple PCA
+% %         if opts.Dim>0 && opts.Dim<=K
+% %             if opts.Sparse==true
+% %                Z=full(Z);
+% %             end
+% %             for i=1:directed
+% %                 [coeff,Z]=pca(Z(:,:,i),'NumComponents',opts.Dim);
+% %                 if opts.Dim==K
+% %                     elb=getElbow(diag(coeff),elbN);
+% %                     Z=Z(:,1:elb(elbN),i);
+% %                 end
+% %             end
+% %         end
+%         if attr==true
+%             Z=[Z,repmat(U,1,directed)];
+%         end
+%         if sum(indT)<n
+%             if opts.Learner==1
+%                 mdl=fitcdiscr(Z(indT,:,directed),YTrn,'DiscrimType','pseudoLinear');
+%                 %                mdl=fitcknn(Z(indT,:),YTrn,'Distance','euclidean','NumNeighbors',5);
+%                 Y(~indT)=predict(mdl,Z(~indT,:,directed));
+% %             else
+% %                 mdl = train(netGNN,Z(indT,:,directed)',YTrn2);
+% %                 prob=mdl(Z(~indT,:,directed)');
+% %                 Y(~indT)=vec2ind(prob)';
+%                 %             [~,Y(~indT)] = max(prob,[],1); % class-wise probability for tsting data
 %             end
 %         end
-        if attr==true
-            Z=[Z,repmat(U,1,directed)];
-        end
-        if sum(indT)<n
-            if opts.Learner==1
-                mdl=fitcdiscr(Z(indT,:,directed),YTrn,'DiscrimType','pseudoLinear');
-                %                mdl=fitcknn(Z(indT,:),YTrn,'Distance','euclidean','NumNeighbors',5);
-                Y(~indT)=predict(mdl,Z(~indT,:,directed));
-            else
-                mdl = train(netGNN,Z(indT,:,directed)',YTrn2);
-                prob=mdl(Z(~indT,:,directed)');
-                Y(~indT)=vec2ind(prob)';
-                %             [~,Y(~indT)] = max(prob,[],1); % class-wise probability for tsting data
-            end
-        end
-    else
-        %
-        %         indNew=indT;
-        GCS=0;Y1=Y;
-        for rep=1:opts.Replicates
-            tmp=randi([1,K],[sum(~indT),1]);
-            Y1(~indT)=tmp;
-            Y2=onehotencode(categorical(Y1),2);
-            %             Y3=double(Y1);
-            for r=1:opts.LearnIter
-                %             i
-                for i=1:num
-                    [tmpZ,W{i}]=GraphEncoderEmbed(X{i},Y1,n,opts); % discrete label version
-                    Z(:,(i-1)*K+1:i*K,directed)=tmpZ*opts.Weight(i);
-                    %[Z(:,(i-1)*K+1:i*K),W{i}]=GraphEncoderEmbed(X{i},Y2,n,opts); % probability version
-                end
-%                 %% Simple PCA
-%                 if opts.Dim>0 && opts.Dim<=K
-%                     if opts.Sparse==true
-%                         Z=full(Z);
-%                     end
-%                     [coeff,Z]=pca(Z,'NumComponents',opts.Dim*directed);
-%                     if opts.Dim==K
-%                         elb=getElbow(diag(coeff),elbN);
-%                         Z=Z(:,1:elb(elbN));
-%                     end
+%     else
+%         %
+%         %         indNew=indT;
+%         GCS=0;Y1=Y;
+%         for rep=1:opts.Replicates
+%             tmp=randi([1,K],[sum(~indT),1]);
+%             Y1(~indT)=tmp;
+%             Y2=onehotencode(categorical(Y1),2);
+%             %             Y3=double(Y1);
+%             for r=1:opts.LearnIter
+%                 %             i
+%                 for i=1:num
+%                     [tmpZ,W{i}]=GraphEncoderEmbed(X{i},Y1,n,opts); % discrete label version
+%                     Z(:,(i-1)*K+1:i*K,directed)=tmpZ*opts.Weight(i);
+%                     %[Z(:,(i-1)*K+1:i*K),W{i}]=GraphEncoderEmbed(X{i},Y2,n,opts); % probability version
 %                 end
-                %                 [Z,W]=GraphEncoderEmbed(X,Y2,n,opts);
-                if attr==true && r==1
-                    Z=[Z,repmat(U,1,directed)];
-                end
-                if opts.Learner==1
-                    mdl=fitcdiscr(Z(indT,:,directed),YTrn,'DiscrimType','pseudoLinear');
-                    [class,prob] = predict(mdl,Z(~indT,:,directed));
-                    prob1=max(prob,[],2);
-                else
-                    mdl = train(netGNN,Z(indT,:,directed)',YTrn2);
-                    prob=mdl(Z(~indT,:,directed)');
-                    %                     class=vec2ind(prob)';
-                    [prob1,class] = max(prob,[],1); % class-wise probability for tsting data
-                end
-                if RandIndex(Y1(~indT),class)==1
-                    break;
-                else
-                    Y2(~indT,:)=prob';
-                    %                     Y3(~indT)=prob1;
-                    Y1(~indT)=class;
-                end
-            end
-            minP=mean(prob1)-3*std(prob1);
-            if minP>GCS
-                GCS=minP;Y=Y1;
-            end
-        end
-    end
+% %                 %% Simple PCA
+% %                 if opts.Dim>0 && opts.Dim<=K
+% %                     if opts.Sparse==true
+% %                         Z=full(Z);
+% %                     end
+% %                     [coeff,Z]=pca(Z,'NumComponents',opts.Dim*directed);
+% %                     if opts.Dim==K
+% %                         elb=getElbow(diag(coeff),elbN);
+% %                         Z=Z(:,1:elb(elbN));
+% %                     end
+% %                 end
+%                 %                 [Z,W]=GraphEncoderEmbed(X,Y2,n,opts);
+%                 if attr==true && r==1
+%                     Z=[Z,repmat(U,1,directed)];
+%                 end
+%                 if opts.Learner==1
+%                     mdl=fitcdiscr(Z(indT,:,directed),YTrn,'DiscrimType','pseudoLinear');
+%                     [class,prob] = predict(mdl,Z(~indT,:,directed));
+%                     prob1=max(prob,[],2);
+% %                 else
+% %                     mdl = train(netGNN,Z(indT,:,directed)',YTrn2);
+% %                     prob=mdl(Z(~indT,:,directed)');
+% %                     %                     class=vec2ind(prob)';
+% %                     [prob1,class] = max(prob,[],1); % class-wise probability for tsting data
+%                 end
+%                 if RandIndex(Y1(~indT),class)==1
+%                     break;
+%                 else
+%                     Y2(~indT,:)=prob';
+%                     %                     Y3(~indT)=prob1;
+%                     Y1(~indT)=class;
+%                 end
+%             end
+%             minP=mean(prob1)-3*std(prob1);
+%             if minP>GCS
+%                 GCS=minP;Y=Y1;
+%             end
+%         end
+%     end
 else
     %% otherwise do clustering
     indT=zeros(n,1);
@@ -266,12 +268,7 @@ function [Z,Y,W,GCS]=GraphEncoderCluster(X,K,n,num,attr,opts)
 elbN=2;
 directed=opts.Directed;
 GCS=1;
-% if opts.Sparse==false
-    Zt=zeros(n,K*num,directed);
-%     ZtC=zeros(n,K*num,directed);
-% else
-%     Zt=sparse(n,K*num*directed);
-% end
+Zt=zeros(n,K*num,directed);
 
 Wt=cell(1,num);
 W=cell(1,num);
@@ -346,10 +343,11 @@ end
 %% Embedding Function
 function [Z,W]=GraphEncoderEmbed(X,Y,n,opts)
 if nargin<4
-    opts = struct('Normalize',true,'Directed',1);
+    opts = struct('Normalize',true,'Directed',1,'Sparse',true);
 end
-prob=false;
+sparse=opts.Sparse;
 directed=opts.Directed;
+prob=false;
 
 s=size(X,1);
 if size(Y,2)>1
@@ -359,23 +357,25 @@ else
     K=max(Y);
 end
 nk=zeros(1,K);
-% if opts.Sparse==false
-    W=zeros(n,K);
-    Z=zeros(n,K*directed);
-% else
-%     W=sparse(n,K);
-%     Z=sparse(n,K*directed);
-% end
+Z=zeros(n,K*directed);
 % indS=zeros(n,k);
-if prob==true
+if prob==true && sparse==false
     nk=sum(Y);
     W=Y./repmat(nk,n,1);
 else
-    for i=1:K
-        ind=(Y==i);
-        nk(i)=sum(ind);
-        W(ind,i)=1/nk(i);
-        %         indS(:,i)=ind;
+    if sparse==false
+        W=zeros(n,K);
+        for i=1:K
+            ind=(Y==i);
+            nk(i)=sum(ind);
+            W(ind,i)=1/nk(i);
+            %         indS(:,i)=ind;
+        end
+    else
+        W=Y;
+        for i=1:K
+            nk(i)=sum(W==i);
+        end
     end
 end
 % num=size(X,3);
@@ -385,7 +385,7 @@ for i=1:s
     a=X(i,1);
     b=X(i,2);
     e=X(i,3);
-    if prob==true
+    if prob==true && sparse==false
         for j=1:K
             Z(a,j)=Z(a,j)+W(b,j)*e;
 %             if a~=b
@@ -397,11 +397,19 @@ for i=1:s
         c=Y(a);
         d=Y(b);
         if d>0
-            Z(a,d)=Z(a,d)+W(b,d)*e;
+            if sparse==false
+                Z(a,d)=Z(a,d)+W(b,d)*e;
+            else
+                Z(a,d)=Z(a,d)+e/nk(d);
+            end
         end
         if c>0 %&& a~=b
             tmp=c+(directed>1)*K;
-            Z(b,tmp)=Z(b,tmp)+W(a,c)*e;
+            if sparse==false
+                Z(b,tmp)=Z(b,tmp)+W(a,c)*e;
+            else
+                Z(b,tmp)=Z(b,tmp)+e/nk(c);
+            end
         end
     end
 end

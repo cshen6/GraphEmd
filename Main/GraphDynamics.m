@@ -21,15 +21,16 @@
 function [Z,Dynamic,Y,time]=GraphDynamics(X,Y,opts)
 
 if nargin<3
-    opts = struct('Common',false,'BenchTime',1);
+    opts = struct('Common',false,'BenchTime',1,'Normalize',true);
 end
 if ~isfield(opts,'Common'); opts.Common=false; end
 if ~isfield(opts,'BenchTime'); opts.BenchTime=1; end
+if ~isfield(opts,'Normalize'); opts.Normalize=true; end
 
 %%% Dynamic Encoder Embedding and Reshape
 time=zeros(3,1);
 tic
-[Z,Y,W]=GraphEncoder(X,Y);
+[Z,Y]=GraphEncoder(X,Y,opts);
 t=length(X);
 [n,Kt]=size(Z);
 K=Kt/t;
@@ -59,11 +60,11 @@ if t>1
     %%% Dynamic Vertex Embedding
     tic
     VD=zeros(n,t-t_b+1);CD=zeros(K,t-t_b+1);
-    indK=boolean(W{1});
     for i=2:t-t_b+1
+%         VD(:,t_b+i-1)=vecnorm(Z(:,:,t_b+i-1)-Z(:,:,t_b),2,2);
         VD(:,t_b+i-1)=1-dot(Z(:,:,t_b+i-1),Z(:,:,t_b),2);
         for k=1:K
-           CD(k,t_b+i-1)=mean(VD(indK(:,k),t_b+i-1));
+           CD(k,t_b+i-1)=mean(VD(Y==k,t_b+i-1));
         end
     end
     GD=mean(VD);

@@ -1,4 +1,5 @@
 function simLeiden
+
 map2 = brewermap(128,'PiYG'); % brewmap
 n=3000;
 [Adj,Y]=simGenerate(60,n);

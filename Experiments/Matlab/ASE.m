@@ -8,8 +8,9 @@ if nargin<3
 end
 
 if Lap
-    D=mean(X,3);
+    D=mean(Adj,3);
     D=max(sum(D,1),1).^(0.5);
+    n=size(Adj,1);
     for j=1:n
         Adj(:,j)=Adj(:,j)/D(j)./D';
     end

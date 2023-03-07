@@ -17,7 +17,7 @@ if ~isfield(opts,'knn'); opts.knn=5; end
 if ~isfield(opts,'dim'); opts.dim=30; end
 if ~isfield(opts,'dimGEE'); opts.dimGEE=0; end
 % if ~isfield(opts,'deg'); opts.deg=0; end
-if ~isfield(opts,'neuron'); opts.neuron=20; end
+if ~isfield(opts,'neuron'); opts.neuron=30; end
 if ~isfield(opts,'epoch'); opts.epoch=100; end
 if ~isfield(opts,'training'); opts.training=0.05; end
 if ~isfield(opts,'activation'); opts.activation='poslin'; end %purelin, tansig
@@ -29,14 +29,14 @@ if length(indices)~=length(Y)
 end
 
 kfold=max(indices);
-[~,~,Y]=unique(Y);
+[K,~,Y]=unique(Y);
 n=length(Y);
 d=min(opts.dim,n-1);
-K=max(Y);
+K=length(K);
 num=size(X,3);
 % nre=opts.resample;
-ide=eye(n);
-klim=20;
+% ide=eye(n);
+% klim=20;
 opts.knn=min(opts.knn,ceil(n/K/3));
 discrimType='pseudoLinear';
 opts.dimGEE = min(opts.dimGEE,K);

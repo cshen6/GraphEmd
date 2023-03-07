@@ -16,18 +16,18 @@ if optPlot==1 || optPlot==2
         scatter3(Z(ind2,1,t1), Z(ind2,2,t1),Z(ind2,3,t1),20,myColor(2,:),'filled');
         scatter3(Z(ind3,1,t1), Z(ind3,2,t1),Z(ind3,3,t1),20,myColor(3,:),'filled');
         hold off
-        axis('square'); title('Time 12'); set(gca,'FontSize',fs); 
+        axis('square'); title(strcat('Time 12:',{' '}, num2str(round(GD(t1)*1000)/1000))); set(gca,'FontSize',fs); 
         nexttile(tl)
         scatter3(Z(ind1,1,t2), Z(ind1,2,t2),Z(ind1,3,t2),20,myColor(1,:),'filled');hold on
         scatter3(Z(ind2,1,t2), Z(ind2,2,t2),Z(ind2,3,t2),20,myColor(2,:),'filled');
         scatter3(Z(ind3,1,t2), Z(ind3,2,t2),Z(ind3,3,t2),20,myColor(3,:),'filled');
-        axis('square'); title('Time 54'); set(gca,'FontSize',fs); 
+        axis('square'); title(strcat('Time 54:',{' '}, num2str(round(GD(t2)*1000)/1000))); set(gca,'FontSize',fs); 
         nexttile(tl)
         scatter3(Z(ind1,1,t3), Z(ind1,2,t3),Z(ind1,3,t3),20,myColor(1,:),'filled');hold on
         scatter3(Z(ind2,1,t3), Z(ind2,2,t3),Z(ind2,3,t3),20,myColor(2,:),'filled');
         scatter3(Z(ind3,1,t3), Z(ind3,2,t3),Z(ind3,3,t3),20,myColor(3,:),'filled');
-        axis('square'); title('Time 96'); set(gca,'FontSize',fs); 
-        xlabel(tl,'Embedding Visualization for the First Three Communities','FontSize',fs)
+        axis('square'); title(strcat('Time 96:',{' '}, num2str(round(GD(t3)*1000)/1000))); set(gca,'FontSize',fs); 
+        %xlabel(tl,'Embedding Visualization for the First Three Communities','FontSize',fs)
         %         set(gca,'FontSize',fs);
 
         F.fname='FigDynamic1';
@@ -159,7 +159,8 @@ end
 
 if optPlot>3
     load('anonymized_msft.mat')
-    [Z,Dynamic,Y,time]=GraphDynamics(G,label);
+    opts = struct('Common',false,'BenchTime',1);
+    [Z,Dynamic,Y,time]=GraphDynamics(G,label,opts);
     VD=Dynamic{1}; GD=Dynamic{3}; CD=Dynamic{2};
     % Dist=Dist+Dist';
     %%% Figure 5: two vertex dynamics one for inlier one for outlier
@@ -331,7 +332,7 @@ if optPlot>3
         title('Month 24'); set(gca,'FontSize',fs);
 %         title(tl,'Subplot Grid Title')
 
-        xlabel(tl,'Vertex Dynamic vs Month 1','FontSize',fs);
+        %xlabel(tl,'Vertex Dynamic vs Month 1','FontSize',fs);
         ylabel(tl,'Number of Vertices','FontSize',fs);
 %         set(gca,'FontSize',fs);
 
