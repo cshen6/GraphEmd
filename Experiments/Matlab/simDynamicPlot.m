@@ -103,7 +103,7 @@ if optPlot==3
         r
         for i=1:10
             n=5000*i;
-            [Z,VD,~,tmp]=simTimeSBM(101,n,20,t);
+            [Z,VD,~,tmp]=simDynamicSBM(101,n,20,t);
             time1(i,r)=sum(tmp);
             if spectral==true
                 [A,~]=simGenerate(101,n,20);
@@ -122,7 +122,7 @@ if optPlot==3
         r
         for i=1:10
             t=10*i;
-            [Z,VD,~,tmp]=simTimeSBM(101,n,20,t);
+            [Z,VD,~,tmp]=simDynamicSBM(101,n,20,t);
             time3(i,r)=sum(tmp);
             if spectral==true
                 [A,~]=simGenerate(101,n,20);

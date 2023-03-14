@@ -1,13 +1,12 @@
 function [Z,VD,Y,time]=simDynamicSBM(type,n,K,t)
 
 Lapl=false;
-USE=true;
-normalize=true;
-extreme=true;
+USE=false;
+normalize=false;
+extreme=false;
 opts=1;
-type=101; n=1000; K=20;t=10;
+%type=101; n=1000; K=20;t=10;
 if opts==1
-    t=10;
     [A,Y]=simGenerate(type,n,K);
     E=adj2edge(A);
     E(:,3)=randi(100,size(E,1),1);

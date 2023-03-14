@@ -31,7 +31,11 @@ if ~isfield(opts,'Normalize'); opts.Normalize=true; end
 time=zeros(3,1);
 tic
 [Z,Y]=GraphEncoder(X,Y,opts);
+Y=Y{opts.BenchTime};
 t=length(X);
+if iscell(Z)
+    Z=cell2mat(Z');
+end
 [n,Kt]=size(Z);
 K=Kt/t;
 Z=reshape(Z,n,K,t);

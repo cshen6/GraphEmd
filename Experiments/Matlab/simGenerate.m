@@ -309,7 +309,7 @@ switch option
         if edge==0
            Dis=zeros(n,n);
         else
-            Dis=[];
+            Dis=zeros(100*n,3);
         end
         tt=rand([n,1]);
         Label=ones(n,1);
@@ -335,14 +335,22 @@ switch option
                 end
             end
         else
+            s=1;
             for i=1:n
                 for j=i+1:n
-                    tmp=weight*(rand(1)<theta(i)*theta(j)*Bl(Label(i),Label(j)));
+                    tmp=(rand(1)<theta(i)*theta(j)*Bl(Label(i),Label(j)));
                     if tmp==1;
-                        Dis=[Dis;i,j,1];
+                        Dis(s,1)=i;
+                        Dis(s,2)=j;
+                        Dis(s,3)=1;
+                        s=s+1;
+                    end
+                    if s>100*n;
+                        break;
                     end
                 end
             end
+            Dis=Dis(1:s-1,:);
         end
         X=Dis;
    case 22 % DC-SBM with 4 classes

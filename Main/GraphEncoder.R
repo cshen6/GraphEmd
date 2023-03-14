@@ -66,7 +66,7 @@ GraphEncoder <- function(X, Y=c(2:5), Laplacian = FALSE, DiagA = TRUE, Correlati
       ## when a range of cluster size is specified
       K=sort(K); # ensure increasing K
       if (length(K)<n/2 & max(K)<max(n/2,10)){
-        tmpGCS=1;Z=0;W=0;GCS = rep(0, length(K));
+        tmpGCS=1;Z=0;GCS = rep(0, length(K));
         for (r in 1:length(K)){
           resTmp = GraphEncoderCluster(X,K[r],n,Laplacian,Correlation, MaxIter, MaxIterK, Replicates);
           tmp=resTmp$GCS;
@@ -80,7 +80,7 @@ GraphEncoder <- function(X, Y=c(2:5), Laplacian = FALSE, DiagA = TRUE, Correlati
       }
     }
   }
-  result = list(Z = result$Z, Y = Y, W = result$W, GCS=GCS, indT=indT);
+  result = list(Z = result$Z, Y = Y, GCS=GCS, indT=indT);
   return(result)
 }
 
@@ -114,7 +114,7 @@ GraphEncoderCluster <- function(X, K, n, Laplacian = FALSE, Correlation = TRUE, 
       result=resTmp;
     }
   }
-  result = list(Z = result$Z, Y = Y, W = result$W, GCS=GCS);
+  result = list(Z = result$Z, Y = Y, GCS=GCS);
   return(result)
 }
 
@@ -130,14 +130,10 @@ GraphEncoderEmbed <- function(X, Y, n, Laplacian = FALSE, Correlation = TRUE) {
   ##Y[indT]=Ytmp;
   
   nk=matrix(0, nrow = 1, ncol = k);
-  W=matrix(0, nrow = n, ncol = k);
-  indS=matrix(0, nrow = n, ncol = k);
   
   for (i in 1:k) {
     ind=(Y==i);
     nk[i]=sum(ind);
-    W[ind,i]=1/nk[i];
-    indS[,i]=ind;
   }
   
   if (Laplacian==TRUE){
@@ -165,10 +161,10 @@ GraphEncoderEmbed <- function(X, Y, n, Laplacian = FALSE, Correlation = TRUE) {
     d=Y[b];
     e=X[i,3];
     if (d > 0){
-      Z[a,d]=Z[a,d]+W[b,d]*e;
+      Z[a,d]=Z[a,d]+e/nk[d];
     }
     if (c > 0 & a!=b){
-      Z[b,c]=Z[b,c]+W[a,c]*e;
+      Z[b,c]=Z[b,c]+e/nk[c];
     }
   }
   
@@ -176,7 +172,7 @@ GraphEncoderEmbed <- function(X, Y, n, Laplacian = FALSE, Correlation = TRUE) {
     Z=normalize.rows(Z, method = "euclidean", p = 2);
     Z[is.na(Z)] = 0;
   }
-  result = list(Z = Z, Y = Y, W = W, indT = indT)
+  result = list(Z = Z, Y = Y, indT = indT)
   return(result)
 }
 
