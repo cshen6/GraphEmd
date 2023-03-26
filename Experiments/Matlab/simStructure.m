@@ -158,57 +158,13 @@ for i = 1:kfold
             case 1
                 [Z]=GraphEncoder(X,YT);
             case 2
-                %                 Z=[];
-                %                 for r=1:rep
-                %                     [Z2]=GraphEncoder(X,Yext{r});
-                %                     Z=[Z,Z2];
-                %                 %                 end
                 [Z]=GraphEncoder(X,YT);
                 YLei=kmeans(Z,newK*K);
-
-%                 Z2 = linkage(Z,'average','euclidean');
-%                 YLei = cluster(Z2,'maxclust',newK*K);
-                %                 Z=[];
-                %                 for r=1:length(YLei)
                 [Z]=GraphEncoder(X,YLei);
-
-%                 YLei=kmeans(Z,newK*K);
-% 
-% %                 Z2 = linkage(Z,'average','euclidean');
-% %                 YLei = cluster(Z2,'maxclust',newK*K);
-%                 %                 Z=[];
-%                 %                 for r=1:length(YLei)
-%                 [Z]=GraphEncoder(X,YLei);
-%                 YLei=kmeans(Z2,newK*K);
-%                 [Z3]=GraphEncoder(X,YLei);
-%                 Z=[Z,Z2];
-%                 end
-%                 for r=1:length(YLei2)
-%                     [Z2]=GraphEncoder(X,YLei2{r});
-%                     Z=[Z,Z2];
-%                 end
-% %                 Z=Z2;
             case 3
                 [Z]=GraphEncoder(X,randi([1,newK*K],n,1));
                 YTmp=kmeans(Z,newK*K);
-
-%                 Z2 = linkage(Z,'average','euclidean');
-%                 YLei = cluster(Z2,'maxclust',newK*K);
-                %                 Z=[];
-                %                 for r=1:length(YLei)
                 [Z]=GraphEncoder(X,YTmp);
-% %                 [Z]=GraphEncoder(X,YT);
-%                 Z=[];
-%                 for r=1:length(YExt)
-%                     [Z2]=GraphEncoder(X,YExt{r});
-%                     Z=[Z,Z2];
-%                 end
-%                 Z=Z2;
-%                 [Z]=GraphEncoder(X,YT);
-%                 for r=1:rep
-%                     [Z2]=GraphEncoder(X,Yext{r});
-%                     Z=[Z,Z2];
-%                 end
         end
         timeEmd=toc;
         tic

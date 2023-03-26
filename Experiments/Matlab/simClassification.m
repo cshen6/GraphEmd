@@ -1,19 +1,19 @@
 function simClassification
 
-%%% Clustering 
-n=10000;k=3;
-[Adj,Y]=simGenerate(10,n,k);
-simClusteringReal(Adj,Y);
-% n=10000;k=10;
+% %%% Clustering 
+% n=10000;k=3;
 % [Adj,Y]=simGenerate(10,n,k);
 % simClusteringReal(Adj,Y);
-% chance error
-load('pubmedAdj.mat')
-kk=zeros(max(Y),1);
-for i=1:max(Y)
-kk(i)=mean(Y==i);
-end
-1-max(kk)
+% % n=10000;k=10;
+% % [Adj,Y]=simGenerate(10,n,k);
+% % simClusteringReal(Adj,Y);
+% % chance error
+% load('PubMed.mat')
+% kk=zeros(max(Y),1);
+% for i=1:max(Y)
+% kk(i)=mean(Y==i);
+% end
+% 1-max(kk)
 
 %%% running time
 rep=50;nn=1000;ln=20;
@@ -294,17 +294,10 @@ end
 opts = struct('Adjacency',1,'Laplacian',0,'Spectral',1,'LDA',0,'GNN',1,'knn',5,'dim',30);% opts = struct('ASE',0,'LDA',0,'AEE',1,'GFN',1,'GCN',0,'GNN',0,'knn',5,'pivot',0,'deg',0,'dim',30,'neuron',10,'epoch',100,'training',0.8,'activation','tansig'); % default parameters
 %%% AEE and AEN:
 load('graphCElegans.mat')
-% knum=1; % all sim models have zero significant node. 
-% [Z,W]=GraphEncoder(Ac,vcols,knum); %3 significant nodes
-% GraphEncoder(Ag,vcols,knum); %2
 indices = crossvalind('Kfold',vcols,5);
 opts.indices=indices; opts2.indices=indices;opts.Learner=2;
 CEAc=GraphEncoderEvaluate(Ac,vcols,opts);
 CEAg=GraphEncoderEvaluate(Ag,vcols,opts);
-% opts2=opts;
-% opts2.deg=1;opts2.ASE=0;opts2.LSE=0;opts2.GCN=0;opts2.GNN=0; opts2.LDA=0;opts2.GFN=0;
-% CEAc2=GraphEncoderEvaluate(Ac,vcols,opts2);
-% CEAg2=GraphEncoderEvaluate(Ag,vcols,opts2);
 CE=GraphEncoderEvaluate({Ac,Ag},vcols,opts);
 
 load('adjnoun.mat')
@@ -313,38 +306,16 @@ load('adjnoun.mat')
 indices = crossvalind('Kfold',Label,5);
 opts.indices=indices;
 AN=GraphEncoderEvaluate(Adj,Label,opts);
-% opts2=opts;
-% opts2.deg=1;opts2.ASE=0;opts2.LSE=0;opts2.GCN=0;opts2.GNN=0; opts2.LDA=0;opts2.GFN=0;
-% AN2=GraphEncoderEvaluate(Adj,Label,opts2);
-
-% opts2=opts;
-% opts2.deg=1;opts2.ASE=0;opts2.LSE=0;opts2.GCN=0;opts2.GNN=0; opts2.LDA=0;opts2.GFN=0;
-% PB2=GraphEncoderEvaluate(Adj,Label,opts2);
 
 %%% Distance and Kernel
 load('Wiki_Data.mat')
-opts = struct('Adjacency',1,'Laplacian',0,'Spectral',1,'LDA',0,'GNN',1,'knn',5,'dim',30);% opts = struct('ASE',0,'LDA',0,'AEE',1,'GFN',1,'GCN',0,'GNN',0,'knn',5,'pivot',0,'deg',0,'dim',30,'neuron',10,'epoch',100,'training',0.8,'activation','tansig'); % default parameters
 Label=Label+1;
-% [Z,W]=GraphEncoder(TE,Label,knum); %0 
-% [Z,W]=GraphEncoder(TF,Label,knum); %0
-% [Z,W]=GraphEncoder(GEAdj,Label,knum); %1138
-% [Z,W]=GraphEncoder(GFAdj,Label,knum); %1004
 opts = struct('Adjacency',1,'DiagAugment',0,'Laplacian',0,'Spectral',1,'LDA',0,'GNN',1,'knn',5,'dim',30);indices = crossvalind('Kfold',Label,10);
 opts.indices=indices;
 WikiTE=GraphEncoderEvaluate(TE,Label,opts);
 WikiTF=GraphEncoderEvaluate(TF,Label,opts);
-% D=diag(sum(GEAdj,1));
-% GEAdj=D^-0.5*(GEAdj+eye(size(GEAdj,1)))*D^-0.5;
 WikiGE=GraphEncoderEvaluate(GEAdj,Label,opts);
 WikiGF=GraphEncoderEvaluate(GFAdj,Label,opts);
-% opts2=opts;
-% opts2.deg=1;opts2.ASE=0;opts2.LSE=0;opts2.GCN=0;opts2.GNN=0; opts2.LDA=0;opts2.GFN=0;
-% WikiTE2=GraphEncoderEvaluate(TE,Label,opts2);
-% WikiTF2=GraphEncoderEvaluate(TF,Label,opts2);
-% % % D=diag(sum(GEAdj,1));
-% % % GEAdj=D^-0.5*(GEAdj+eye(size(GEAdj,1)))*D^-0.5;
-% WikiGE2=GraphEncoderEvaluate(GEAdj,Label,opts2);
-% WikiGF2=GraphEncoderEvaluate(GFAdj,Label,opts2);
 %%%%Fusion
 WikiT=GraphEncoderEvaluate({TE,TF},Label,opts);
 WikiG=GraphEncoderEvaluate({GE,GF},Label,opts);
@@ -368,67 +339,29 @@ opts = struct('Adjacency',1,'Laplacian',0,'Spectral',1,'LDA',0,'GNN',1,'knn',5,'
 indices = crossvalind('Kfold',Y,10);
 opts.indices=indices;
 Cora=GraphEncoderEvaluate(Adj,Y,opts);
-% Cora2=GraphEncoderEvaluate(Adj,Y,opts2);
-% opts2=opts;
-% opts2.deg=1;opts2.ASE=0;opts2.LSE=0;opts2.GCN=0;opts2.GNN=0; opts2.LDA=0;opts2.GFN=0;
-% Cora2=GraphEncoderEvaluate(Adj,Y,opts2);
 
-% load('DD244.mat') %GCN K=20
-% % GraphEncoder(Adj,Y,knum); %249 
-% DD=GraphEncoderEvaluate(Adj,Y,opts);
 load('email.mat')
 indices = crossvalind('Kfold',Y,10);
 opts.indices=indices;
 email=GraphEncoderEvaluate(Adj,Y,opts);
-% email2=GraphEncoderEvaluate(Adj,Y,opts2);
 
 load('Gene.mat') %AEL / GFN K=2
 % GraphEncoder(Adj,Y,knum); %0
 indices = crossvalind('Kfold',Y,10);
 opts.indices=indices;
 Gene=GraphEncoderEvaluate(Adj,Y,opts);
-% Gene2=GraphEncoderEvaluate(Adj,Y,opts2);
-% opts2=opts;
-% opts2.deg=1;opts2.ASE=0;opts2.LSE=0;opts2.GCN=0;opts2.GNN=0; opts2.LDA=0;opts2.GFN=0;
-% Gene2=GraphEncoderEvaluate(Adj,Y,opts2);
 
-% load('KKI.mat')%GCN K=189
-% % GraphEncoder(Adj,Y,knum); %2238
-% KKI=GraphEncoderEvaluate(Adj,Y,opts);
 load('IIP.mat') %AEL / GFN K=2
 % GraphEncoder(Adj,Y,knum); %0
 indices = crossvalind('Kfold',Y,10);
 opts.indices=indices;
 IIP=GraphEncoderEvaluate(Adj,Y,opts);
-% IIP2=GraphEncoderEvaluate(Adj,Y,opts2);
-% opts2=opts;
-% opts2.deg=1;opts2.ASE=0;opts2.LSE=0;opts2.GCN=0;opts2.GNN=0; opts2.LDA=0;opts2.GFN=0;
-% IIP2=GraphEncoderEvaluate(Adj,Y,opts2);
 
 load('lastfm.mat') %AEK K=17
 % GraphEncoder(Adj,Y,knum); %542
 indices = crossvalind('Kfold',Y,10);
 opts.indices=indices;
 LFM=GraphEncoderEvaluate(Adj,Y,opts);
-% LFM2=GraphEncoderEvaluate(Adj,Y,opts2);
-% opts2=opts;
-% opts2.deg=1;opts2.ASE=0;opts2.LSE=0;opts2.GCN=0;opts2.GNN=0; opts2.LDA=0;opts2.GFN=0;
-% LFM2=GraphEncoderEvaluate(Adj,Y,opts2);
-
-% load('OHSU.mat')%GCN K=189
-% % GraphEncoder(Adj,Y,knum); %6479 
-% OHSU=GraphEncoderEvaluate(Adj,Y,opts);
-% 
-% load('Peking.mat')%GCN K=189
-% % GraphEncoder(Adj,Y,knum); %3341
-% Pek=GraphEncoderEvaluate(Adj,Y,opts);
-
-% load('pubmedAdj.mat')
-% % GraphEncoder(Adj,Y,knum); %7 
-% indices = crossvalind('Kfold',Y,10);
-% opts.indices=indices;opts2.indices=indices;
-% Pub=GraphEncoderEvaluate(Adj,Y,opts);
-% % Pub2=GraphEncoderEvaluate(Adj,Y,opts2);
 
 %%% AEN only:
 load('polblogs.mat') 
@@ -437,79 +370,67 @@ opts = struct('Adjacency',1,'Laplacian',0,'Spectral',1,'LDA',0,'GNN',1,'knn',5,'
 indices = crossvalind('Kfold',Y,10);
 opts.indices=indices;
 PB=GraphEncoderEvaluate(Adj,Y,opts);
-% PB2=GraphEncoderEvaluate(Adj,Y,opts2);
-% opts2=opts;
-% opts2.deg=1;opts2.ASE=0;opts2.LSE=0;opts2.GCN=0;opts2.GNN=0; opts2.LDA=0;opts2.GFN=0;
-% Pub2=GraphEncoderEvaluate(Adj,Y,opts2);
 
-% opts2=opts;
-% opts2.deg=1;opts2.ASE=0;opts2.LSE=0;opts2.GCN=0;opts2.GNN=0; opts2.LDA=0;opts2.GFN=0;
-% email2=GraphEncoderEvaluate(Adj,Y,opts2);
-% %%% GCN False Example
-% n=2000;k=5;p=0.4;
-% Y=randi(k,n,1);
-% X=unifrnd(0,1,n,n);
-% X=(X+X')/2;
-% X=double(X<p);
-% for i=1:n
-% X(i,i)=0;
-% end
-% [acc_AEL,t_AEL, acc_GFN, t_GFN, acc_ASE, t_ASE, acc_GCN,t_GCN, acc_AEK,t_AEK,acc_ANN,t_ANN]=GraphEncoderEvaluate(X,Y);
-
+load('PubMed.mat')
+opts = struct('Adjacency',1,'Laplacian',0,'Spectral',1,'LDA',0,'GNN',1,'knn',5,'dim',30);% opts = struct('ASE',0,'LDA',0,'AEE',1,'GFN',1,'GCN',0,'GNN',0,'knn',5,'pivot',0,'deg',0,'dim',30,'neuron',10,'epoch',100,'training',0.8,'activation','tansig'); % default parameters
+% GraphEncoder(Adj,Label,knum); %8
+indices = crossvalind('Kfold',Y,10);
+opts.indices=indices;
+Pub=GraphEncoderEvaluate(Edge,Label,opts);
 %%% ARE
 
-n=300;
-[Adj,Y]=simGenerate(1,n);
-[SBM_acc_AEE,SBM_acc_AEE2,SBM_acc_ASE,SBM_t_AEE,SBM_t_AEE2,SBM_t_ASE,SBM_acc_ARE,SBM_t_ARE]=GraphEncoderEvaluate2(Adj,Y);
-
-%%%% Two-sample valid test using encoder embedding
-
-rep=500;p1=zeros(rep,20);p2=zeros(rep,20);
-for i=1:20;
-    n=20*i;k=10;
-    for r=1:rep;
-        [Adj,Y]=simGenerate(12,n);
-        SBM=GraphEncoder(Adj,Y);
-        [Adj,Y]=simGenerate(12,n);
-        SBM2=GraphEncoder(Adj,Y);
-        [~,p1(r,i)]=DCorFastTest([SBM;SBM2],[zeros(n,1);ones(n,1)]);
-        [Adj,Y]=simGenerate(22,n);
-        SBM3=GraphEncoder(Adj,Y);
-        [~,p2(r,i)]=DCorFastTest([SBM;SBM3],[zeros(n,1);ones(n,1)]);
-    end
-end
-power2=mean(p2<0.05);
-power1=mean(p1<0.05);
-plot(1:20,power1,'r-.','LineWidth',3)
-hold on
-plot(1:20,power2,'b-.','LineWidth',3)
-ylim([0,1.05])
-plot(1:20,0.05*ones(20,1),'k--','LineWidth',2)
-xlabel('Number of Vertices')
-ylabel('Testing Power')
-set(gca,'FontSize',15);
-xticks([1,10,20])
-% legend('AEE*NN','AEE*NNC','AEE*LDA','ASE*NN','ASE*LDA','Location','SouthWest');
-xticklabels({'20','200','400'})
-
-% using ASE instead
-
-rep=500;p1=zeros(rep,20);p2=zeros(rep,20);
-for i=1:20;
-    n=20*i;k=10;
-    for r=1:rep;
-        [Adj,Y]=simGenerate(12,n);
-        SBM=ASE(Adj,3);
-        [Adj,Y]=simGenerate(12,n);
-        SBM2=ASE(Adj,3);
-        [~,p1(r,i)]=DCorFastTest([SBM;SBM2],[zeros(n,1);ones(n,1)]);
-        [Adj,Y]=simGenerate(22,n);
-        SBM3=ASE(Adj,3);
-        [~,p2(r,i)]=DCorFastTest([SBM;SBM3],[zeros(n,1);ones(n,1)]);
-    end
-end
-power4=mean(p2<0.05);
-power3=mean(p1<0.05);
+% n=300;
+% [Adj,Y]=simGenerate(1,n);
+% [SBM_acc_AEE,SBM_acc_AEE2,SBM_acc_ASE,SBM_t_AEE,SBM_t_AEE2,SBM_t_ASE,SBM_acc_ARE,SBM_t_ARE]=GraphEncoderEvaluate2(Adj,Y);
+% 
+% %%%% Two-sample valid test using encoder embedding
+% 
+% rep=500;p1=zeros(rep,20);p2=zeros(rep,20);
+% for i=1:20;
+%     n=20*i;k=10;
+%     for r=1:rep;
+%         [Adj,Y]=simGenerate(12,n);
+%         SBM=GraphEncoder(Adj,Y);
+%         [Adj,Y]=simGenerate(12,n);
+%         SBM2=GraphEncoder(Adj,Y);
+%         [~,p1(r,i)]=DCorFastTest([SBM;SBM2],[zeros(n,1);ones(n,1)]);
+%         [Adj,Y]=simGenerate(22,n);
+%         SBM3=GraphEncoder(Adj,Y);
+%         [~,p2(r,i)]=DCorFastTest([SBM;SBM3],[zeros(n,1);ones(n,1)]);
+%     end
+% end
+% power2=mean(p2<0.05);
+% power1=mean(p1<0.05);
+% plot(1:20,power1,'r-.','LineWidth',3)
+% hold on
+% plot(1:20,power2,'b-.','LineWidth',3)
+% ylim([0,1.05])
+% plot(1:20,0.05*ones(20,1),'k--','LineWidth',2)
+% xlabel('Number of Vertices')
+% ylabel('Testing Power')
+% set(gca,'FontSize',15);
+% xticks([1,10,20])
+% % legend('AEE*NN','AEE*NNC','AEE*LDA','ASE*NN','ASE*LDA','Location','SouthWest');
+% xticklabels({'20','200','400'})
+% 
+% % using ASE instead
+% 
+% rep=500;p1=zeros(rep,20);p2=zeros(rep,20);
+% for i=1:20;
+%     n=20*i;k=10;
+%     for r=1:rep;
+%         [Adj,Y]=simGenerate(12,n);
+%         SBM=ASE(Adj,3);
+%         [Adj,Y]=simGenerate(12,n);
+%         SBM2=ASE(Adj,3);
+%         [~,p1(r,i)]=DCorFastTest([SBM;SBM2],[zeros(n,1);ones(n,1)]);
+%         [Adj,Y]=simGenerate(22,n);
+%         SBM3=ASE(Adj,3);
+%         [~,p2(r,i)]=DCorFastTest([SBM;SBM3],[zeros(n,1);ones(n,1)]);
+%     end
+% end
+% power4=mean(p2<0.05);
+% power3=mean(p1<0.05);
 
 
 

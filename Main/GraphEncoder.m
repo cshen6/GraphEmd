@@ -57,13 +57,17 @@ if ~isfield(opts,'Directed'); opts.Directed=0; end
 % if length(opts.Weight)~=numG
 %     opts.Weight=ones(numG,1);
 % end
-thres=0.5; % less than 50% known label will use classification rule to refine embedding, otherwise k-means clustering.
+thres=0.01; % known label percentage less than thres will trigger ensemble clustering
 [G,numG,n]=ProcessGraph(G,opts); % process input graph
 if iscell(Y)
     numY=length(Y);
 else
-    Y={Y};
-    numY=1;
+    if Y==0
+        numY=0;
+    else
+        Y={Y};
+        numY=1;
+    end
 end
 Z=cell(numG,numY);
 YNew=cell(numG,numY);
@@ -72,11 +76,12 @@ Score=ones(numG,numY);
 
 for j=1:numY
     tmpY=Y{j};
-    [tmpY,indT{j},n,refine]=ProcessLabel(tmpY,n,opts.Refine); % process label
+    [tmpY,indT{j},n]=ProcessLabel(tmpY,n); % process label
     ratio=sum(indT{j})/n;
     for i=1:numG
         tmpG=G{i};
         ZY=GraphEncoderEmbed(tmpG,tmpY,n,opts); % graph encoder embed
+        tmpS=0;
         %     if opts.Learner==2
         %         % initialize NN
         %         netGNN = patternnet(max(opts.neuron,dim),'trainscg','crossentropy'); % number of neurons, Scaled Conjugate Gradient, cross entropy
@@ -87,41 +92,47 @@ for j=1:numY
         %         netGNN.divideParam.valRatio   = 0.1;
         %         netGNN.divideParam.testRatio  = 0;
         %     end
-        if refine<1 % no refinement
-            Z{i,j}=ZY;Score(i,j)=0;YNew{i,j}=tmpY;
-        else
-            if ratio>thres && refine==1 % refine by classification
-                indTmp=indT{j};
-%                 mdl=fitcdiscr(ZY(indTmp,:),tmpY(indTmp),'DiscrimType','pseudoLinear');
-                mdl=fitcknn(ZY(indTmp,:),tmpY(indTmp),'Distance','correlation','NumNeighbors',5);
-                tmpY(~indTmp)=predict(mdl,ZY(~indTmp,:));
-                Z{i,j}=GraphEncoderEmbed(tmpG,tmpY,n,opts);
-                Score(i,j)=0; YNew{i,j}=tmpY;
-                %Y{j}=tmpY;%indT{j}=indTmp;
-            else
-                % refine by clustering
-                if refine<=1
-                    K=size(ZY,2);
-                else
-                    K=ceil(refine);
-                end
-                [Z{i,j},YNew{i,j},Score(i,j)]=GraphEncoderCluster(ZY,tmpY,tmpG,K,n,opts);
-%                 else
-%                     %% when a range of cluster size is specified
-%                     K=sort(K); % ensure increasing K
-%                     if length(K)<n/2 && max(K)<max(n/2,10)
-%                         tmpGCS=1;Z=0;Score=zeros(length(K),1);
-%                         for r=1:length(K)
-%                             [Zt,Yt,tmp]=GraphEncoderCluster(G,K(r),n,opts);
-%                             Score(r)=tmp;
-%                             if tmp<=tmpGCS
-%                                 tmpGCS=tmp;Y=Yt;Z=Zt;
-%                             end
-%                         end
-%                     end
-%                 end
-            end
+        if ratio<=thres
+            [ZY,tmpY,tmpS]=GraphEncoderCluster(ZY,tmpY,tmpG,K,n,opts);
         end
+%         if refine<=1 % no refinement
+%             Z{i,j}=ZY;Score(i,j)=tmpS;YNew{i,j}=tmpY;
+%         else
+%             [Z{i,j},YNew{i,j},Score(i,j)]=GraphEncoderCluster(ZY,tmpY,tmpG,K,n,opts);
+%         end
+        Z{i,j}=ZY;Score(i,j)=tmpS;YNew{i,j}=tmpY;
+%             if ratio>thres && refine==1 % refine by classification
+%                 indTmp=indT{j};
+% %                 mdl=fitcdiscr(ZY(indTmp,:),tmpY(indTmp),'DiscrimType','pseudoLinear');
+%                 mdl=fitcknn(ZY(indTmp,:),tmpY(indTmp),'Distance','Euclidean','NumNeighbors',5);
+%                 tmpY(~indTmp)=predict(mdl,ZY(~indTmp,:));
+%                 Z{i,j}=GraphEncoderEmbed(tmpG,tmpY,n,opts);
+%                 Score(i,j)=0; YNew{i,j}=tmpY;
+%                 %Y{j}=tmpY;%indT{j}=indTmp;
+%             else
+%                 % refine by clustering
+%                 if refine<=1
+%                     K=size(ZY,2);
+%                 else
+%                     K=ceil(refine);
+%                 end
+%                 [Z{i,j},YNew{i,j},Score(i,j)]=GraphEncoderCluster(ZY,tmpY,tmpG,K,n,opts);
+% %                 else
+% %                     %% when a range of cluster size is specified
+% %                     K=sort(K); % ensure increasing K
+% %                     if length(K)<n/2 && max(K)<max(n/2,10)
+% %                         tmpGCS=1;Z=0;Score=zeros(length(K),1);
+% %                         for r=1:length(K)
+% %                             [Zt,Yt,tmp]=GraphEncoderCluster(G,K(r),n,opts);
+% %                             Score(r)=tmp;
+% %                             if tmp<=tmpGCS
+% %                                 tmpGCS=tmp;Y=Yt;Z=Zt;
+% %                             end
+% %                         end
+% %                     end
+% %                 end
+%             end
+%         end
     end
 end
 Y=YNew;
@@ -132,16 +143,20 @@ if n1==n
     for i=1:numG
         ZU{i}=GraphFeatureEmbed(G{i},U,n,opts); % embed any feature
     end
-    Z=[Z,ZU]; % concatenate the encoder and feature embedding
+    Z=[Z;ZU]; % concatenate the encoder and feature embedding
 end
 
 if size(Z,2)==1
-    indT=indT{1};
+    if numY>0
+        indT=indT{1};
+        Y=Y(:,1);
+    end
     Z=Z(:,1);
-    Y=Y(:,1);
     if size(Z,1)==1
         Z=Z{1};
+        if numY>0
         Y=Y{1};
+        end
     end
 end
 
@@ -351,7 +366,7 @@ for i=1:numG
 end
 
 %% process labels
-function [Y,indT,numN,refine]=ProcessLabel(Y,n,refine)
+function [Y,indT,numN]=ProcessLabel(Y,n)
 [numN,numY]=size(Y);
 if numN==1 && numY==1
     if Y<2 || Y>n || floor(Y)~=Y
@@ -360,9 +375,6 @@ if numN==1 && numY==1
     end
     indT=0;
     Y=randi(Y,n,1);
-    if refine<1
-        refine=1;
-    end
 else
     if numN <n
         disp('The input label does not match input graph size');

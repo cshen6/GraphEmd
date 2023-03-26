@@ -1,14 +1,17 @@
-function [result]=GraphEncoderEvaluate(X,Y,opts)
+function [result]=GraphEncoderEvaluate(X,Y,opts,D)
 
+if nargin < 4
+    D=0;
+end
 if nargin < 3
-    opts = struct('indices',crossvalind('Kfold',Y,10),'Adjacency',1,'Laplacian',0,'Spectral',0,'LDA',0,'GNN',1,'knn',5,'dim',30,'neuron',20,'epoch',100,'training',0.05,'activation','poslin'); % default parameters
+    opts = struct('indices',crossvalind('Kfold',Y,10),'Adjacency',1,'Laplacian',0,'Spectral',0,'LDA',0,'GNN',0,'knn',5,'dim',30,'neuron',20,'epoch',100,'training',0.05,'activation','poslin'); % default parameters
 end
 if ~isfield(opts,'indices'); opts.indices=crossvalind('Kfold',Y,10); end
 if ~isfield(opts,'Adjacency'); opts.Adjacency=1; end
 if ~isfield(opts,'Laplacian'); opts.Laplacian=0; end
-if ~isfield(opts,'Spectral'); opts.Spectral=0; end
+if ~isfield(opts,'Spectral'); opts.Spectral=0; end % 1 for ASE and Omni; 2 for USE; 3 for MASE
 if ~isfield(opts,'LDA'); opts.LDA=0; end
-if ~isfield(opts,'GNN'); opts.GNN=1; end
+if ~isfield(opts,'GNN'); opts.GNN=0; end
 if ~isfield(opts,'knn'); opts.knn=5; end
 if ~isfield(opts,'dim'); opts.dim=30; end
 % if ~isfield(opts,'deg'); opts.deg=0; end
@@ -19,10 +22,15 @@ if ~isfield(opts,'activation'); opts.activation='poslin'; end %purelin, tansig
 warning('off','all');
 %met=[opts.AEE,opts.LDA,opts.GFN,opts.ASE,opts.LSE,opts.GCN,opts.GNN]; %AEE, LDA, GFN, ASE, GFN, ANN
 indices=opts.indices;
-if length(indices)~=length(Y)
-    indices=crossvalind('Kfold',Y,10);
+% if length(indices)~=length(Y)
+%     indices=crossvalind('Kfold',Y,10);
+% end
+if iscell(Y)
+    Y2=Y;
+    Y=Y{1,1};
+else
+    Y2=0;
 end
-
 kfold=max(indices);
 [K,~,Y]=unique(Y);
 n=length(Y);
@@ -75,6 +83,40 @@ acc_ASE_NN=zeros(kfold,d);t_ASE_NN=zeros(kfold,d);acc_ASE_LDA=zeros(kfold,d);t_A
 acc_GCN=zeros(kfold,1);t_GCN=zeros(kfold,1);
 % opts1 = struct('deg',opts.deg); % default parameters
 % opts2 = struct('deg',opts.deg,'pivot',opts.pivot); % default parameters
+if opts.Spectral>0
+    % ASE
+    numK=1;
+    if iscell(X)
+        numK=length(X);
+        if opts.Spectral==1
+            Adj=Omni(X);
+        else
+            Adj=zeros(n,n*numK);
+            for ii=1:numK
+                if size(X{ii},2)<=3
+                    Adj(:,(ii-1)*n+1:(ii-1)*n+n)=edge2adj(X{ii});
+                else
+                    Adj(:,(ii-1)*n+1:(ii-1)*n+n)=X{ii};
+                end
+            end
+        end
+        if opts.Spectral==3
+            dimS=30;
+            Adj2=zeros(n,dimS*numK);
+            for ii=1:numK
+                [U,S,~]=svds(Adj(:,(ii-1)*n+1:(ii-1)*n+n),dimS);
+                Adj2(:,(ii-1)*dimS+1:(ii-1)*dimS+dimS)=U(:,1:dimS)*S(1:dimS,1:dimS)^0.5;
+            end
+            Adj=Adj2;
+        end
+    else
+        if size(X,2)<=3
+            Adj=edge2adj(X);
+        else
+            Adj=X;
+        end
+    end
+end
 
 for i = 1:kfold
         %     tst = (indices == i); % tst indices
@@ -98,9 +140,15 @@ for i = 1:kfold
             tic
             oot=opts;
             oot.Laplacian=0; 
-            Z=GraphEncoder(X,YT,oot);
+            if ~iscell(Y2)
+               Z=GraphEncoder(X,YT,D,oot);
+            else
+                Y3=Y2;
+                Y3{1}(tsn)=-1;
+                Z=GraphEncoder(X,Y3,D,oot);
+            end
             if iscell(Z)
-                Z=cell2mat(Z');
+                Z=horzcat(Z{:});
             end
             ZTrn=Z(trn,:);
             ZTsn=Z(tsn,:);
@@ -118,7 +166,7 @@ for i = 1:kfold
             
             if opts.knn>0
 %                 tic
-                mdl=fitcknn(ZTrn,YTrn,'Distance','correlation','NumNeighbors',opts.knn);
+                mdl=fitcknn(ZTrn,YTrn,'Distance','Euclidean','NumNeighbors',opts.knn);
                 tt=predict(mdl,ZTsn);
                 t_AEE_NN(i)=tmp1;
                 acc_AEE_NN(i)=acc_AEE_NN(i)+mean(YTsn~=tt);
@@ -149,17 +197,8 @@ for i = 1:kfold
                 acc_GNN(i)=acc_GNN(i)+mean(YTsn~=tt);
             end
             
-            if opts.Spectral==1
+            if opts.Spectral>0
                 % ASE
-                if iscell(X)
-                   Adj=Omni(X);
-                else
-                    if size(X,2)<=3
-                        Adj=edge2adj(X);
-                    else
-                        Adj=X;
-                    end
-                end
                 YA=Y;
                 tic
                 %         if nre>n
@@ -168,11 +207,23 @@ for i = 1:kfold
                 %             tsn=nre+1:size(AdjRe,1);
                 %             YA=YRe;
                 %         end
-                [U,S,~]=svds(Adj,d);
+%                 if opts.Spectral~=3
+                    [U,S,V]=svds(Adj,d);
+                    if opts.Spectral==2
+                        U=V;
+                    end
+%                 end
                 t1=toc;
                 for j=1:d
                     tic
-                    Z=U(:,1:j)*S(1:j,1:j)^0.5;
+                    if opts.Spectral~=3
+                        Z=U(:,1:j)*S(1:j,1:j)^0.5;
+                    else
+                        Z=U(:,1:j);
+                    end
+                    if opts.Spectral==2
+                       Z=reshape(Z,n,j*numK);
+                    end
                     t2=toc;
                     if opts.LDA==1
                         tic
@@ -192,79 +243,79 @@ for i = 1:kfold
             end
         end
         
-        if opts.Laplacian==1
-            YT=Y;
-            YT(tsn)=-1;
-            oot=opts;
-            oot.Laplacian=1; 
-%             oot=struct('Laplacian',true,'LearnIter',0,'Learner',opts.Learner,'Dim',opts.dimGEE);
-            YTrn=Y(trn);
-            YTsn=Y(tsn);
-            tic
-            Z=GraphEncoder(X,YT,oot);
-            if iscell(Z)
-                Z=cell2mat(Z');
-            end
-            ZTrn=Z(trn,:);
-            ZTsn=Z(tsn,:);
-            %     else
-            %         [Z,indT]=GraphEncoder(X,YT,opts);
-            %         %[Z,indT]=GraphSBMEst(X,YT);
-            %     end
-            %     if k>klim
-            %         [ind,~,~] = DCorScreening(Z,Y(trn));
-            %         Z=Z(:,ind);
-            %     end
-            tmp1=toc;
-            if opts.knn>0
-                tic
-                mdl=fitcknn(ZTrn,YTrn,'Distance','correlation','NumNeighbors',opts.knn);
-                tt=predict(mdl,ZTsn);
-                t_LEE_NN(i)=tmp1;
-                acc_LEE_NN(i)=acc_LEE_NN(i)+mean(YTsn~=tt);
-            end
-            
-            if opts.LDA==1
-                tic
-                mdl=fitcdiscr(ZTrn,YTrn,'discrimType',discrimType);
-                tt=predict(mdl,ZTsn);
-                t_LEE_LDA(i)=tmp1;
-                acc_LEE_LDA(i)=acc_LEE_LDA(i)+mean(YTsn~=tt);
-            end
-            
-            
-            % ASE
-            if opts.Spectral==1
-                tic
-                Adj=Omni(X);
-                D=max(sum(Adj,1),1).^(0.5);
-                AdjT=Adj;
-                for j=1:n
-                    AdjT(:,j)=AdjT(:,j)/D(j)./D';
-                end
-                [U,S,~]=svds(AdjT,d);
-                t1=toc;
-                for j=1:d
-                    tic
-                    Z=U(:,1:j)*S(1:j,1:j)^0.5;
-                    t2=toc;
-                    if opts.LDA==1
-                        tic
-                        mdl=fitcdiscr(Z(trn,:),Y(trn),'DiscrimType',discrimType);
-                        tt=predict(mdl,Z(tsn,:));
-                        t_LSE_LDA(i,j)=t1+t2;
-                        acc_LSE_LDA(i,j)=acc_LSE_LDA(i,j)+mean(Y(tsn)~=tt);
-                    end
-                    if opts.knn>0
-                        tic
-                        mdl=fitcknn(Z(trn,:),Y(trn),'Distance','euclidean','NumNeighbors',opts.knn);
-                        tt=predict(mdl,Z(tsn,:));
-                        t_LSE_NN(i,j)=t1+t2;
-                        acc_LSE_NN(i,j)=acc_LSE_NN(i,j)+mean(Y(tsn)~=tt);
-                    end
-                end
-            end
-        end
+%         if opts.Laplacian==1
+%             YT=Y;
+%             YT(tsn)=-1;
+%             oot=opts;
+%             oot.Laplacian=1; 
+% %             oot=struct('Laplacian',true,'LearnIter',0,'Learner',opts.Learner,'Dim',opts.dimGEE);
+%             YTrn=Y(trn);
+%             YTsn=Y(tsn);
+%             tic
+%             Z=GraphEncoder(X,YT,D,oot);
+%             if iscell(Z)
+%                 Z=cell2mat(Z');
+%             end
+%             ZTrn=Z(trn,:);
+%             ZTsn=Z(tsn,:);
+%             %     else
+%             %         [Z,indT]=GraphEncoder(X,YT,opts);
+%             %         %[Z,indT]=GraphSBMEst(X,YT);
+%             %     end
+%             %     if k>klim
+%             %         [ind,~,~] = DCorScreening(Z,Y(trn));
+%             %         Z=Z(:,ind);
+%             %     end
+%             tmp1=toc;
+%             if opts.knn>0
+%                 tic
+%                 mdl=fitcknn(ZTrn,YTrn,'Distance','Euclidean','NumNeighbors',opts.knn);
+%                 tt=predict(mdl,ZTsn);
+%                 t_LEE_NN(i)=tmp1;
+%                 acc_LEE_NN(i)=acc_LEE_NN(i)+mean(YTsn~=tt);
+%             end
+%             
+%             if opts.LDA==1
+%                 tic
+%                 mdl=fitcdiscr(ZTrn,YTrn,'discrimType',discrimType);
+%                 tt=predict(mdl,ZTsn);
+%                 t_LEE_LDA(i)=tmp1;
+%                 acc_LEE_LDA(i)=acc_LEE_LDA(i)+mean(YTsn~=tt);
+%             end
+%             
+%             
+%             % ASE
+%             if opts.Spectral==1
+%                 tic
+%                 Adj=Omni(X);
+%                 D=max(sum(Adj,1),1).^(0.5);
+%                 AdjT=Adj;
+%                 for j=1:n
+%                     AdjT(:,j)=AdjT(:,j)/D(j)./D';
+%                 end
+%                 [U,S,~]=svds(AdjT,d);
+%                 t1=toc;
+%                 for j=1:d
+%                     tic
+%                     Z=U(:,1:j)*S(1:j,1:j)^0.5;
+%                     t2=toc;
+%                     if opts.LDA==1
+%                         tic
+%                         mdl=fitcdiscr(Z(trn,:),Y(trn),'DiscrimType',discrimType);
+%                         tt=predict(mdl,Z(tsn,:));
+%                         t_LSE_LDA(i,j)=t1+t2;
+%                         acc_LSE_LDA(i,j)=acc_LSE_LDA(i,j)+mean(Y(tsn)~=tt);
+%                     end
+%                     if opts.knn>0
+%                         tic
+%                         mdl=fitcknn(Z(trn,:),Y(trn),'Distance','euclidean','NumNeighbors',opts.knn);
+%                         tt=predict(mdl,Z(tsn,:));
+%                         t_LSE_NN(i,j)=t1+t2;
+%                         acc_LSE_NN(i,j)=acc_LSE_NN(i,j)+mean(Y(tsn)~=tt);
+%                     end
+%                 end
+%             end
+%         end
         
         % kipf GCN
         
@@ -336,7 +387,7 @@ accN=[acc_GNN, acc_AEE_NN,acc_AEE_LDA,acc_ASE_NN,acc_ASE_LDA, acc_LEE_NN,acc_LEE
 stdN=[std_GNN, std_AEE_NN,std_AEE_LDA,std_ASE_NN,std_ASE_LDA, std_LEE_NN,std_LEE_LDA,std_LSE_NN,std_LSE_LDA];
 time=[t_GNN, t_AEE_NN,t_AEE_LDA,t_ASE_NN,t_ASE_LDA, t_LEE_NN,t_LEE_LDA,t_LSE_NN,t_LSE_LDA];
 
-result = array2table([accN; 1-accN; stdN; time], 'RowNames', {'acc', 'err','std', 'time'},'VariableNames', {'GEE_NN', 'AEE_KNN', 'AEE_LDA','ASE_KNN', 'ASE_LDA','LEE_KNN', 'LEE_LDA','LSE_KNN', 'LSE_LDA'});
+result = array2table([1-accN; accN; stdN; time], 'RowNames', {'err', 'acc','std', 'time'},'VariableNames', {'GEE_NN', 'AEE_KNN', 'AEE_LDA','ASE_KNN', 'ASE_LDA','LEE_KNN', 'LEE_LDA','LSE_KNN', 'LSE_LDA'});
 
 function A=Omni(A);
 if iscell(A)
