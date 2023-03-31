@@ -4,7 +4,7 @@ function simFusion(choice,spec, rep)
 % spec =1 for Omnibus benchmark, 2 for USE, 3 for MASE
 
 if nargin<2
-    spec=2;
+    spec=0;
 end
 if nargin<3
     rep=20;
@@ -234,11 +234,12 @@ if choice>=10 && choice<=13
 %             load('AIDS.mat');K2=30;Dist2='sqeuclidean';Dist1='euclidean';D = 1-squareform(pdist(X, Dist1));
     end
     opts = struct('Adjacency',1,'DiagAugment',1,'Laplacian',0,'Spectral',spec,'LDA',0,'GNN',GNN,'knn',5,'dim',30);
-    Acc1=zeros(rep,4);Acc2=zeros(rep,4);Time1=zeros(rep,4);Time2=zeros(rep,4);
+    Acc1=zeros(rep,8);Acc2=zeros(rep,8);Time1=zeros(rep,8);Time2=zeros(rep,8);
     if spec>0
         Edge=edge2adj(Edge);
     end
 %     Y2=kmeans(X,K2,'Distance',Dist2);
+    tmpZ=GraphEncoder(Edge,0,X);
     for i=1:rep
         i
        indices = crossvalind('Kfold',Label,5);
@@ -246,7 +247,11 @@ if choice>=10 && choice<=13
        tmp=GraphEncoderEvaluate(Edge,Label,opts); Acc1(i,1)=tmp{1,2-GNN};Acc2(i,1)=tmp{1,4};Time1(i,1)=tmp{4,2-GNN};Time2(i,1)=tmp{4,4};
        tmp=GraphEncoderEvaluate(D,Label,opts); Acc1(i,2)=tmp{1,2-GNN};Acc2(i,2)=tmp{1,4};Time1(i,2)=tmp{4,2-GNN};Time2(i,2)=tmp{4,4};
        tmp=GraphEncoderEvaluate({Edge,D},Label,opts); Acc1(i,3)=tmp{1,2-GNN};Acc2(i,3)=tmp{1,4};Time1(i,3)=tmp{4,2-GNN};Time2(i,3)=tmp{4,4};
-       tmp=AttributeEvaluate(X,Label,indices); Acc1(i,4)=tmp(1);Time1(i,4)=tmp(2);
+       if spec==0
+           tmp=AttributeEvaluate(X,Label,indices); Acc1(i,5)=tmp(1);Time1(i,5)=tmp(2);
+           tmp=AttributeEvaluate(tmpZ,Label,indices); Acc1(i,6)=tmp(1);Time1(i,6)=tmp(2);
+           tmp=GraphEncoderEvaluate(Edge,Label,opts,X); Acc1(i,7)=tmp{1,2-GNN};Time1(i,7)=tmp{1,4};
+       end
 %        tmp=GraphEncoderEvaluate(Edge,{Label,Y2},opts); Acc1(i,4)=tmp{1,2-GNN};Acc2(i,4)=tmp{1,4};
 %        tmp=GraphEncoderEvaluate({Edge,D},{Label,Y2},opts); Acc1(i,5)=tmp{1,2-GNN};Acc2(i,5)=tmp{1,4};
 %        Z=GraphEncoder(Edge,Y2);tmp=AttributeEvaluate(Z,Label,indices); Acc1(i,6)=tmp;Acc2(i,6)=tmp;

@@ -4,8 +4,9 @@ if nargin < 4
     D=0;
 end
 if nargin < 3
-    opts = struct('indices',crossvalind('Kfold',Y,10),'Adjacency',1,'Laplacian',0,'Spectral',0,'LDA',0,'GNN',0,'knn',5,'dim',30,'neuron',20,'epoch',100,'training',0.05,'activation','poslin'); % default parameters
+    opts = struct('eval',1,'indices',crossvalind('Kfold',Y,10),'Adjacency',1,'Laplacian',0,'Spectral',0,'LDA',0,'GNN',0,'knn',5,'dim',30,'neuron',20,'epoch',100,'training',0.05,'activation','poslin'); % default parameters
 end
+if ~isfield(opts,'eval'); opts.eval=1; end
 if ~isfield(opts,'indices'); opts.indices=crossvalind('Kfold',Y,10); end
 if ~isfield(opts,'Adjacency'); opts.Adjacency=1; end
 if ~isfield(opts,'Laplacian'); opts.Laplacian=0; end
@@ -133,7 +134,7 @@ for i = 1:kfold
         
         if opts.Adjacency==1
             YT=Y;
-            YT(tsn)=-1;
+            YT(tsn)=0;
             YTrn=Y(trn);
             YTsn=Y(tsn);
 %             size(Y)
@@ -141,10 +142,14 @@ for i = 1:kfold
             oot=opts;
             oot.Laplacian=0; 
             if ~iscell(Y2)
-               Z=GraphEncoder(X,YT,D,oot);
+                if opts.eval==1
+                   Z=GraphEncoder(X,YT,D,oot);
+                else
+                   Z=GraphEncoder(X,0,D,oot);
+                end
             else
                 Y3=Y2;
-                Y3{1}(tsn)=-1;
+                Y3{1}(tsn)=0;
                 Z=GraphEncoder(X,Y3,D,oot);
             end
             if iscell(Z)
@@ -164,23 +169,22 @@ for i = 1:kfold
             %     end
             tmp1=toc;
             
+            if opts.eval==1
             if opts.knn>0
-%                 tic
+                tic
                 mdl=fitcknn(ZTrn,YTrn,'Distance','Euclidean','NumNeighbors',opts.knn);
                 tt=predict(mdl,ZTsn);
-                t_AEE_NN(i)=tmp1;
+                t_AEE_NN(i)=tmp1+toc;
                 acc_AEE_NN(i)=acc_AEE_NN(i)+mean(YTsn~=tt);
             end
             
             if opts.LDA==1
-%                 tic
+                tic
                 mdl=fitcdiscr(ZTrn,YTrn,'discrimType',discrimType);
                 tt=predict(mdl,ZTsn);
-                t_AEE_LDA(i)=tmp1;
+                t_AEE_LDA(i)=tmp1+toc;
                 acc_AEE_LDA(i)=acc_AEE_LDA(i)+mean(YTsn~=tt);
             end
-            
-            
             if opts.GNN==1
                 tic
                 Y2=onehotencode(categorical(YTrn),2)';
@@ -195,6 +199,21 @@ for i = 1:kfold
                 tt = vec2ind(classes)'; % this gives the actual class for each observation
                 t_GNN(i)=tmp1+toc;
                 acc_GNN(i)=acc_GNN(i)+mean(YTsn~=tt);
+            end
+            end
+            if opts.eval==2
+                tic
+%                 if D==0
+%                    mdl=fitlm(ZTrn,YTrn);
+%                    tt=predict(mdl,ZTsn);
+%                 else
+                   mdl=fitlm([ZTrn,D(trn,:)],YTrn);
+%                    mdl=fitrnet([ZTrn,D(trn,:)],YTrn);
+                   tt=predict(mdl,[ZTsn,D(tsn,:)]);
+%                 end
+                err =sum((YTsn-tt).^2)/sum((YTsn-mean(YTsn)).^2);
+                t_AEE_NN(i)=tmp1+toc;
+                acc_AEE_NN(i)=acc_AEE_NN(i)+err;
             end
             
             if opts.Spectral>0
@@ -225,6 +244,7 @@ for i = 1:kfold
                        Z=reshape(Z,n,j*numK);
                     end
                     t2=toc;
+                    if opts.eval==1;
                     if opts.LDA==1
                         tic
                         mdl=fitcdiscr(Z(trn,:),YA(trn),'DiscrimType',discrimType);
@@ -238,6 +258,20 @@ for i = 1:kfold
                         tt=predict(mdl,Z(tsn,:));
                         t_ASE_NN(i,j)=t1+t2;%+toc;
                         acc_ASE_NN(i,j)=acc_ASE_NN(i,j)+mean(YTsn~=tt);
+                    end
+                    end
+                    if opts.eval==2
+                        tic
+%                         if D==0
+%                             mdl=fitlm(Z(trn,:),YA(trn));
+%                             tt=predict(mdl,Z(tsn,:));
+%                         else
+                            mdl=fitlm([Z(trn,:),D(trn,:)],YA(trn));
+                            tt=predict(mdl,[Z(tsn,:),D(tsn,:)]);
+%                         end
+                        err =sum((YTsn-tt).^2)/sum((YTsn-mean(YTsn)).^2);
+                        t_ASE_NN(i,j)=t1+t2;
+                        acc_ASE_NN(i,j)=acc_ASE_NN(i,j)+err;
                     end
                 end
             end

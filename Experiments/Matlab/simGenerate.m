@@ -1520,6 +1520,134 @@ switch option
         X=Dis;
         Label(Label==2)=1;
         Label(Label==3)=2;
+    case 201 % DC-SBM with 3 classes
+        fileName='DCSBM';
+        pp=[0.2,0.3,0.5];
+        d=3;
+        Bl=zeros(d,d);
+        %             Bl=rand(clas,clas);
+        Bl(:,1)=[0.9,0.1,0.1];
+        Bl(:,2)=[0.1,0.5,0.1];
+        Bl(:,3)=[0.1,0.1,0.2];
+        if edge==0
+           Dis=zeros(n,n);
+        else
+            Dis=[];
+        end
+        tt=rand([n,1]);
+        Label=ones(n,1);
+        thres=0;
+        theta=betarnd(1,4,n,1);
+        % theta=unifrnd(0.5,1.5,n,1);
+%         theta=theta;
+        for i=1:d
+            thres=thres+pp(i);
+            Label=Label+(tt>thres); %determine the block of each data
+        end
+        if edge==0
+            for i=1:n
+                Dis(i,i)=0;%diagonals are zeros
+                for j=i+1:n
+                    weight=1;%randi(10);
+                    Dis(i,j)=weight*(rand(1)<theta(i)*theta(j)*Bl(Label(i),Label(j)));
+                    Dis(j,i)=Dis(i,j);
+                end
+            end
+        else
+            for i=1:n
+                for j=i+1:n
+                    tmp=(rand(1)<theta(i)*theta(j)*Bl(Label(i),Label(j)));
+                    if tmp==1;
+                        Dis=[Dis;i,j,1];
+                    end
+                end
+            end
+        end
+        X=Dis;
+     case 202 % DC-SBM with 10 classes
+        fileName='DCSBM';
+        pp=1/d*ones(d,1);
+        Bl=0.1*ones(d,d);
+        %             Bl=rand(clas,clas);
+        for i=1:d
+            Bl(i,i)=0.9;
+        end
+        if edge==0
+           Dis=zeros(n,n);
+        else
+            Dis=zeros(100*n,3);
+        end
+        tt=rand([n,1]);
+        Label=ones(n,1);
+        thres=0;
+%         theta=betarnd(1,10,n,1);
+%         ind=(Label==2);
+%         theta(ind)= betarnd(10,10,sum(ind),1);
+%         ind=(Label==3);
+%         theta(ind)= betarnd(10,1,sum(ind),1);
+        theta=betarnd(1,4,n,1);
+%         theta=theta;
+        for i=1:d
+            thres=thres+pp(i);
+            Label=Label+(tt>thres); %determine the block of each data
+        end
+        if edge==0
+            for i=1:n
+                Dis(i,i)=0;%diagonals are zeros
+                for j=i+1:n
+                    weight=1;%randi(10);
+                    Dis(i,j)=weight*(rand(1)<theta(i)*theta(j)*Bl(Label(i),Label(j)));
+                    Dis(j,i)=Dis(i,j);
+                end
+            end
+        else
+            s=1;
+            for i=1:n
+                for j=i+1:n
+                    tmp=(rand(1)<theta(i)*theta(j)*Bl(Label(i),Label(j)));
+                    if tmp==1;
+                        Dis(s,1)=i;
+                        Dis(s,2)=j;
+                        Dis(s,3)=1;
+                        s=s+1;
+                    end
+                    if s>100*n;
+                        break;
+                    end
+                end
+            end
+            Dis=Dis(1:s-1,:);
+        end
+        X=Dis;
+   case 203 % DC-SBM with 4 classes
+        fileName='DCSBM';
+        pp=[0.2,0.2,0.3,0.3];
+        d=4;
+        Bl=zeros(d,d);
+        %             Bl=rand(clas,clas);
+        Bl(:,1)=[0.3,0.1,0.1,0.1];
+        Bl(:,2)=[0.1,0.5,0.1,0.1];
+        Bl(:,3)=[0.1,0.1,0.7,0.1];
+        Bl(:,4)=[0.1,0.1,0.1,0.9];
+        Dis=zeros(n,n);
+        tt=rand([n,1]);
+        Label=ones(n,1);
+        thres=0;
+        theta=betarnd(1,4,n,1);
+        %theta=unifrnd(0.05,0.35,n,1);
+%         theta=theta;
+        for i=1:d
+            thres=thres+pp(i);
+            Label=Label+(tt>thres); %determine the block of each data
+        end
+        for i=1:n
+            Dis(i,i)=0;%diagonals are zeros
+            for j=i+1:n
+                Dis(i,j)=rand(1)<theta(i)*theta(j)*Bl(Label(i),Label(j));
+                Dis(j,i)=Dis(i,j);
+            end
+        end
+        X=theta;
 %         Dis=diag(sum(Dis))-Dis;
 %         X=Dis;
 %     case 33 % RDPG
