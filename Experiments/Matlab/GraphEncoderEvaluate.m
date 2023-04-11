@@ -4,7 +4,7 @@ if nargin < 4
     D=0;
 end
 if nargin < 3
-    opts = struct('eval',1,'indices',crossvalind('Kfold',Y,10),'Adjacency',1,'Laplacian',0,'Spectral',0,'LDA',0,'GNN',0,'knn',5,'dim',30,'neuron',20,'epoch',100,'training',0.05,'activation','poslin'); % default parameters
+    opts = struct('eval',1,'indices',crossvalind('Kfold',Y,10),'Adjacency',1,'Laplacian',0,'Spectral',0,'LDA',0,'GNN',0,'knn',5,'dim',30,'neuron',20,'epoch',100,'training',0.05,'activation','poslin','Elbow',0); % default parameters
 end
 if ~isfield(opts,'eval'); opts.eval=1; end
 if ~isfield(opts,'indices'); opts.indices=crossvalind('Kfold',Y,10); end
@@ -20,6 +20,7 @@ if ~isfield(opts,'neuron'); opts.neuron=20; end
 if ~isfield(opts,'epoch'); opts.epoch=100; end
 if ~isfield(opts,'training'); opts.training=0.05; end
 if ~isfield(opts,'activation'); opts.activation='poslin'; end %purelin, tansig
+if ~isfield(opts,'Elbow'); opts.Elbow=0; end
 warning('off','all');
 %met=[opts.AEE,opts.LDA,opts.GFN,opts.ASE,opts.LSE,opts.GCN,opts.GNN]; %AEE, LDA, GFN, ASE, GFN, ANN
 indices=opts.indices;
@@ -155,6 +156,19 @@ for i = 1:kfold
             if iscell(Z)
                 Z=horzcat(Z{:});
             end
+%             if opts.Elbow>0
+%                 stdZ=std(Z);
+%                 [stdZ2,dimInd]=sort(stdZ,'descend');
+%                 if (stdZ2(1)-stdZ2(end))/stdZ2(1)>0.1
+%                     [idx,center]=kmeans(stdZ',2);
+%                     dimInd=(idx==1);
+%                     if center(2)>center(1)
+%                         dimInd=~dimInd;
+%                     end
+%                     %         q=getElbow(stdZ,1)
+%                     Z=Z(:,dimInd);
+%                 end
+%             end
             ZTrn=Z(trn,:);
             ZTsn=Z(tsn,:);
 %             size(Z)
@@ -207,7 +221,8 @@ for i = 1:kfold
 %                    mdl=fitlm(ZTrn,YTrn);
 %                    tt=predict(mdl,ZTsn);
 %                 else
-                   mdl=fitlm([ZTrn,D(trn,:)],YTrn);
+                   %mdl=fitlm([ZTrn,D(trn,:)],YTrn,'NumNeighbors',opts.knn);
+                   mdl=fitrensemble([ZTrn,D(trn,:)],YTrn);
 %                    mdl=fitrnet([ZTrn,D(trn,:)],YTrn);
                    tt=predict(mdl,[ZTsn,D(tsn,:)]);
 %                 end
@@ -266,7 +281,7 @@ for i = 1:kfold
 %                             mdl=fitlm(Z(trn,:),YA(trn));
 %                             tt=predict(mdl,Z(tsn,:));
 %                         else
-                            mdl=fitlm([Z(trn,:),D(trn,:)],YA(trn));
+                            mdl=fitrensemble([Z(trn,:),D(trn,:)],YA(trn));
                             tt=predict(mdl,[Z(tsn,:),D(tsn,:)]);
 %                         end
                         err =sum((YTsn-tt).^2)/sum((YTsn-mean(YTsn)).^2);

@@ -38,7 +38,7 @@ for j=1:rep
         err=mean(YTsn~=tt);
     end
     if eval==2;
-        mdl=fitlm(ZTrn,YTrn);
+        mdl=fitrensemble(ZTrn,YTrn);
 %         mdl=fitrnet(ZTrn,YTrn);
         tt=predict(mdl,ZTsn);
         err =sum((YTsn-tt).^2)/sum((YTsn-mean(YTsn)).^2);

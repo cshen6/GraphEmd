@@ -1,30 +1,30 @@
-function simFusion(choice,spec, rep)
+function simRefine(choice,spec, rep)
 % use choice =1 to 12 to replicate the simulation and experiments. 
 % use choice =100/101 to plot the simulation figure
 % spec =1 for Omnibus benchmark, 2 for USE, 3 for MASE
 
 if nargin<2
-    spec=1;
+    spec=0;
 end
 if nargin<3
-    rep=3;
+    rep=2;
 end
 % Figure 1 SBM
 if choice==1 || choice==2
-    lim=10;G1=cell(lim,rep);G2=cell(lim,rep);G3=cell(lim,rep);G12=cell(lim,rep);G23=cell(lim,rep);G13=cell(lim,rep);G123=cell(lim,rep);
+    lim=3;G1=cell(lim,rep);G2=cell(lim,rep);G3=cell(lim,rep);G12=cell(lim,rep);G23=cell(lim,rep);G13=cell(lim,rep);G123=cell(lim,rep);
     opts = struct('Adjacency',1,'Laplacian',0,'Spectral',spec,'LDA',0,'GNN',1,'knn',5,'dim',30);
     for i=1:lim
         for r=1:rep
-            n=100*i
+            n=1000*i
             [Dis,Label]=simGenerate(18+(choice-1)*10,n,1);
             indices = crossvalind('Kfold',Label,10);
             opts.indices=indices;
             G1{i,r}=GraphEncoderEvaluate(Dis{1},Label,opts);
             G2{i,r}=GraphEncoderEvaluate(Dis{2},Label,opts);
             G3{i,r}=GraphEncoderEvaluate(Dis{3},Label,opts);
-            G13{i,r}=GraphEncoderEvaluate({Dis{1},Dis{3}},Label,opts);
-            G23{i,r}=GraphEncoderEvaluate({Dis{2},Dis{3}},Label,opts);
-            G12{i,r}=GraphEncoderEvaluate({Dis{1},Dis{2}},Label,opts);
+            G13{i,r}=GraphEncoderEvaluate(Dis{1},{Label,Label(randperm(n))},opts);
+            G23{i,r}=GraphEncoderEvaluate(Dis,{Label,Label(randperm(n))},opts);
+            G12{i,r}=GraphEncoderEvaluate(Dis,Label,opts,Label(randperm(n)));
             G123{i,r}=GraphEncoderEvaluate(Dis,Label,opts);
         end
     end
@@ -47,7 +47,7 @@ if choice==1 || choice==2
             Acc123(i,4)=Acc123(i,4)+G123{i,r}{4,1}/rep;Acc123(i,5)=Acc123(i,5)+G123{i,r}{4,2}/rep;Acc123(i,6)=Acc123(i,6)+G123{i,r}{4,4}/rep;
         end
     end
-    save(strcat('GEEFusionSim',num2str(choice),'Spec',num2str(spec),'.mat'),'choice','Acc1','Acc2','Acc3','Acc12','Acc13','Acc23','Acc123');
+    save(strcat('GEERefineSim',num2str(choice),'Spec',num2str(spec),'.mat'),'choice','Acc1','Acc2','Acc3','Acc12','Acc13','Acc23','Acc123');
 %     [mean(Acc1);mean(Acc2);mean(Acc3);mean(Acc12);mean(Acc13);mean(Acc23);mean(Acc123)]
 %     [std(Acc1);std(Acc2);std(Acc3);std(Acc12);std(Acc13);std(Acc23);std(Acc123)]
 end
@@ -121,7 +121,11 @@ if choice==7
     load('Letter.mat')
     spec=0;
     opts = struct('Adjacency',1,'DiagAugment',1,'Laplacian',0,'Spectral',spec,'LDA',0,'GNN',0,'knn',5,'dim',30);
-    Acc1=zeros(rep,12);Acc2=zeros(rep,12);Time1=zeros(rep,12);Time2=zeros(rep,12); spc=4;
+    Acc1=zeros(rep,18);Acc2=zeros(rep,18);Time1=zeros(rep,18);Time2=zeros(rep,18); spc=6;
+    lim=10507;
+    ind=(Edge1(:,1)>lim) | (Edge1(:,2)>lim);Edge1=Edge1(~ind,:); Label1=Label1(1:lim);
+    ind=(Edge2(:,1)>lim) | (Edge2(:,2)>lim);Edge2=Edge2(~ind,:); Label2=Label2(1:lim);
+    ind=(Edge3(:,1)>lim) | (Edge3(:,2)>lim);Edge3=Edge3(~ind,:); Label3=Label3(1:lim);
     if spec>0
         G1=edge2adj(Edge1);G2=edge2adj(Edge2);G3=edge2adj(Edge3);
     else
@@ -132,26 +136,22 @@ if choice==7
         for j=1:3
             switch j
                 case 1 
-                    Label=Label1;%LabelA=Label2;LabelB=Label3;
+                    Label=Label1;LabelA=Label2;LabelB=Label3;
                 case 2
-                    Label=Label2;%LabelA=Label1;LabelB=Label3;
+                    Label=Label2;LabelA=Label1;LabelB=Label3;
                 case 3
-                    Label=Label3;%LabelA=Label1;LabelB=Label2;
+                    Label=Label3;LabelA=Label1;LabelB=Label2;
             end
-            %     lim=10507;
-            lim=length(Label);
-            ind=(Edge1(:,1)>lim) | (Edge1(:,2)>lim);Edge1=Edge1(~ind,:); %Label1=Label1(1:lim);
-            ind=(Edge2(:,1)>lim) | (Edge2(:,2)>lim);Edge2=Edge2(~ind,:); %Label2=Label2(1:lim);
-            ind=(Edge3(:,1)>lim) | (Edge3(:,2)>lim);Edge3=Edge3(~ind,:); %Label3=Label3(1:lim);
             indices = crossvalind('Kfold',Label,5);
             opts.indices=indices;
             tmp=GraphEncoderEvaluate(Edge1,Label,opts); Acc1(i,1+(j-1)*spc)=tmp{1,2};Acc2(i,1+(j-1)*spc)=tmp{1,4};Time1(i,1+(j-1)*spc)=tmp{4,2};Time2(i,1+(j-1)*spc)=tmp{4,4};
             tmp=GraphEncoderEvaluate(Edge2,Label,opts); Acc1(i,2+(j-1)*spc)=tmp{1,2};Acc2(i,2+(j-1)*spc)=tmp{1,4};Time1(i,2+(j-1)*spc)=tmp{4,2};Time2(i,2+(j-1)*spc)=tmp{4,4};
             tmp=GraphEncoderEvaluate(Edge3,Label,opts); Acc1(i,3+(j-1)*spc)=tmp{1,2};Acc2(i,3+(j-1)*spc)=tmp{1,4};Time1(i,3+(j-1)*spc)=tmp{4,2};Time2(i,3+(j-1)*spc)=tmp{4,4};
             tmp=GraphEncoderEvaluate({Edge1,Edge2,Edge3},Label,opts); Acc1(i,4+(j-1)*spc)=tmp{1,2};Acc2(i,4+(j-1)*spc)=tmp{1,4};Time1(i,4+(j-1)*spc)=tmp{4,2};Time2(i,4+(j-1)*spc)=tmp{4,4};
-            %              tmp=GraphEncoderEvaluate(Edge1,Label,opts,[LabelA,LabelB]); Acc1(i,5+(j-1)*spc)=tmp{1,2};Acc2(i,5+(j-1)*spc)=tmp{1,4};Time1(i,5+(j-1)*spc)=tmp{4,2};Time2(i,5+(j-1)*spc)=tmp{4,4};
-            %              tmp=GraphEncoderEvaluate(Edge2,Label,opts,[LabelA,LabelB]); Acc1(i,5+(j-1)*spc)=tmp{1,2};Acc2(i,5+(j-1)*spc)=tmp{1,4};Time1(i,5+(j-1)*spc)=tmp{4,2};Time2(i,5+(j-1)*spc)=tmp{4,4};
-            %             tmp=GraphEncoderEvaluate({Edge1,Edge2,Edge3},{Label,LabelA,LabelB},opts); Acc1(i,6+(j-1)*spc)=tmp{1,2};Acc2(i,6+(j-1)*spc)=tmp{1,4};Time1(i,6+(j-1)*spc)=tmp{4,2};Time2(i,6+(j-1)*spc)=tmp{4,4};
+%            tmp=GraphEncoderEvaluate(Edge1,Label,opts,[LabelA,LabelB]); Acc1(i,5+(j-1)*spc)=tmp{1,2};Acc2(i,5+(j-1)*spc)=tmp{1,4};Time1(i,5+(j-1)*spc)=tmp{4,2};Time2(i,5+(j-1)*spc)=tmp{4,4};
+%             tmp=GraphEncoderEvaluate(Edge2,Label,opts,[LabelA,LabelB]); Acc1(i,5+(j-1)*spc)=tmp{1,2};Acc2(i,5+(j-1)*spc)=tmp{1,4};Time1(i,5+(j-1)*spc)=tmp{4,2};Time2(i,5+(j-1)*spc)=tmp{4,4};
+           tmp=GraphEncoderEvaluate({Edge1,Edge2,Edge3},{Label,LabelA,LabelB},opts); Acc1(i,5+(j-1)*spc)=tmp{1,2};Acc2(i,5+(j-1)*spc)=tmp{1,4};Time1(i,5+(j-1)*spc)=tmp{4,2};Time2(i,6+(j-1)*spc)=tmp{4,4};
+           tmp=GraphEncoderEvaluate({Edge1,Edge2,Edge3},Label,opts,[LabelA,LabelB]); Acc1(i,6+(j-1)*spc)=tmp{1,2};Acc2(i,6+(j-1)*spc)=tmp{1,4};Time1(i,6+(j-1)*spc)=tmp{4,2};Time2(i,6+(j-1)*spc)=tmp{4,4};
         end
     end
     save(strcat('GEEFusionLetterSpec',num2str(spec),'.mat'),'choice','Acc1','Acc2','Time1','Time2');
@@ -238,17 +238,17 @@ if choice>=10 && choice<=13
 %             load('AIDS.mat');K2=30;Dist2='sqeuclidean';Dist1='euclidean';D = 1-squareform(pdist(X, Dist1));
     end
     opts = struct('Adjacency',1,'DiagAugment',1,'Laplacian',0,'Spectral',spec,'LDA',0,'GNN',GNN,'knn',5,'dim',30);
-    Acc1=zeros(rep,4);Acc2=zeros(rep,4);Time1=zeros(rep,4);Time2=zeros(rep,4);
+    Acc1=zeros(rep,8);Acc2=zeros(rep,8);Time1=zeros(rep,8);Time2=zeros(rep,8);
     if spec>0
         Edge=edge2adj(Edge);
     end
-%     thres=0.2;
-%     numC=zeros(size(X,2),1);
-%     LOne=onehotencode(categorical(Label),2);
-%     for i=1:size(X,2);
-%         numC(i)=max(abs(corr(X(:,i),LOne)));
-%     end
-%     dim=(abs(numC)>thres);
+    thres=0.2;
+    numC=zeros(size(X,2),1);
+    LOne=onehotencode(categorical(Label),2);
+    for i=1:size(X,2);
+        numC(i)=max(abs(corr(X(:,i),LOne)));
+    end
+    dim=(abs(numC)>thres);
 %     Y2=kmeans(X,K2,'Distance',Dist2);
 %     tmpZ=GraphEncoder(Edge,0,X);
     for i=1:rep
@@ -258,12 +258,12 @@ if choice>=10 && choice<=13
        tmp=GraphEncoderEvaluate(Edge,Label,opts); Acc1(i,1)=tmp{1,2-GNN};Acc2(i,1)=tmp{1,4};Time1(i,1)=tmp{4,2-GNN};Time2(i,1)=tmp{4,4};
        tmp=GraphEncoderEvaluate(D,Label,opts); Acc1(i,2)=tmp{1,2-GNN};Acc2(i,2)=tmp{1,4};Time1(i,2)=tmp{4,2-GNN};Time2(i,2)=tmp{4,4};
        tmp=GraphEncoderEvaluate({Edge,D},Label,opts); Acc1(i,3)=tmp{1,2-GNN};Acc2(i,3)=tmp{1,4};Time1(i,3)=tmp{4,2-GNN};Time2(i,3)=tmp{4,4};
-       tmp=AttributeEvaluate(X,Label,indices); Acc1(i,4)=tmp(1);Time1(i,4)=tmp(2);
-%        if spec==0
-% %            tmp=AttributeEvaluate(tmpZ,Label,indices); Acc1(i,6)=tmp(1);Time1(i,6)=tmp(2);
-%            tmp=GraphEncoderEvaluate(Edge,Label,opts,X); Acc1(i,7)=tmp{1,2-GNN};Time1(i,7)=tmp{4,2};
-%            tmp=GraphEncoderEvaluate(Edge,Label,opts,X(:,dim)); Acc1(i,8)=tmp{1,2-GNN};Time1(i,8)=tmp{4,2};
-%        end
+       if spec==0
+           tmp=AttributeEvaluate(X,Label,indices); Acc1(i,5)=tmp(1);Time1(i,5)=tmp(2);
+%            tmp=AttributeEvaluate(tmpZ,Label,indices); Acc1(i,6)=tmp(1);Time1(i,6)=tmp(2);
+           tmp=GraphEncoderEvaluate(Edge,Label,opts,X); Acc1(i,7)=tmp{1,2-GNN};Time1(i,7)=tmp{4,2};
+           tmp=GraphEncoderEvaluate(Edge,Label,opts,X(:,dim)); Acc1(i,8)=tmp{1,2-GNN};Time1(i,8)=tmp{4,2};
+       end
 %        tmp=GraphEncoderEvaluate(Edge,{Label,Y2},opts); Acc1(i,4)=tmp{1,2-GNN};Acc2(i,4)=tmp{1,4};
 %        tmp=GraphEncoderEvaluate({Edge,D},{Label,Y2},opts); Acc1(i,5)=tmp{1,2-GNN};Acc2(i,5)=tmp{1,4};
 %        Z=GraphEncoder(Edge,Y2);tmp=AttributeEvaluate(Z,Label,indices); Acc1(i,6)=tmp;Acc2(i,6)=tmp;

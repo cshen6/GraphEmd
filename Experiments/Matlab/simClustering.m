@@ -286,7 +286,7 @@ ari=zeros(kmax,1);
 [Adj,Y]=simGenerate(type,n,K);
 for i=1:rep
 for r=2:kmax
-    [~,Y2,~,~,tmp]=GraphEncoder(Adj,r);
+    [~,Y2]=GraphEncoder(Adj,r);
     ari(r)=ari(r)+RandIndex(Y2,Y+1)/rep;
 end
 end
