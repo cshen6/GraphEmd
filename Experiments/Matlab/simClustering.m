@@ -187,7 +187,7 @@ end
 % [Adj,Y]=simGenerate(31,n,k);
 % GraphClusteringEvaluate(Adj,Y)
 
-load('CoraAdj.mat') %AEL / GFN K=2
+load('Cora.mat') %AEL / GFN K=2
 opts.Dim=K;
 GraphClusteringEvaluate(Adj,Y,opts)
 load('email.mat') %k=42

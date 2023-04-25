@@ -26,7 +26,7 @@
 %% @export
 %%
 
-function [Z,Y,indT,Score]=GraphEncoder(G,Y,U,opts)
+function [Z,output]=GraphEncoder(G,Y,U,opts)
 warning ('off','all');
 if nargin<2
     Y={2};
@@ -35,7 +35,7 @@ if nargin<3
     U=0;
 end
 if nargin<4
-    opts = struct('Normalize',true,'DiagAugment',true,'Laplacian',false,'Refine',0,'Directed',0,'MaxIter',30,'MaxIterK',3,'Replicates',3,'Elbow',0);
+    opts = struct('Normalize',true,'DiagAugment',true,'Laplacian',false,'Refine',0,'Directed',0,'MaxIter',30,'MaxIterK',3,'Replicates',3,'Dimension',false);
 end
 if ~isfield(opts,'Normalize'); opts.Normalize=true; end
 if ~isfield(opts,'DiagAugment'); opts.DiagAugment=true; end
@@ -45,7 +45,7 @@ if ~isfield(opts,'MaxIter'); opts.MaxIter=30; end
 if ~isfield(opts,'MaxIterK'); opts.MaxIterK=3; end
 if ~isfield(opts,'Replicates'); opts.Replicates=3; end
 if ~isfield(opts,'Directed'); opts.Directed=0; end
-if ~isfield(opts,'Elbow'); opts.Elbow=0; end
+if ~isfield(opts,'Dimension'); opts.Dimension=false; end
 % if ~isfield(opts,'Weight'); opts.Weight=1; end
 % opts.neuron=20;
 % opts.activation='poslin';
@@ -58,7 +58,6 @@ if ~isfield(opts,'Elbow'); opts.Elbow=0; end
 % if length(opts.Weight)~=numG
 %     opts.Weight=ones(numG,1);
 % end
-thres=0.01; % known label percentage less than thres will trigger ensemble clustering
 [G,numG,n]=ProcessGraph(G,opts); % process input graph
 if iscell(Y)
     numY=length(Y);
@@ -71,19 +70,26 @@ else
     end
 end
 Z=cell(numG,numY);
+ZStd=cell(numG,numY);
+classMean=cell(numG,numY);
+classStd=cell(numG,numY);
+dimScore=cell(numG,numY);
+dimChoice=cell(numG,numY);
 YNew=cell(numG,numY);
 indT=cell(1,numY);
-Score=ones(numG,numY);
+ClusterScore=cell(numG,numY);
+thres1=0.01;% known label percentage less than thres will trigger ensemble clustering
+thres2=1;
 
 for j=1:numY
     tmpY=Y{j};
-    [tmpY,indT{j},K]=ProcessLabel(tmpY,n); % process label
+    [tmpY,indT{j},K,n]=ProcessLabel(tmpY,n); % process label
     ratio=sum(indT{j})/n;
     for i=1:numG
         tmpG=G{i};
         ZY=GraphEncoderEmbed(tmpG,tmpY,n,opts); % graph encoder embed
         tmpS=0;
-        if ratio<=thres
+        if ratio<=thres1
             [ZY,tmpY,tmpS]=GraphEncoderCluster(ZY,tmpY,tmpG,K,n,opts);
         end
         %         if refine<=1 % no refinement
@@ -91,7 +97,18 @@ for j=1:numY
         %         else
         %             [Z{i,j},YNew{i,j},Score(i,j)]=GraphEncoderCluster(ZY,tmpY,tmpG,K,n,opts);
         %         end
-        Z{i,j}=ZY;Score(i,j)=tmpS;YNew{i,j}=tmpY;
+        ZStd{i,j}=std(ZY);
+        [classMean{i,j},classStd{i,j},dimScore{i,j}]=GraphEncoderSummary(ZY,tmpY,K);
+        if opts.Dimension==true
+            tmp=(dimScore{i,j}>thres2);
+            dimChoice{i,j}=tmp;
+            if sum(tmp)~=0
+                ZY=ZY(:,tmp);
+            else
+                ZY=sum(ZY(:,~tmp),2);
+            end
+        end
+        Z{i,j}=ZY;ClusterScore{i,j}=tmpS;YNew{i,j}=tmpY; 
     end
 end
 Y=YNew;
@@ -107,23 +124,25 @@ if n1==n
 end
 
 if size(Z,2)==1
-    if numY>0
-        indT=indT{1};
-        Y=Y(:,1);
-    end
+%     if numY>0
+%         indT=indT{1};
+%         Y=Y(:,1);
+%     end
     Z=Z(:,1);
     if size(Z,1)==1
         Z=Z{1};
-        if numY>0
-        Y=Y{1};
-        end
+%         classMean=classMean{1};classStd=classStd{1};ClusterScore=ClusterScore{1};dimScore=dimScore{1};
+%         if numY>0
+%         Y=Y{1};
+%         end
     end
 end
+output=struct('Y',Y,'KnownIndices',indT,'Std',ZStd,'ClassMean',classMean,'ClassStd',classStd,'DimScore',dimScore,'ClusterScore',ClusterScore,'DimChoice',dimChoice);
 
 %% Encoder Embedding Function
 function Z=GraphEncoderEmbed(G,Y,n,opts)
 if nargin<4
-    opts = struct('Normalize',true,'Directed',0,'Elbow',0);
+    opts = struct('Normalize',true,'Directed',0);
 end
 sparse=true;
 prob=false;
@@ -131,6 +150,9 @@ sender=(opts.Directed < 2);
 receiver=(opts.Directed ~=1);
 
 s=size(G,1);
+if s==n
+    sparse=false;
+end
 if size(Y,2)>1
     K=size(Y,2);
     prob=true;
@@ -159,87 +181,61 @@ else
     end
 end
 
-% Edge List Version in O(s)
-for i=1:s
-    a=G(i,1);
-    b=G(i,2);
-    e=G(i,3);
-    if prob==true && sparse==false
-        for j=1:K
-            Z(a,j)=Z(a,j)+W(b,j)*e;
-            Z(b,j)=Z(b,j)+W(a,j)*e;
-        end
-    else
-        c=Y(a);
-        d=Y(b);
-        if d>0 && sender
-            if sparse==false
-                Z(a,d)=Z(a,d)+W(b,d)*e;
-            else
-                Z(a,d)=Z(a,d)+e/nk(d);
+% Matrix Version
+if s==n
+    Z=G*W;
+else
+    % Edge List Version in O(s)
+    for i=1:s
+        a=G(i,1);
+        b=G(i,2);
+        e=G(i,3);
+        if prob==true && sparse==false
+            for j=1:K
+                Z(a,j)=Z(a,j)+W(b,j)*e;
+                Z(b,j)=Z(b,j)+W(a,j)*e;
             end
-        end
-        if c>0 && receiver %&& a~=b
-            if sparse==false
-                Z(b,c)=Z(b,c)+W(a,c)*e;
-            else
-                Z(b,c)=Z(b,c)+e/nk(c);
+        else
+            c=Y(a);
+            d=Y(b);
+            if d>0 && sender
+                if sparse==false
+                    Z(a,d)=Z(a,d)+W(b,d)*e;
+                else
+                    Z(a,d)=Z(a,d)+e/nk(d);
+                end
+            end
+            if c>0 && receiver %&& a~=b
+                if sparse==false
+                    Z(b,c)=Z(b,c)+W(a,c)*e;
+                else
+                    Z(b,c)=Z(b,c)+e/nk(c);
+                end
             end
         end
     end
 end
 
-% stdZ=std(Z)
 if opts.Normalize==true
     Z = normalize(Z,2,'norm');
     Z(isnan(Z))=0;
 end
-% stdZ=std(Z)
-% a=zeros(K,1);b=zeros(K,1);
-% for i=1:K
-%     ind=(Y==i);
-%     tmpY=Y;tmpY(~ind)=0;
-%     cov(Z,tmpY)
-% end
-% if opts.Elbow>0
-% %     ind=(Y>0);
-% %     corr(Z(ind,:),Y(ind))
-%     stdZ=std(Z);
-% %     [stdZ1]=sort(stdZ,'descend');
-%     if (max(stdZ)-min(stdZ))/max(stdZ)>0.2
-%         [idx,center]=kmeans(stdZ',2);
-%         dimInd=(idx==1);
-%         if center(2)>center(1)
-%             dimInd=~dimInd;
-%         end
-% %                 q=getElbow(stdZ,1);
-%         Z=[Z(:,dimInd),sum(Z(:,~dimInd),2)];
-%         find(dimInd>0)
-%     end
-% end
 
-% if opts.Elbow>0
-%     dimInd=(b<0.1);
-%     Z=Z(:,dimInd);
-% end
-
-
-% aa=mean(Z/2);
-% std(Z/2)
-% thres=sqrt(1/4./nk)
-% if directed>1
-%     Z=reshape(Z,n,K,directed);
-% end
-% [~,Z]=pca(Z);
-% Z=sum(Z,2);
-% W=W(:,1:min(opts.Dim,K));
-
-% % Z=reshape(Z,n,size(Z,2)*num);
-% B=zeros(k,k);
-% for j=1:k
-%     tmp=(indS(:,j)==1);
-%     B(j,:)=mean(Z(tmp,:));
-% end
+function [tmpMean,tmpStd,tmpScore]=GraphEncoderSummary(ZY,tmpY,K)
+[~,sz2]=size(ZY);
+tmpMean=zeros(K,sz2);
+tmpStd=zeros(K,sz2);
+%             if length(tmpY)>sz1
+%                 tmpY=tmpY(1:sz1);
+%             end
+for ii=1:K
+    tmp=(tmpY==ii);
+    tmpMean(ii,:)=mean(ZY(tmp,:));
+    tmpStd(ii,:)=std(ZY(tmp,:));
+end
+tmpScore=(max(tmpMean,[],2)-min(tmpMean,[],2))./max(tmpStd,[],2);
+tmpScore=tmpScore';
+% tmpScore=(max(tmpMean)-min(tmpMean))./stdZ;
 
 %% Feature Embedding Function
 function Z=GraphFeatureEmbed(G,U,n,opts)
@@ -328,14 +324,15 @@ for i=1:numG
     tmpG=G{i};
     [s,t]=size(tmpG);
     if s==t % convert adjacency matrix to edgelist
-        [tmpG,s,n]=adj2edge(tmpG);
+        %[tmpG,s,n]=adj2edge(tmpG);
+        n=s;
     else
         if t==2 % enlarge the edgelist to s*3
             tmpG=[tmpG,ones(s,1)];
         end
         n=max(max(max(G{i}(:,1:2))),n);
     end
-    if opts.DiagAugment==true % add self-loop to the graph
+    if opts.DiagAugment==true && s<n/10 % add self-loop to the graph if it is sufficiently sparse
         XNew=[1:n;1:n;ones(1,n)]';
         tmpG=[tmpG;XNew];
         s=s+n;
@@ -360,13 +357,14 @@ for i=1:numG
 end
 
 %% process labels
-function [Y,indT,K]=ProcessLabel(Y,n)
+function [Y,indT,K,n]=ProcessLabel(Y,n)
 [numN,numY]=size(Y);
 if numN==1 && numY==1
-    if Y<2 || Y>n || floor(Y)~=Y
+    if Y<2 || floor(Y)~=Y
         disp('The input dimension range is either not a integer, or smaller than 2, or bigger than vertex size');
         return;
     end
+    n=max(Y,n);
     indT=0;
     K=Y;
     Y=randi(Y,n,1);
@@ -375,6 +373,7 @@ else
         disp('The input label does not match input graph size');
         return;
     end
+    n=max(numN,n);
     indT=(Y>0);
     YTrn=Y(indT);
     [tmp,~,YTrn]=unique(YTrn);

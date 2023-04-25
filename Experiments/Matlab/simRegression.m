@@ -46,14 +46,14 @@ for i=1:rep
     indices = crossvalind('Kfold',Label,5);
     opts.indices=indices;
     tmp=AttributeEvaluate(X2,Y,indices,opts.eval); Acc1(i,1)=tmp(1);Time1(i,1)=tmp(2);
-    for j=1:5
-        tic
-        [Z,YW,err]=GraphEncoderR(Edge,Y,(indices==j),X2,opts);
-        Acc1(i,2)=Acc1(i,2)+err/5;
-        Time1(i,2)=Time1(i,2)+toc/5;
-    end
+%     for j=1:5
+%         tic
+%         [Z,YW,err]=GraphEncoderR(Edge,Y,(indices==j),X2,opts);
+%         Acc1(i,2)=Acc1(i,2)+err/5;
+%         Time1(i,2)=Time1(i,2)+toc/5;
+%     end
     %tmp=GraphEncoderEvaluate(Edge,Y,opts,X2); Acc1(i,2)=tmp{1,2-GNN};Acc2(i,2)=tmp{1,4};Time1(i,2)=tmp{4,2-GNN};Time2(i,2)=tmp{4,4};
-    %tmp=AttributeEvaluate([Z,X2],Y,indices,opts.eval); Acc1(i,2)=tmp(1);Time1(i,2)=Time1(i,2)+tmp(2);
+    tmp=AttributeEvaluate([Z,X2],Y,indices,opts.eval); Acc1(i,2)=tmp(1);Time1(i,2)=Time1(i,2)+tmp(2);
     if spec>0
         tmp=AttributeEvaluate([Z2,X2],Y,indices,opts.eval); Acc1(i,3)=tmp(1);Time1(i,3)=Time1(i,3)+tmp(2);
     end

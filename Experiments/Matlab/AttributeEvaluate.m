@@ -6,6 +6,7 @@ if nargin<4
     eval=1;
 end
 tmp=zeros(2,1);
+discrimType='pseudoLinear';
 % if size(X,2)>100
 %     netGNN = patternnet(30,'trainscg','crossentropy'); % number of neurons, Scaled Conjugate Gradient, cross entropy
 %     netGNN.layers{1}.transferFcn = 'poslin';
@@ -33,7 +34,8 @@ for j=1:rep
 %     else
     tic
     if eval==1;
-        mdl=fitcknn(ZTrn,YTrn,'NumNeighbors',5);
+%         mdl=fitcknn(ZTrn,YTrn,'NumNeighbors',5);
+        mdl=fitcdiscr(ZTrn,YTrn,'discrimType',discrimType);
         tt=predict(mdl,ZTsn);
         err=mean(YTsn~=tt);
     end

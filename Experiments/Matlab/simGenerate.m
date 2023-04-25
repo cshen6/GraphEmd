@@ -1651,11 +1651,22 @@ switch option
    case 300 % DC-SBM with 10 classes
         fileName='SBM';
         pp=1/d*ones(d,1);
+        if d>3
+            pp(4:end)=0.25/(d-3);
+            pp(1:3)=0.25;
+        end
         Bl=0.1*ones(d,d);
         %             Bl=rand(clas,clas);
         for i=1:3
             Bl(i,i)=0.2;
         end
+%         if d>3
+%             for j=1:d-3
+%                 Bl(3+j,1)=0.2-0.1*j/(d-2);
+%             end
+%         end
+%         Bl
+%         Bl
         if edge==0
            Dis=zeros(n,n);
         else
@@ -1796,7 +1807,7 @@ switch option
         fileName='SBM';
         pp=1/d*ones(d,1);
         Bl=0.1*ones(d,d);
-        Bl(:,1)=0.5;Bl(:,2)=0.3;
+        Bl(:,1)=0.6;Bl(:,2)=0.4;Bl(:,3)=0.2;
         %             Bl=rand(clas,clas);
 %         for i=1:d
 %             Bl(i,i)=0.3;
@@ -1845,6 +1856,10 @@ switch option
         fileName='DCSBM';
         pp=1/d*ones(d,1);
         Bl=0.1*ones(d,d);
+        if d>3
+            pp(4:end)=0.25/(d-3);
+            pp(1:3)=0.25;
+        end
         %             Bl=rand(clas,clas);
         for i=1:3
             Bl(i,i)=0.9;
@@ -2007,7 +2022,7 @@ switch option
         fileName='DCSBM';
         pp=1/d*ones(d,1);
         Bl=0.1*ones(d,d);
-        Bl(1,:)=0.5;Bl(2,:)=0.3;
+        Bl(:,1)=0.7;Bl(:,2)=0.5;Bl(:,3)=0.3;
         %             Bl=rand(clas,clas);
         if edge==0
            Dis=zeros(n,n);

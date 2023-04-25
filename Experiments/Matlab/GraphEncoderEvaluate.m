@@ -4,15 +4,15 @@ if nargin < 4
     D=0;
 end
 if nargin < 3
-    opts = struct('eval',1,'indices',crossvalind('Kfold',Y,10),'Adjacency',1,'Laplacian',0,'Spectral',0,'LDA',0,'GNN',0,'knn',5,'dim',30,'neuron',20,'epoch',100,'training',0.05,'activation','poslin','Elbow',0); % default parameters
+    opts = struct('eval',1,'indices',crossvalind('Kfold',Y,5),'Adjacency',1,'Laplacian',0,'Spectral',0,'LDA',1,'GNN',0,'knn',5,'dim',30,'neuron',20,'epoch',100,'training',0.05,'activation','poslin','Dimension',false); % default parameters
 end
 if ~isfield(opts,'eval'); opts.eval=1; end
-if ~isfield(opts,'indices'); opts.indices=crossvalind('Kfold',Y,10); end
+if ~isfield(opts,'indices'); opts.indices=crossvalind('Kfold',Y,5); end
 if ~isfield(opts,'Adjacency'); opts.Adjacency=1; end
 if ~isfield(opts,'Laplacian'); opts.Laplacian=0; end
 if ~isfield(opts,'Spectral'); opts.Spectral=0; end % 1 for ASE and Omni; 2 for USE; 3 for MASE
-if ~isfield(opts,'LDA'); opts.LDA=0; end
-if ~isfield(opts,'GNN'); opts.GNN=0; end
+if ~isfield(opts,'LDA'); opts.LDA=1; end
+if ~isfield(opts,'GNN'); opts.GNN=1; end
 if ~isfield(opts,'knn'); opts.knn=5; end
 if ~isfield(opts,'dim'); opts.dim=30; end
 % if ~isfield(opts,'deg'); opts.deg=0; end
@@ -20,7 +20,7 @@ if ~isfield(opts,'neuron'); opts.neuron=20; end
 if ~isfield(opts,'epoch'); opts.epoch=100; end
 if ~isfield(opts,'training'); opts.training=0.05; end
 if ~isfield(opts,'activation'); opts.activation='poslin'; end %purelin, tansig
-if ~isfield(opts,'Elbow'); opts.Elbow=0; end
+if ~isfield(opts,'Dimension'); opts.Dimension=false; end
 warning('off','all');
 %met=[opts.AEE,opts.LDA,opts.GFN,opts.ASE,opts.LSE,opts.GCN,opts.GNN]; %AEE, LDA, GFN, ASE, GFN, ANN
 indices=opts.indices;
@@ -40,7 +40,6 @@ d=min(opts.dim,n-1);
 K=length(K);
 opts.knn=min(opts.knn,ceil(n/K/3));
 discrimType='pseudoLinear';
-
 % initialize NN
 if opts.GNN>0
 netGNN = patternnet(max(opts.neuron,K),'trainscg','crossentropy'); % number of neurons, Scaled Conjugate Gradient, cross entropy
@@ -118,6 +117,10 @@ if opts.Spectral>0
             Adj=X;
         end
     end
+    [U,S,V]=svds(Adj,d);
+    if opts.Spectral==2
+        U=V;
+    end
 end
 
 for i = 1:kfold
@@ -143,10 +146,17 @@ for i = 1:kfold
             oot=opts;
             oot.Laplacian=0; 
             if ~iscell(Y2)
-                if opts.eval==1
-                   Z=GraphEncoder(X,YT,D,oot);
-                else
-                   Z=GraphEncoder(X,0,D,oot);
+                switch opts.eval
+                    case 0
+                        [Z,out]=GraphEncoder(X,YT,0,oot);
+                    case 1
+                        [Z,out]=GraphEncoder(X,YT,D,oot);
+                    case 2
+                        [Z,out]=GraphEncoder(X,0,D,oot);
+                end
+                ZM=zeros(size(out(1).ClassMean,1),size(out(1).ClassMean,2)*length(out));
+                for il=1:length(out)
+                    ZM(:,size(out(1).ClassMean,2)*(il-1)+1:size(out(1).ClassMean,2)*il)=out(il).ClassMean;
                 end
             else
                 Y3=Y2;
@@ -155,6 +165,9 @@ for i = 1:kfold
             end
             if iscell(Z)
                 Z=horzcat(Z{:});
+            end
+            if opts.eval==0 && size(D,1)==size(Z,1);
+                Z=[Z,D];
             end
 %             if opts.Elbow>0
 %                 stdZ=std(Z);
@@ -183,7 +196,7 @@ for i = 1:kfold
             %     end
             tmp1=toc;
             
-            if opts.eval==1
+            if opts.eval<2
             if opts.knn>0
                 tic
                 mdl=fitcknn(ZTrn,YTrn,'Distance','Euclidean','NumNeighbors',opts.knn);
@@ -195,22 +208,23 @@ for i = 1:kfold
             if opts.LDA==1
                 tic
                 mdl=fitcdiscr(ZTrn,YTrn,'discrimType',discrimType);
+%                 mdl=fitcensemble(ZTrn,YTrn,'Method','Bag');
                 tt=predict(mdl,ZTsn);
                 t_AEE_LDA(i)=tmp1+toc;
                 acc_AEE_LDA(i)=acc_AEE_LDA(i)+mean(YTsn~=tt);
             end
             if opts.GNN==1
                 tic
-                Y2=onehotencode(categorical(YTrn),2)';
-%                 Y2=zeros(length(YTrn),K);
-%                 for j=1:length(YTrn)
-%                     Y2(j,YTrn(j))=1;
-%                 end
-                %         Y2Trn=Y2(trn,:);
-                mdl3 = train(netGNN,ZTrn',Y2);
-                classes = mdl3(ZTsn'); % class-wise probability for tsting data
-                %acc_NN = perform(mdl3,Y2Tsn',classes);
-                tt = vec2ind(classes)'; % this gives the actual class for each observation
+                %                 Y2=onehotencode(categorical(YTrn),2)';
+                %                 mdl3 = train(netGNN,ZTrn',Y2);
+                %                 classes = mdl3(ZTsn'); % class-wise probability for tsting data
+                %                 tt = vec2ind(classes)'; % this gives the actual class for each observation
+                %                 t_GNN(i)=tmp1+toc;
+                %                 acc_GNN(i)=acc_GNN(i)+mean(YTsn~=tt);
+                %                 mdl=fitcensemble(ZTrn,YTrn,'method','Bag','Learners','Tree');
+                %                 tt=predict(mdl,ZTsn);
+                mdl=fitcknn(ZM,1:K,'Distance','Euclidean','NumNeighbors',1);
+                tt=predict(mdl,ZTsn);
                 t_GNN(i)=tmp1+toc;
                 acc_GNN(i)=acc_GNN(i)+mean(YTsn~=tt);
             end
@@ -242,10 +256,6 @@ for i = 1:kfold
                 %             YA=YRe;
                 %         end
 %                 if opts.Spectral~=3
-                    [U,S,V]=svds(Adj,d);
-                    if opts.Spectral==2
-                        U=V;
-                    end
 %                 end
                 t1=toc;
                 for j=1:d
@@ -259,7 +269,10 @@ for i = 1:kfold
                        Z=reshape(Z,n,j*numK);
                     end
                     t2=toc;
-                    if opts.eval==1;
+                    if opts.eval==0 && size(D,1)==size(Z,1);
+                        Z=[Z,D];
+                    end
+                    if opts.eval<2
                     if opts.LDA==1
                         tic
                         mdl=fitcdiscr(Z(trn,:),YA(trn),'DiscrimType',discrimType);
