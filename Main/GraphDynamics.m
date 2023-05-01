@@ -30,8 +30,8 @@ if ~isfield(opts,'Normalize'); opts.Normalize=true; end
 %%% Dynamic Encoder Embedding and Reshape
 time=zeros(3,1);
 tic
-[Z,Y]=GraphEncoder(X,Y,opts);
-Y=Y{opts.BenchTime};
+[Z,out]=GraphEncoder(X,Y,opts);
+Y=out(opts.BenchTime).Y;
 t=length(X);
 if iscell(Z)
     Z=cell2mat(Z');

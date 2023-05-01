@@ -3,58 +3,6 @@ function simDimension(choice,rep)
 if nargin<2
     rep=20;
 end
-% 
-% n=3000;k=10;type=300;
-% [Dis,Label]=simGenerate(type,n,k);
-% Z=GraphEncoder(Dis,Label);
-% q=getElbow(std(Z),1)
-% 
-% 
-% [Dis,Label]=simGenerate(28,3000,4);
-% Z=GraphEncoder(Dis,Label);
-% Z=horzcat(Z{:});
-% score=std(Z);
-% [~,dim]=sort(score,'descend');
-% [~,Z2]=pca(Z,'NumComponent',3);
-% ind1=(Label==1);ind2=(Label==2);ind3=(Label==3);ind4=(Label==4);
-% 
-% tl = tiledlayout(1,2);myColor = brewermap(4,'RdYlGn'); 
-% nexttile(tl)
-% scatter3(Z2(ind1,1), Z2(ind1,2),Z2(ind1,3),20,myColor(1,:),'filled');hold on
-% scatter3(Z2(ind2,1), Z2(ind2,2),Z2(ind2,3),20,myColor(2,:),'filled');
-% scatter3(Z2(ind3,1), Z2(ind3,2),Z2(ind3,3),20,myColor(3,:),'filled');
-% scatter3(Z2(ind4,1), Z2(ind4,2),Z2(ind4,3),20,myColor(4,:),'filled');
-% nexttile(tl)
-% Z2=Z(:,dim(1:3));
-% scatter3(Z2(ind1,1), Z2(ind1,2),Z2(ind1,3),20,myColor(1,:),'filled');hold on
-% scatter3(Z2(ind2,1), Z2(ind2,2),Z2(ind2,3),20,myColor(2,:),'filled');
-% scatter3(Z2(ind3,1), Z2(ind3,2),Z2(ind3,3),20,myColor(3,:),'filled');
-% scatter3(Z2(ind4,1), Z2(ind4,2),Z2(ind4,3),20,myColor(4,:),'filled');
-% % Z=GraphEncoder(Dis,Label(randperm(1000)));
-% % Z=horzcat(Z{:});
-% % std(Z)
-% 
-% 
-% 
-% [Dis,Label]=simGenerate(18,3000,4);
-% Dis={Dis{1},Dis{2}};
-% Z=GraphEncoder(Dis,Label);
-% Z=horzcat(Z{:});
-% score=std(Z);
-% [~,dim]=sort(score,'descend');
-% [~,Z2]=pca(Z,'NumComponent',2);
-% ind1=(Label==1);ind2=(Label==2);ind3=(Label==3);
-% 
-% tl = tiledlayout(1,2);myColor = brewermap(4,'RdYlGn'); 
-% nexttile(tl)
-% scatter(Z2(ind1,1), Z2(ind1,2),20,myColor(1,:),'filled');hold on
-% scatter(Z2(ind2,1), Z2(ind2,2),20,myColor(2,:),'filled');
-% scatter(Z2(ind3,1), Z2(ind3,2),20,myColor(3,:),'filled');
-% nexttile(tl)
-% Z2=Z(:,dim(1:2));
-% scatter(Z2(ind1,1), Z2(ind1,2),20,myColor(1,:),'filled');hold on
-% scatter(Z2(ind2,1), Z2(ind2,2),20,myColor(2,:),'filled');
-% scatter(Z2(ind3,1), Z2(ind3,2),20,myColor(3,:),'filled');
 
 if choice==1 || choice==2 || choice ==3 || choice==4 || choice==5 || choice ==6 || choice ==7 || choice ==8  % top 3; all; none; none; repeat for DC-SBM
     lim=10;G1=cell(lim,rep);G2=cell(lim,rep);dim=20; ind=2;ind2=3;
@@ -168,9 +116,8 @@ if choice>=11 && choice <=18
     end
     [Z,out]=GraphEncoder({G1,G2},Label,0,opts);
     save(strcat('GEEDimension',num2str(choice),'.mat'),'choice','Acc1','Acc2','Time1','Time2','out')
-    [mean(Acc1);mean(Acc2);mean(Time1);mean(Time2)]
-%     [~,out]=GraphEncoder(G1,Label,0,optsE);
-    sum(out(1).DimScore>1)/length(out(1).DimScore)
+    [mean(Acc1);mean(Acc2);std(Acc1);std(Acc2)]
+    [length(out(1).Y), length(out(1).DimScore), sum(out(1).DimScore>1)]
 %     [std(Acc1);std(Acc2);std(Time1);std(Time2)]
 end
 
@@ -208,8 +155,8 @@ if choice>=19 && choice <=26
     end
     [Z,out]=GraphEncoder(G1,Label,0,opts);
     save(strcat('GEEDimension',num2str(choice),'.mat'),'choice','Acc1','Acc2','Time1','Time2','out');
-    [mean(Acc1);mean(Acc2);mean(Time1);mean(Time2)]
-    sum(out(1).DimScore>1)/length(out(1).DimScore)
+    [mean(Acc1);mean(Acc2);std(Acc1);std(Acc2)]
+    [length(out(1).Y), length(out(1).DimScore), sum(out(1).DimScore>1)]
 %     [std(Acc1);std(Acc2);std(Time1);std(Time2)]
 end
 
@@ -273,3 +220,367 @@ if choice==28
     hold off
     title('Principal GEE * UMAP')
 end
+
+if choice==29
+    load('smartphone.mat');
+    load('GEEDimension26.mat');
+    Z=GraphEncoder(Edge,Label);
+    Z2=Z(:,(out.DimScore>1));
+    [Z3,umap,clusterIdentifiers,extras]=run_umap(Z2(:,:),'n_components',3);
+    [Z4,umap,clusterIdentifiers,extras]=run_umap(Z(:,:),'n_components',3);
+     maxK=20;
+    myColor = brewermap(maxK,'RdYlGn');
+    tl = tiledlayout(1,2);
+    nexttile(tl)
+    i=1;
+    ind=(Label==i);scatter3(Z4(ind,1),Z4(ind,2),Z4(ind,3),'Color', myColor(i,:));
+    hold on
+    for i=2:maxK
+        ind=(Label==i);
+        scatter3(Z4(ind,1),Z4(ind,2),Z4(ind,3),'Color', myColor(i,:));
+    end
+    title('Full GEE * UMAP')
+    hold off
+    nexttile(tl)
+    i=1;
+    ind=(Label==i);scatter3(Z3(ind,1),Z3(ind,2),Z3(ind,3),'Color', myColor(i,:));
+    hold on
+    for i=2:maxK
+        ind=(Label==i);
+        scatter3(Z3(ind,1),Z3(ind,2),Z3(ind,3),'Color', myColor(i,:));
+        hold on
+    end
+    hold off
+%     dlmwrite('a.tsv', Z, 'delimiter', '\t');
+end
+
+if choice==31
+    tl = tiledlayout(1,4);fs=36;
+     myColor = brewermap(8,'Spectral');
+
+    [Dis,Label]=simGenerate(300,5000,10,1);
+    [Z1,out1]=GraphEncoder(Dis,Label);
+    V1=cov(Z1);
+    [Dis,Label]=simGenerate(310,5000,10,1);
+    [Z2,out2]=GraphEncoder(Dis,Label);
+    V2=cov(Z2);
+    
+    nexttile(tl)
+    imagesc(V1)
+    ylabel('Covariance Matrix','FontSize',fs)
+    axis('square'); 
+    title('SBM')
+    set(gca,'FontSize',fs);
+
+    nexttile(tl)
+    hold on
+    plot(1:10,out1.DimScore,'x','Color', myColor(2,:), 'LineStyle', 'none','LineWidth',5,'MarkerSize',25);
+    plot(1:10,ones(10,1),'Color', myColor(7,:), 'LineStyle', '--','LineWidth',5);
+    hold off
+    ylim([0,5]);xlim([1,10]);title('SBM')
+    ylabel('Importance Score','FontSize',fs)
+    xlabel('Dimension','FontSize',fs)
+    axis('square'); set(gca,'FontSize',fs);
+
+    nexttile(tl)
+    imagesc(V2)
+    axis('square'); 
+    title('DC-SBM');
+    ylabel('Covariance Matrix','FontSize',fs)
+    set(gca,'FontSize',fs);
+
+    nexttile(tl)
+    hold on
+    plot(1:10,out2.DimScore,'x','Color', myColor(2,:), 'LineStyle', 'none','LineWidth',5,'MarkerSize',25);
+    plot(1:10,ones(10,1),'Color', myColor(7,:), 'LineStyle', '--','LineWidth',5);
+    ylim([0,5]);xlim([1,10]);title('DC-SBM')
+    hold off
+    ylabel('Importance Score','FontSize',fs)
+    xlabel('Dimension','FontSize',fs)
+    axis('square'); set(gca,'FontSize',fs);
+
+    F.fname='FigDimension1';
+    F.wh=[16 4]*2;
+        %     F.PaperPositionMode='auto';
+    print_fig(gcf,F)
+end
+if choice==32
+    tl = tiledlayout(1,4);fs=36;
+    myColor = brewermap(8,'Spectral');
+    nexttile(tl)
+    load('GEEDimension1.mat');
+    hold on
+    plot(1:10,Acc1(:,2),'Color', myColor(8,:), 'LineStyle', '-','LineWidth',5);
+    plot(1:10,Acc2(:,2),'Color', myColor(1,:), 'LineStyle', '-','LineWidth',5);
+    legend('GEE','P-GEE','Location','NorthEast')
+    ylim([0.2,0.8]);
+    xlim([1,10]); xticks([1 5 10]); xticklabels({'300','1500','3000'});
+    ylabel('Classification Error','FontSize',fs)
+    xlabel('Sample Size','FontSize',fs)
+    title('SBM')
+    hold off
+    axis('square'); set(gca,'FontSize',fs);
+
+    nexttile(tl)
+    load('GEEDimension1.mat');
+    hold on
+    plot(1:10,Acc3(:,2),'Color', myColor(7,:), 'LineStyle', '-','LineWidth',5);
+    plot(1:10,Acc3(:,4),'Color', myColor(2,:), 'LineStyle', '-','LineWidth',5);
+    legend('True Positive','False Positive','Location','East')
+    ylim([0,1]);
+    xlim([1,10]); xticks([1 5 10]); xticklabels({'300','1500','3000'});
+    xlabel('Sample Size','FontSize',fs)
+    title('SBM')
+    hold off
+    axis('square'); set(gca,'FontSize',fs);
+
+    nexttile(tl)
+    load('GEEDimension5.mat');
+    hold on
+    plot(1:10,Acc1(:,2),'Color', myColor(8,:), 'LineStyle', '-','LineWidth',5);
+    plot(1:10,Acc2(:,2),'Color', myColor(1,:), 'LineStyle', '-','LineWidth',5);
+    legend('GEE','P-GEE','Location','NorthEast')
+    ylim([0.2,0.8]);
+    xlim([1,10]); xticks([1 5 10]); xticklabels({'300','1500','3000'});
+    ylabel('Classification Error','FontSize',fs)
+    xlabel('Sample Size','FontSize',fs)
+    title('DC-SBM')
+    hold off
+    axis('square'); set(gca,'FontSize',fs);
+
+    nexttile(tl)
+    load('GEEDimension5.mat');
+    hold on
+    plot(1:10,Acc3(:,2),'Color', myColor(7,:), 'LineStyle', '-','LineWidth',5);
+    plot(1:10,Acc3(:,4),'Color', myColor(2,:), 'LineStyle', '-','LineWidth',5);
+    legend('True Positive','False Positive','Location','East')
+    ylim([0,1]);
+    xlim([1,10]); xticks([1 5 10]); xticklabels({'300','1500','3000'});
+    xlabel('Sample Size','FontSize',fs)
+    hold off
+    title('DC-SBM')
+    axis('square'); set(gca,'FontSize',fs);
+
+    F.fname='FigDimension2';
+    F.wh=[16 4]*2;
+        %     F.PaperPositionMode='auto';
+    print_fig(gcf,F)
+end
+if choice==33
+    tl = tiledlayout(1,4);fs=36;
+    myColor = brewermap(8,'Spectral');
+    nexttile(tl)
+    load('GEEDimension9.mat');
+    hold on
+    plot(1:10,Acc1(:,2),'Color', myColor(8,:), 'LineStyle', '-','LineWidth',5);
+    plot(1:10,Acc2(:,2),'Color', myColor(1,:), 'LineStyle', '-','LineWidth',5);
+    legend('GEE','P-GEE','Location','NorthWest')
+    ylim([0,0.8]);
+    xlim([1,10]); xticks([1 5 10]); xticklabels({'5','25','50'});
+    ylabel('Classification Error','FontSize',fs)
+    xlabel('Dimension','FontSize',fs)
+    title('SBM')
+    hold off
+    axis('square'); set(gca,'FontSize',fs);
+
+    nexttile(tl)
+    load('GEEDimension9.mat');
+    hold on
+    plot(1:10,Acc3(:,2),'Color', myColor(7,:), 'LineStyle', '-','LineWidth',5);
+    plot(1:10,Acc3(:,4),'Color', myColor(2,:), 'LineStyle', '-','LineWidth',5);
+    legend('True Positive','False Positive','Location','West')
+    ylim([0,1]);
+    xlim([1,10]); xticks([1 5 10]); xticklabels({'5','25','50'});
+    xlabel('Dimension','FontSize',fs)
+    title('SBM')
+    hold off
+    axis('square'); set(gca,'FontSize',fs);
+
+    nexttile(tl)
+    load('GEEDimension10.mat');
+    hold on
+    plot(1:10,Acc1(:,2),'Color', myColor(8,:), 'LineStyle', '-','LineWidth',5);
+    plot(1:10,Acc2(:,2),'Color', myColor(1,:), 'LineStyle', '-','LineWidth',5);
+    legend('GEE','P-GEE','Location','NorthWest')
+    ylim([0,0.8]);
+    xlim([1,10]); xticks([1 5 10]); xticklabels({'5','25','50'});
+    ylabel('Classification Error','FontSize',fs)
+    xlabel('Dimension','FontSize',fs)
+    title('DC-SBM')
+    hold off
+    axis('square'); set(gca,'FontSize',fs);
+
+    nexttile(tl)
+    load('GEEDimension10.mat');
+    hold on
+    plot(1:10,Acc3(:,2),'Color', myColor(7,:), 'LineStyle', '-','LineWidth',5);
+    plot(1:10,Acc3(:,4),'Color', myColor(2,:), 'LineStyle', '-','LineWidth',5);
+    legend('True Positive','False Positive','Location','West')
+    ylim([0,1]);
+    xlim([1,10]); xticks([1 5 10]); xticklabels({'5','25','50'});
+    xlabel('Dimension','FontSize',fs)
+    title('DC-SBM')
+    hold off
+    axis('square'); set(gca,'FontSize',fs);
+
+    F.fname='FigDimension3';
+    F.wh=[16 4]*2;
+        %     F.PaperPositionMode='auto';
+    print_fig(gcf,F)
+end
+if choice==34
+    tl = tiledlayout(1,4);fs=36;
+     myColor = brewermap(8,'Spectral');
+
+    [Dis,Label]=simGenerate(301,5000,10,1);
+    [Z1,out1]=GraphEncoder(Dis,Label);
+    V1=cov(Z1);
+    [Dis,Label]=simGenerate(311,5000,10,1);
+    [Z2,out2]=GraphEncoder(Dis,Label);
+    V2=cov(Z2);
+    
+    nexttile(tl)
+    imagesc(V1)
+    ylabel('Covariance Matrix','FontSize',fs)
+    axis('square'); 
+    title('SBM')
+    set(gca,'FontSize',fs);
+
+    nexttile(tl)
+    hold on
+    plot(1:10,out1.DimScore,'x','Color', myColor(2,:), 'LineStyle', 'none','LineWidth',5,'MarkerSize',25);
+    plot(1:10,ones(10,1),'Color', myColor(7,:), 'LineStyle', '--','LineWidth',5);
+    hold off
+    ylim([0,5]);xlim([1,10]);title('SBM')
+    ylabel('Importance Score','FontSize',fs)
+    xlabel('Dimension','FontSize',fs)
+    axis('square'); set(gca,'FontSize',fs);
+
+    nexttile(tl)
+    imagesc(V2)
+    axis('square'); 
+    title('DC-SBM');
+    ylabel('Covariance Matrix','FontSize',fs)
+    set(gca,'FontSize',fs);
+
+
+    nexttile(tl)
+    hold on
+    plot(1:10,out2.DimScore,'x','Color', myColor(2,:), 'LineStyle', 'none','LineWidth',5,'MarkerSize',25);
+    plot(1:10,ones(10,1),'Color', myColor(7,:), 'LineStyle', '--','LineWidth',5);
+    ylim([0,5]);xlim([1,10]);title('DC-SBM')
+    hold off
+    ylabel('Importance Score','FontSize',fs)
+    xlabel('Dimension','FontSize',fs)
+    axis('square'); set(gca,'FontSize',fs);
+
+    F.fname='FigDimensionA1';
+    F.wh=[16 4]*2;
+        %     F.PaperPositionMode='auto';
+    print_fig(gcf,F)
+end
+if choice==35
+    tl = tiledlayout(1,4);fs=36;
+     myColor = brewermap(8,'Spectral');
+
+    [Dis,Label]=simGenerate(302,5000,10,1);
+    [Z1,out1]=GraphEncoder(Dis,Label);
+    V1=cov(Z1);
+    [Dis,Label]=simGenerate(312,5000,10,1);
+    [Z2,out2]=GraphEncoder(Dis,Label);
+    V2=cov(Z2);
+    
+    nexttile(tl)
+    imagesc(V1)
+    ylabel('Covariance Matrix','FontSize',fs)
+    axis('square'); 
+    title('SBM')
+    set(gca,'FontSize',fs);
+
+    nexttile(tl)
+    hold on
+    plot(1:10,out1.DimScore,'x','Color', myColor(2,:), 'LineStyle', 'none','LineWidth',5,'MarkerSize',25);
+    plot(1:10,ones(10,1),'Color', myColor(7,:), 'LineStyle', '--','LineWidth',5);
+    hold off
+    ylim([0,5]);xlim([1,10]);title('SBM')
+    ylabel('Importance Score','FontSize',fs)
+    xlabel('Dimension','FontSize',fs)
+    axis('square'); set(gca,'FontSize',fs);
+
+    nexttile(tl)
+    imagesc(V2)
+    axis('square'); 
+    title('DC-SBM');
+    ylabel('Covariance Matrix','FontSize',fs)
+    set(gca,'FontSize',fs);
+
+
+    nexttile(tl)
+    hold on
+    plot(1:10,out2.DimScore,'x','Color', myColor(2,:), 'LineStyle', 'none','LineWidth',5,'MarkerSize',25);
+    plot(1:10,ones(10,1),'Color', myColor(7,:), 'LineStyle', '--','LineWidth',5);
+    ylim([0,5]);xlim([1,10]);title('DC-SBM')
+    hold off
+    ylabel('Importance Score','FontSize',fs)
+    xlabel('Dimension','FontSize',fs)
+    axis('square'); set(gca,'FontSize',fs);
+
+    F.fname='FigDimensionA2';
+    F.wh=[16 4]*2;
+        %     F.PaperPositionMode='auto';
+    print_fig(gcf,F)
+end
+% 1. variance and importance score plot, 
+% 2. FP / TP / importance score for type 1, 2，3, 9； 5，6，7 10.
+% 3. classification error plot for increasing n in 1 and 5.
+
+% 
+% n=3000;k=10;type=300;
+% [Dis,Label]=simGenerate(type,n,k);
+% Z=GraphEncoder(Dis,Label); 
+% 
+% [Dis,Label]=simGenerate(28,3000,4);
+% Z=GraphEncoder(Dis,Label);
+% Z=horzcat(Z{:});
+% score=std(Z);
+% [~,dim]=sort(score,'descend');
+% [~,Z2]=pca(Z,'NumComponent',3);
+% ind1=(Label==1);ind2=(Label==2);ind3=(Label==3);ind4=(Label==4);
+% 
+% tl = tiledlayout(1,2);myColor = brewermap(4,'RdYlGn'); 
+% nexttile(tl)
+% scatter3(Z2(ind1,1), Z2(ind1,2),Z2(ind1,3),20,myColor(1,:),'filled');hold on
+% scatter3(Z2(ind2,1), Z2(ind2,2),Z2(ind2,3),20,myColor(2,:),'filled');
+% scatter3(Z2(ind3,1), Z2(ind3,2),Z2(ind3,3),20,myColor(3,:),'filled');
+% scatter3(Z2(ind4,1), Z2(ind4,2),Z2(ind4,3),20,myColor(4,:),'filled');
+% nexttile(tl)
+% Z2=Z(:,dim(1:3));
+% scatter3(Z2(ind1,1), Z2(ind1,2),Z2(ind1,3),20,myColor(1,:),'filled');hold on
+% scatter3(Z2(ind2,1), Z2(ind2,2),Z2(ind2,3),20,myColor(2,:),'filled');
+% scatter3(Z2(ind3,1), Z2(ind3,2),Z2(ind3,3),20,myColor(3,:),'filled');
+% scatter3(Z2(ind4,1), Z2(ind4,2),Z2(ind4,3),20,myColor(4,:),'filled');
+% % Z=GraphEncoder(Dis,Label(randperm(1000)));
+% % Z=horzcat(Z{:});
+% % std(Z)
+% 
+% 
+% 
+% [Dis,Label]=simGenerate(18,3000,4);
+% Dis={Dis{1},Dis{2}};
+% Z=GraphEncoder(Dis,Label);
+% Z=horzcat(Z{:});
+% score=std(Z);
+% [~,dim]=sort(score,'descend');
+% [~,Z2]=pca(Z,'NumComponent',2);
+% ind1=(Label==1);ind2=(Label==2);ind3=(Label==3);
+% 
+% tl = tiledlayout(1,2);myColor = brewermap(4,'RdYlGn'); 
+% nexttile(tl)
+% scatter(Z2(ind1,1), Z2(ind1,2),20,myColor(1,:),'filled');hold on
+% scatter(Z2(ind2,1), Z2(ind2,2),20,myColor(2,:),'filled');
+% scatter(Z2(ind3,1), Z2(ind3,2),20,myColor(3,:),'filled');
+% nexttile(tl)
+% Z2=Z(:,dim(1:2));
+% scatter(Z2(ind1,1), Z2(ind1,2),20,myColor(1,:),'filled');hold on
+% scatter(Z2(ind2,1), Z2(ind2,2),20,myColor(2,:),'filled');
+% scatter(Z2(ind3,1), Z2(ind3,2),20,myColor(3,:),'filled');
