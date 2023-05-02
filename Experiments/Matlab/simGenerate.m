@@ -1338,15 +1338,15 @@ switch option
         for i=1:d
             Bl(i,i)=0.5;
         end
-        if edge==0
+%         if edge==0
 %             if n>30000
 %            Dis=sparse(n,n);
 %             else
                 Dis=zeros(n,n);
 %             end
-        else
-            Dis=[];
-        end
+%         else
+%             Dis=[];
+%         end
         tt=rand([n,1]);
         Label=ones(n,1);
         thres=0;
@@ -1361,7 +1361,7 @@ switch option
             thres=thres+pp(i);
             Label=Label+(tt>thres); %determine the block of each data
         end
-        if edge==0
+%         if edge==0
             for i=1:n
                 Dis(i,i)=0;%diagonals are zeros
                 for j=i+1:n
@@ -1370,16 +1370,16 @@ switch option
                     Dis(j,i)=Dis(i,j);
                 end
             end
-        else
-            for i=1:n
-                for j=i+1:n
-                    tmp=weight*(rand(1)<theta(i)*theta(j)*Bl(Label(i),Label(j)));
-                    if tmp==1;
-                        Dis=[Dis;i,j,1];
-                    end
-                end
-            end
-        end
+%         else
+%             for i=1:n
+%                 for j=i+1:n
+%                     tmp=1*(rand(1)<theta(i)*theta(j)*Bl(Label(i),Label(j)));
+%                     if tmp==1;
+%                         Dis=[Dis;i,j,1];
+%                     end
+%                 end
+%             end
+%         end
         X=Dis;
     case 120 % DC-SBM with 3 classes
         fileName='DCSBM';

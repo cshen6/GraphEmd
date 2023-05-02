@@ -7,14 +7,18 @@ extreme=false;
 opts=1;
 %type=101; n=1000; K=20;t=10;
 if opts==1
-    [A,Y]=simGenerate(type,n,K);
+    [A,Y]=simGenerate(type,n,K,0);
     E=adj2edge(A);
+%     E=A;
     E(:,3)=randi(100,size(E,1),1);
     G={E};s=size(E,1);
-    if Lapl==true
-%         A=laplacian(graph(A));
-        A=Lap(A);
-    end
+%     if USE == true;
+%         A=edge2adj(E);
+        if Lapl==true
+            %         A=laplacian(graph(A));
+            A=Lap(A);
+        end
+%     end
     for i=1:t-1
         inlier=binornd(1,0.5,s,1);
         outlier=(~inlier);
