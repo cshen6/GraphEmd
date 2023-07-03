@@ -345,9 +345,6 @@ switch option
                         Dis(s,3)=1;
                         s=s+1;
                     end
-                    if s>100*n;
-                        break;
-                    end
                 end
             end
             Dis=Dis(1:s-1,:);
@@ -1611,9 +1608,6 @@ switch option
                         Dis(s,3)=1;
                         s=s+1;
                     end
-                    if s>100*n;
-                        break;
-                    end
                 end
             end
             Dis=Dis(1:s-1,:);
@@ -1651,10 +1645,10 @@ switch option
    case 300 % DC-SBM with 10 classes
         fileName='SBM';
         pp=1/d*ones(d,1);
-%         if d>3
-%             pp(4:end)=0.25/(d-3);
-%             pp(1:3)=0.25;
-%         end
+        if d>3
+            pp(4:end)=0.25/(d-3);
+            pp(1:3)=0.25;
+        end
         Bl=0.1*ones(d,d);
         %             Bl=rand(clas,clas);
         for i=1:3
@@ -1681,12 +1675,17 @@ switch option
         end
         if edge==0
             for i=1:n
-                Dis(i,i)=0;%diagonals are zeros
-                for j=i+1:n
+                for j=1:n
                     weight=1;%randi(10);
                     Dis(i,j)=weight*(rand(1)<Bl(Label(i),Label(j)));
                     Dis(j,i)=Dis(i,j);
                 end
+                Dis(i,i)=0;%diagonals are zeros
+%                 for j=i+1:n
+%                     weight=1;%randi(10);
+%                     Dis(i,j)=weight*(rand(1)<Bl(Label(i),Label(j)));
+%                     Dis(j,i)=Dis(i,j);
+%                 end
             end
         else
             s=1;
@@ -1699,9 +1698,6 @@ switch option
                         Dis(s,3)=1;
                         s=s+1;
                     end
-                    if s>100*n;
-                        break;
-                    end
                 end
             end
             Dis=Dis(1:s-1,:);
@@ -1710,6 +1706,10 @@ switch option
     case 301 % DC-SBM with 10 classes
         fileName='SBM';
         pp=1/d*ones(d,1);
+        if d>3
+            pp(4:end)=0.25/(d-3);
+            pp(1:3)=0.25;
+        end
         Bl=0.1*ones(d,d);
         %             Bl=rand(clas,clas);
         for i=1:d
@@ -1729,12 +1729,17 @@ switch option
         end
         if edge==0
             for i=1:n
-                Dis(i,i)=0;%diagonals are zeros
-                for j=i+1:n
+                for j=1:n
                     weight=1;%randi(10);
                     Dis(i,j)=weight*(rand(1)<Bl(Label(i),Label(j)));
                     Dis(j,i)=Dis(i,j);
                 end
+                Dis(i,i)=0;%diagonals are zeros
+%                 for j=i+1:n
+%                     weight=1;%randi(10);
+%                     Dis(i,j)=weight*(rand(1)<Bl(Label(i),Label(j)));
+%                     Dis(j,i)=Dis(i,j);
+%                 end
             end
         else
             s=1;
@@ -1746,9 +1751,6 @@ switch option
                         Dis(s,2)=j;
                         Dis(s,3)=1;
                         s=s+1;
-                    end
-                    if s>100*n;
-                        break;
                     end
                 end
             end
@@ -1794,9 +1796,6 @@ switch option
                         Dis(s,2)=j;
                         Dis(s,3)=1;
                         s=s+1;
-                    end
-                    if s>100*n;
-                        break;
                     end
                 end
             end
@@ -1844,9 +1843,6 @@ switch option
                         Dis(s,3)=1;
                         s=s+1;
                     end
-                    if s>100*n;
-                        break;
-                    end
                 end
             end
             Dis=Dis(1:s-1,:);
@@ -1856,10 +1852,10 @@ switch option
         fileName='DCSBM';
         pp=1/d*ones(d,1);
         Bl=0.1*ones(d,d);
-%         if d>3
-%             pp(4:end)=0.25/(d-3);
-%             pp(1:3)=0.25;
-%         end
+        if d>3
+            pp(4:end)=0.25/(d-3);
+            pp(1:3)=0.25;
+        end
         %             Bl=rand(clas,clas);
         for i=1:3
             Bl(i,i)=0.9;
@@ -1885,12 +1881,17 @@ switch option
         end
         if edge==0
             for i=1:n
-                Dis(i,i)=0;%diagonals are zeros
                 for j=i+1:n
                     weight=1;%randi(10);
                     Dis(i,j)=weight*(rand(1)<theta(i)*theta(j)*Bl(Label(i),Label(j)));
                     Dis(j,i)=Dis(i,j);
                 end
+                Dis(i,i)=0;%diagonals are zeros
+%                 for j=i+1:n
+%                     weight=1;%randi(10);
+%                     Dis(i,j)=weight*(rand(1)<theta(i)*theta(j)*Bl(Label(i),Label(j)));
+%                     Dis(j,i)=Dis(i,j);
+%                 end
             end
         else
             s=1;
@@ -1903,9 +1904,6 @@ switch option
                         Dis(s,3)=1;
                         s=s+1;
                     end
-                    if s>100*n;
-                        break;
-                    end
                 end
             end
             Dis=Dis(1:s-1,:);
@@ -1914,6 +1912,10 @@ switch option
      case 311 % DC-SBM with 10 classes
         fileName='DCSBM';
         pp=1/d*ones(d,1);
+        if d>3
+            pp(4:end)=0.25/(d-3);
+            pp(1:3)=0.25;
+        end
         Bl=0.1*ones(d,d);
         %             Bl=rand(clas,clas);
         for i=1:d
@@ -1940,12 +1942,17 @@ switch option
         end
         if edge==0
             for i=1:n
-                Dis(i,i)=0;%diagonals are zeros
                 for j=i+1:n
                     weight=1;%randi(10);
                     Dis(i,j)=weight*(rand(1)<theta(i)*theta(j)*Bl(Label(i),Label(j)));
                     Dis(j,i)=Dis(i,j);
                 end
+                Dis(i,i)=0;%diagonals are zeros
+%                 for j=i+1:n
+%                     weight=1;%randi(10);
+%                     Dis(i,j)=weight*(rand(1)<theta(i)*theta(j)*Bl(Label(i),Label(j)));
+%                     Dis(j,i)=Dis(i,j);
+%                 end
             end
         else
             s=1;
@@ -1957,9 +1964,6 @@ switch option
                         Dis(s,2)=j;
                         Dis(s,3)=1;
                         s=s+1;
-                    end
-                    if s>100*n;
-                        break;
                     end
                 end
             end
@@ -2010,9 +2014,6 @@ switch option
                         Dis(s,3)=1;
                         s=s+1;
                     end
-                    if s>100*n;
-                        break;
-                    end
                 end
             end
             Dis=Dis(1:s-1,:);
@@ -2062,9 +2063,6 @@ switch option
                         Dis(s,2)=j;
                         Dis(s,3)=1;
                         s=s+1;
-                    end
-                    if s>100*n;
-                        break;
                     end
                 end
             end

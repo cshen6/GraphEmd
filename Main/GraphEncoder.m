@@ -9,7 +9,6 @@
 %% @param U is an n*d node attributes
 %% @param opts specifies options:
 %%        Normalize specifies whether to normalize each embedding by L2 norm;
-%%        DiagAugment = true means adding 1 to all diagonal entries (i.e., add self-loop to edgelist), which can help sparse graphs.
 %%        Laplacian specifies whether to uses graph Laplacian or adjacency matrix;
 %%        Refinement specififies whether the labels are refined by classification or clustering, 
 %%                   default 0 means no refinement, 1 for refinement at current dimension, and other integers for refinement into another dimension.
@@ -35,10 +34,10 @@ if nargin<3
     U=0;
 end
 if nargin<4
-    opts = struct('Normalize',true,'DiagAugment',true,'Laplacian',false,'Refine',0,'Directed',0,'MaxIter',30,'MaxIterK',3,'Replicates',3,'Dimension',false);
+    opts = struct('Normalize',true,'Laplacian',false,'Refine',0,'Directed',0,'MaxIter',30,'MaxIterK',3,'Replicates',3,'Dimension',false,'PCA',false);
 end
 if ~isfield(opts,'Normalize'); opts.Normalize=true; end
-if ~isfield(opts,'DiagAugment'); opts.DiagAugment=true; end
+% if ~isfield(opts,'DiagAugment'); opts.DiagAugment=false; end
 if ~isfield(opts,'Laplacian'); opts.Laplacian=false; end
 if ~isfield(opts,'Refine'); opts.Refine=0; end
 if ~isfield(opts,'MaxIter'); opts.MaxIter=30; end
@@ -46,12 +45,14 @@ if ~isfield(opts,'MaxIterK'); opts.MaxIterK=3; end
 if ~isfield(opts,'Replicates'); opts.Replicates=3; end
 if ~isfield(opts,'Directed'); opts.Directed=0; end
 if ~isfield(opts,'Dimension'); opts.Dimension=false; end
+if ~isfield(opts,'PCA'); opts.PCA=false; end
+% opts.PCA=true; % this option is for internal testing only. Should always be set to false unless to test PCA. 
 % if ~isfield(opts,'Weight'); opts.Weight=1; end
 % opts.neuron=20;
 % opts.activation='poslin';
 % opts.Directed=1;
 % opts.Refine=1;
-% opts.DiagAugment=false;
+% opts.DiagAugment=true;
 % opts.Normalize=false;
 % opts.Laplacian=true;
 
@@ -98,14 +99,21 @@ for j=1:numY
         %             [Z{i,j},YNew{i,j},Score(i,j)]=GraphEncoderCluster(ZY,tmpY,tmpG,K,n,opts);
         %         end
         ZStd{i,j}=std(ZY);
-        [classMean{i,j},classStd{i,j},dimScore{i,j}]=GraphEncoderSummary(ZY,tmpY,K);
+        [classMean{i,j},classStd{i,j},dimScore{i,j}]=GraphEncoderSummary(ZY,tmpY,K,opts);
         if opts.Dimension==true
-            tmp=(dimScore{i,j}>thres2);
-            dimChoice{i,j}=tmp;
-            if sum(tmp)~=0
-                ZY=ZY(:,tmp);
+            if opts.PCA==true
+                [~,tmpZ,latent]=pca(ZY);
+                tmp=getElbow(latent,2);
+                dimChoice{i,j}=1:tmp(end);
+                ZY=tmpZ(:,1:tmp(end));
             else
-                ZY=sum(ZY(:,~tmp),2);
+                tmp=(dimScore{i,j}>thres2);
+                dimChoice{i,j}=tmp;
+                if sum(tmp)~=0
+                    ZY=ZY(:,tmp);
+                else
+                    ZY=sum(ZY(:,~tmp),2);
+                end
             end
         end
         Z{i,j}=ZY;ClusterScore{i,j}=tmpS;YNew{i,j}=tmpY; 
@@ -144,85 +152,105 @@ function Z=GraphEncoderEmbed(G,Y,n,opts)
 if nargin<4
     opts = struct('Normalize',true,'Directed',0);
 end
-sparse=true;
-prob=false;
+% sparse=true;
+% prob=false;
 sender=(opts.Directed < 2);
 receiver=(opts.Directed ~=1);
 
 s=size(G,1);
-if s==n
-    sparse=false;
-end
+% if s==n
+%     sparse=false;
+% end
 if size(Y,2)>1
     K=size(Y,2);
-    prob=true;
+    %     prob=true;
 else
     K=max(Y);
 end
 nk=zeros(1,K);
 Z=zeros(n,K);
 % indS=zeros(n,k);
-if prob==true && sparse==false
-    nk=sum(Y);
-    W=Y./repmat(nk,n,1);
-else
-    if sparse==false
-        W=zeros(n,K);
-        for i=1:K
-            ind=(Y==i);
-            nk(i)=sum(ind);
-            W(ind,i)=1/nk(i);
-        end
-    else
-        W=Y;
-        for i=1:K
-            nk(i)=sum(W==i);
-        end
-    end
+% if prob==true && sparse==false
+%     nk=sum(Y);
+%     W=Y./repmat(nk,n,1);
+% else
+%     if sparse==false
+%         W=zeros(n,K);
+%         for i=1:K
+%             ind=(Y==i);
+%             nk(i)=sum(ind);
+%             W(ind,i)=nk(i);
+%         end
+%     else
+W=Y;
+for i=1:K
+    nk(i)=sum(W==i);
 end
+%     end
+% end
 
 % Matrix Version
-if s==n
-    Z=G*W;
-else
+% if s==n
+%     Z=G*W;
+% else
     % Edge List Version in O(s)
     for i=1:s
         a=G(i,1);
         b=G(i,2);
         e=G(i,3);
-        if prob==true && sparse==false
-            for j=1:K
-                Z(a,j)=Z(a,j)+W(b,j)*e;
-                Z(b,j)=Z(b,j)+W(a,j)*e;
+        %         if prob==true && sparse==false
+        %             for j=1:K
+        %                 Z(a,j)=Z(a,j)+e/W(b,j);
+        %                 Z(b,j)=Z(b,j)+e/W(a,j);
+        %             end
+        %         else
+        c=Y(a);
+        d=Y(b);
+        if d>0 && sender
+            %                 if sparse==false
+            %                     if c==d
+            %                         Z(a,d)=Z(a,d)+e/(W(b,d)-1);
+            %                     else
+            %                         Z(a,d)=Z(a,d)+e/W(b,d);
+            %                     end
+            %                 else
+            if c==d
+                Z(a,d)=Z(a,d)+e/(nk(d)-1);
+            else
+                Z(a,d)=Z(a,d)+e/nk(d);
             end
-        else
-            c=Y(a);
-            d=Y(b);
-            if d>0 && sender
-                if sparse==false
-                    Z(a,d)=Z(a,d)+W(b,d)*e;
-                else
-                    Z(a,d)=Z(a,d)+e/nk(d);
-                end
-            end
-            if c>0 && receiver %&& a~=b
-                if sparse==false
-                    Z(b,c)=Z(b,c)+W(a,c)*e;
-                else
-                    Z(b,c)=Z(b,c)+e/nk(c);
-                end
-            end
+            %                 end
         end
+        if c>0 && receiver %&& a~=b
+            %                 if sparse==false
+            %                     if c==d
+            %                         Z(b,c)=Z(b,c)+e/(W(a,c)-1);
+            %                     else
+            %                         Z(b,c)=Z(b,c)+e/W(a,c);
+            %                     end
+            %                 else
+            if c==d
+                Z(b,c)=Z(b,c)+e/(nk(c)-1);
+            else
+                Z(b,c)=Z(b,c)+e/nk(c);
+            end
+            %                 end
+        end
+        %         end
     end
-end
+% end
 
 if opts.Normalize==true
     Z = normalize(Z,2,'norm');
     Z(isnan(Z))=0;
 end
 
-function [tmpMean,tmpStd,tmpScore]=GraphEncoderSummary(ZY,tmpY,K)
+function [tmpMean,tmpStd,tmpScore]=GraphEncoderSummary(ZY,tmpY,K,opts)
 [~,sz2]=size(ZY);
+if opts.Normalize==false
+    ZY = normalize(ZY,2,'norm');
+    ZY(isnan(ZY))=0;
+end
 tmpMean=zeros(K,sz2);
 tmpStd=zeros(K,sz2);
 %             if length(tmpY)>sz1
@@ -233,7 +261,10 @@ for ii=1:K
     tmpMean(ii,:)=mean(ZY(tmp,:));
     tmpStd(ii,:)=std(ZY(tmp,:));
 end
-tmpScore=(max(tmpMean,[],2)-min(tmpMean,[],2))./max(tmpStd,[],2);
+tmpScore=(max(tmpMean,[],2)-min(tmpMean,[],2));
+indTmp=(tmpScore>0);
+tmp=tmpScore./max(tmpStd,[],2);
+tmpScore(indTmp)=tmp(indTmp);
 tmpScore=tmpScore';
 % tmpScore=(max(tmpMean)-min(tmpMean))./stdZ;
 
@@ -324,19 +355,19 @@ for i=1:numG
     tmpG=G{i};
     [s,t]=size(tmpG);
     if s==t % convert adjacency matrix to edgelist
-        %[tmpG,s,n]=adj2edge(tmpG);
-        n=s;
+        [tmpG,s,n]=adj2edge(tmpG);
+%         n=s;
     else
         if t==2 % enlarge the edgelist to s*3
             tmpG=[tmpG,ones(s,1)];
         end
         n=max(max(max(G{i}(:,1:2))),n);
     end
-    if opts.DiagAugment==true && s<n/10 % add self-loop to the graph if it is sufficiently sparse
-        XNew=[1:n;1:n;ones(1,n)]';
-        tmpG=[tmpG;XNew];
-        s=s+n;
-    end
+%     if opts.DiagAugment==true
+%         XNew=[1:n;1:n;ones(1,n)]';
+%         tmpG=[tmpG;XNew];
+%         s=s+n;
+%     end
     if opts.Laplacian==true % convert the edge weight from raw weight to Laplacian
         D=zeros(n,1);
         for j=1:s
