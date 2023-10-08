@@ -5,7 +5,7 @@ end
 if nargin<4
     eval=1;
 end
-tmp=zeros(2,1);
+tmp=zeros(4,1);
 discrimType='pseudoLinear';
 % if size(X,2)>100
 %     netGNN = patternnet(30,'trainscg','crossentropy'); % number of neurons, Scaled Conjugate Gradient, cross entropy
@@ -32,22 +32,29 @@ for j=1:rep
 %         %acc_NN = perform(mdl3,Y2Tsn',classes);
 %         tt = vec2ind(classes)'; % this gives the actual class for each observation
 %     else
-    tic
     if eval==1;
+        tic
 %         mdl=fitcknn(ZTrn,YTrn,'NumNeighbors',5);
         mdl=fitcdiscr(ZTrn,YTrn,'discrimType',discrimType);
         tt=predict(mdl,ZTsn);
         err=mean(YTsn~=tt);
+        tmp(3)=tmp(3)+toc/rep;
+        tmp(1)=tmp(1)+err/rep;
+
+        mdl=fitcknn(ZTrn,YTrn,'Distance','Euclidean','NumNeighbors',5);
+        tt=predict(mdl,ZTsn);
+        err=mean(YTsn~=tt);
+        tmp(4)=tmp(4)+toc/rep;
+        tmp(2)=tmp(2)+err/rep;
     end
     if eval==2;
-        mdl=fitrensemble(ZTrn,YTrn);
+        tic
+        mdl=fitcensemble(ZTrn,YTrn,'Method','Bag');
 %         mdl=fitrnet(ZTrn,YTrn);
         tt=predict(mdl,ZTsn);
-        err =sum((YTsn-tt).^2)/sum((YTsn-mean(YTsn)).^2);
+        err=mean(YTsn~=tt);
+        tmp(3)=tmp(3)+toc/rep;
+        tmp(1)=tmp(1)+err/rep;
     end
         %     t_AEE_NN(i)=tmp1;
-%     end
-    ttt=toc;
-    tmp(1)=tmp(1)+err/rep;
-    tmp(2)=tmp(2)+ttt/rep;
 end

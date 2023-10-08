@@ -34,7 +34,7 @@ if nargin<3
     U=0;
 end
 if nargin<4
-    opts = struct('Normalize',true,'Laplacian',false,'Refine',0,'Directed',0,'MaxIter',30,'MaxIterK',3,'Replicates',3,'Dimension',false,'PCA',false);
+    opts = struct('Normalize',true,'Laplacian',false,'Refine',0,'Directed',0,'MaxIter',30,'MaxIterK',3,'Replicates',3,'Dimension',0,'Matrix',true);
 end
 if ~isfield(opts,'Normalize'); opts.Normalize=true; end
 % if ~isfield(opts,'DiagAugment'); opts.DiagAugment=false; end
@@ -44,18 +44,19 @@ if ~isfield(opts,'MaxIter'); opts.MaxIter=30; end
 if ~isfield(opts,'MaxIterK'); opts.MaxIterK=3; end
 if ~isfield(opts,'Replicates'); opts.Replicates=3; end
 if ~isfield(opts,'Directed'); opts.Directed=0; end
-if ~isfield(opts,'Dimension'); opts.Dimension=false; end
-if ~isfield(opts,'PCA'); opts.PCA=false; end
+if ~isfield(opts,'Dimension'); opts.Dimension=0; end
+if ~isfield(opts,'Matrix'); opts.Matrix=true; end
 % opts.PCA=true; % this option is for internal testing only. Should always be set to false unless to test PCA. 
 % if ~isfield(opts,'Weight'); opts.Weight=1; end
 % opts.neuron=20;
 % opts.activation='poslin';
 % opts.Directed=1;
 % opts.Refine=1;
-% opts.DiagAugment=true;
+% opts.Dimension=true;
+% opts.PCA=true;
 % opts.Normalize=false;
 % opts.Laplacian=true;
-
+% opts.Matrix=true;
 % if length(opts.Weight)~=numG
 %     opts.Weight=ones(numG,1);
 % end
@@ -78,43 +79,58 @@ dimScore=cell(numG,numY);
 dimChoice=cell(numG,numY);
 YNew=cell(numG,numY);
 indT=cell(1,numY);
+nk=cell(1,numY);
 ClusterScore=cell(numG,numY);
-thres1=0.01;% known label percentage less than thres will trigger ensemble clustering
-thres2=1;
+thres1=0.01;
+% thres2=0.01;% known label percentage less than thres will trigger ensemble clustering
+thres2=0.7;
 
 for j=1:numY
     tmpY=Y{j};
-    [tmpY,indT{j},K,n]=ProcessLabel(tmpY,n); % process label
+    [tmpY,indT{j},K,n,nk{j}]=ProcessLabel(tmpY,n); % process label
     ratio=sum(indT{j})/n;
     for i=1:numG
-        tmpG=G{i};
-        ZY=GraphEncoderEmbed(tmpG,tmpY,n,opts); % graph encoder embed
+        tmpG=G{i};tmpnk=nk{j};
+        ZY=GraphEncoderEmbed(tmpG,tmpY,n,tmpnk,opts); % graph encoder embed
         tmpS=0;
-        if ratio<=thres1
-            [ZY,tmpY,tmpS]=GraphEncoderCluster(ZY,tmpY,tmpG,K,n,opts);
-        end
-        %         if refine<=1 % no refinement
-        %             Z{i,j}=ZY;Score(i,j)=tmpS;YNew{i,j}=tmpY;
-        %         else
-        %             [Z{i,j},YNew{i,j},Score(i,j)]=GraphEncoderCluster(ZY,tmpY,tmpG,K,n,opts);
-        %         end
         ZStd{i,j}=std(ZY);
-        [classMean{i,j},classStd{i,j},dimScore{i,j}]=GraphEncoderSummary(ZY,tmpY,K,opts);
-        if opts.Dimension==true
-            if opts.PCA==true
-                [~,tmpZ,latent]=pca(ZY);
-                tmp=getElbow(latent,2);
-                dimChoice{i,j}=1:tmp(end);
-                ZY=tmpZ(:,1:tmp(end));
-            else
-                tmp=(dimScore{i,j}>thres2);
-                dimChoice{i,j}=tmp;
-                if sum(tmp)~=0
-                    ZY=ZY(:,tmp);
-                else
-                    ZY=sum(ZY(:,~tmp),2);
-                end
+        [classMean{i,j},classStd{i,j},dimScore{i,j}]=GraphEncoderSummary(ZY,tmpY,K);
+%         dimScore{i,j}=dimScore{i,j}./n'.^0.5;
+        if ratio<=thres1
+            [ZY,tmpY,tmpS]=GraphEncoderCluster(ZY,tmpY,tmpG,K,n,tmpnk,opts);
+        end
+        if opts.Dimension>0
+%             if opts.Dimension>1
+%                 [~,tmpZ,latent]=pca(ZY);
+%                 tmp=getElbow(latent,2);
+%                 dimChoice{i,j}=1:tmp(end);
+%                 ZY=tmpZ(:,1:tmp(end));
+%                 dimScore{i,j}=ZStd{i,j};
+                tmp=sort(dimScore{i,j},'descend');
+                tmp(tmp==Inf)=100;
+                tmp2=getElbow(tmp,opts.Dimension);
+%                 if max(tmp)<thres1
+                tmp=(dimScore{i,j}>=max(tmp(tmp2(end)),thres2));
+%                 else
+%                     tmp=(dimScore{i,j}>=max(tmp(tmp2(end)),thres1));
+%                 end
+                %                 ZY=tmpZ(:,1:tmp(end));
+%             else
+%                 tmp=(dimScore{i,j}>thres2);
+%             end
+            dimChoice{i,j}=tmp';
+            if sum(tmp)~=0
+                ZY=ZY(:,tmp);
+                %                 else
+                %                     ZY=sum(ZY(:,~tmp),2);
             end
+        else
+            dimChoice{i,j}=true(1,K);
+        end
+        if opts.Normalize==true
+            ZY = normalize(ZY,2,'norm');
+            %     ZY=ZY./sum(ZY,1);
+            ZY(isnan(ZY))=0;
         end
         Z{i,j}=ZY;ClusterScore{i,j}=tmpS;YNew{i,j}=tmpY; 
     end
@@ -145,19 +161,19 @@ if size(Z,2)==1
 %         end
     end
 end
-output=struct('Y',Y,'KnownIndices',indT,'Std',ZStd,'ClassMean',classMean,'ClassStd',classStd,'DimScore',dimScore,'ClusterScore',ClusterScore,'DimChoice',dimChoice);
+output=struct('Y',Y,'nk',nk, 'KnownIndices',indT,'Std',ZStd,'ClassMean',classMean,'ClassStd',classStd,'DimScore',dimScore,'ClusterScore',ClusterScore,'DimChoice',dimChoice);
 
 %% Encoder Embedding Function
-function Z=GraphEncoderEmbed(G,Y,n,opts)
-if nargin<4
-    opts = struct('Normalize',true,'Directed',0);
-end
+function Z=GraphEncoderEmbed(G,Y,n,nk,opts)
+% if nargin<5
+%     opts = struct('Normalize',true,'Directed',0);
+% end
 % sparse=true;
 % prob=false;
 sender=(opts.Directed < 2);
 receiver=(opts.Directed ~=1);
 
-s=size(G,1);
+[s,t]=size(G);
 % if s==n
 %     sparse=false;
 % end
@@ -167,25 +183,25 @@ if size(Y,2)>1
 else
     K=max(Y);
 end
-nk=zeros(1,K);
 Z=zeros(n,K);
-% indS=zeros(n,k);
-% if prob==true && sparse==false
-%     nk=sum(Y);
-%     W=Y./repmat(nk,n,1);
-% else
-%     if sparse==false
-%         W=zeros(n,K);
-%         for i=1:K
-%             ind=(Y==i);
-%             nk(i)=sum(ind);
-%             W(ind,i)=nk(i);
-%         end
-%     else
-W=Y;
-for i=1:K
-    nk(i)=sum(W==i);
-end
+% nk=zeros(1,K);
+% % indS=zeros(n,k);
+% % if prob==true && sparse==false
+% %     nk=sum(Y);
+% %     W=Y./repmat(nk,n,1);
+% % else
+% %     if sparse==false
+% %         W=zeros(n,K);
+% %         for i=1:K
+% %             ind=(Y==i);
+% %             nk(i)=sum(ind);
+% %             W(ind,i)=nk(i);
+% %         end
+% %     else
+% W=Y;
+% for i=1:K
+%     nk(i)=sum(W==i);
+% end
 %     end
 % end
 
@@ -194,6 +210,7 @@ end
 %     Z=G*W;
 % else
     % Edge List Version in O(s)
+if s~=t && t<=3
     for i=1:s
         a=G(i,1);
         b=G(i,2);
@@ -238,19 +255,28 @@ end
         end
         %         end
     end
-% end
-
+else
+    W=zeros(n,K);
+    for i=1:K
+        ind=(Y==i);
+        W(ind,i)=1/nk(i);
+    end
+    Z=G*W;
+    for i=1:n
+        tmpL=Y(i);
+        if tmpL>0
+           Z(i,tmpL)=Z(i,tmpL)*nk(tmpL)/(nk(tmpL)-1);
+        end
+    end
+end
 if opts.Normalize==true
     Z = normalize(Z,2,'norm');
+%     ZY=ZY./sum(ZY,1);
     Z(isnan(Z))=0;
 end
 
-function [tmpMean,tmpStd,tmpScore]=GraphEncoderSummary(ZY,tmpY,K,opts)
-[~,sz2]=size(ZY);
-if opts.Normalize==false
-    ZY = normalize(ZY,2,'norm');
-    ZY(isnan(ZY))=0;
-end
+function [tmpMean,tmpStd,tmpScore,Z]=GraphEncoderSummary(Z,tmpY,K)
+[~,sz2]=size(Z);
 tmpMean=zeros(K,sz2);
 tmpStd=zeros(K,sz2);
 %             if length(tmpY)>sz1
@@ -258,21 +284,32 @@ tmpStd=zeros(K,sz2);
 %             end
 for ii=1:K
     tmp=(tmpY==ii);
-    tmpMean(ii,:)=mean(ZY(tmp,:));
-    tmpStd(ii,:)=std(ZY(tmp,:));
+    tmpMean(ii,:)=mean(Z(tmp,:));
+    tmpStd(ii,:)=std(Z(tmp,:));
 end
-tmpScore=(max(tmpMean,[],2)-min(tmpMean,[],2));
+tmpScore=(max(tmpMean,[],1)-min(tmpMean,[],1));
 indTmp=(tmpScore>0);
-tmp=tmpScore./max(tmpStd,[],2);
+tmp=tmpScore./max(tmpStd,[],1);
 tmpScore(indTmp)=tmp(indTmp);
 tmpScore=tmpScore';
+
+% if opts.Normalize==true
+%     tmpMean = normalize(tmpMean,2,'norm');
+% %     ZY=ZY./sum(ZY,1);
+%     tmpMean(isnan(tmpMean))=0;
+% end
 % tmpScore=(max(tmpMean)-min(tmpMean))./stdZ;
+% if opts.Normalize==true
+%     Z = normalize(Z,2,'norm');
+% %     ZY=ZY./sum(ZY,1);
+%     Z(isnan(Z))=0;
+% end
 
 %% Feature Embedding Function
 function Z=GraphFeatureEmbed(G,U,n,opts)
-if nargin<4
-    opts = struct('Normalize',true,'Directed',0);
-end
+% if nargin<4
+%     opts = struct('Normalize',true,'Directed',0);
+% end
 sender=(opts.Directed < 2);
 receiver=(opts.Directed ~=1);
 
@@ -301,7 +338,7 @@ if K >=2 && opts.Normalize==true
 end
 
 %% Clustering Function
-function [Z,Y,Score]=GraphEncoderCluster(Z,Y,G,K,n,opts)
+function [Z,Y,Score]=GraphEncoderCluster(Z,Y,G,K,n,nk,opts)
 
 % if nargin<4
 %     opts = struct('Normalize',true,'MaxIter',50,'MaxIterK',5,'Replicates',3,'Directed',1,'Dim',0);
@@ -322,7 +359,7 @@ for rep=1:opts.Replicates
         else
             Y=Y1;
         end
-        Zt=GraphEncoderEmbed(G,Y(:,1),n,opts);
+        Zt=GraphEncoderEmbed(G,Y(:,1),n,nk,opts);
     end
     % Compute GCS for each replicate
     tmpGCS=calculateGCS(Zt,Y1,n,K);
@@ -338,7 +375,7 @@ end
 % k-means clustering
 if ens>1
     Y = kmeans(Z, K,'MaxIter',opts.MaxIterK,'Replicates',1,'Start','plus');
-    Z = GraphEncoderEmbed(G,Y(:,1),n,opts);
+    Z = GraphEncoderEmbed(G,Y(:,1),n,nk,opts);
     Score=calculateGCS(Z,Y,n,K);
 end
 
@@ -355,19 +392,22 @@ for i=1:numG
     tmpG=G{i};
     [s,t]=size(tmpG);
     if s==t % convert adjacency matrix to edgelist
-        [tmpG,s,n]=adj2edge(tmpG);
-%         n=s;
+        n=max(s,n);
+        if ~opts.Matrix
+            [tmpG,s,n]=adj2edge(tmpG);
+        end
+        %         n=s;
     else
         if t==2 % enlarge the edgelist to s*3
             tmpG=[tmpG,ones(s,1)];
         end
         n=max(max(max(G{i}(:,1:2))),n);
     end
-%     if opts.DiagAugment==true
-%         XNew=[1:n;1:n;ones(1,n)]';
-%         tmpG=[tmpG;XNew];
-%         s=s+n;
-%     end
+    %     if opts.DiagAugment==true
+    %         XNew=[1:n;1:n;ones(1,n)]';
+    %         tmpG=[tmpG;XNew];
+    %         s=s+n;
+    %     end
     if opts.Laplacian==true % convert the edge weight from raw weight to Laplacian
         D=zeros(n,1);
         for j=1:s
@@ -388,7 +428,7 @@ for i=1:numG
 end
 
 %% process labels
-function [Y,indT,K,n]=ProcessLabel(Y,n)
+function [Y,indT,K,n,nk]=ProcessLabel(Y,n)
 [numN,numY]=size(Y);
 if numN==1 && numY==1
     if Y<2 || floor(Y)~=Y
@@ -410,6 +450,10 @@ else
     [tmp,~,YTrn]=unique(YTrn);
     K=length(tmp);
     Y(indT)=YTrn;
+end
+nk=zeros(1,K);
+for i=1:K
+    nk(i)=sum(Y==i);
 end
 
 %% Adj to Edge Function

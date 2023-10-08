@@ -84,7 +84,7 @@ if optPlot==1 || optPlot==2
         axis('square'); 
         legend('0.25','0.10', '0.05','0.02','Location','NorthWest');
         set(gca,'FontSize',fs);
-        title('Vertices Excedding Threshold'); xlabel('Time Step','FontSize',fs)
+        title('Vertices Exceeding Threshold'); xlabel('Time Step','FontSize',fs)
         %xlabel(tl,'Vertex Dynamic vs Time 1','FontSize',fs);
         %ylabel(tl,'Number of Vertices','FontSize',fs);
 %         set(gca,'FontSize',fs);
@@ -98,57 +98,72 @@ end
 
 %%% Figure 3: running time figure compare with unfolded ASE for increasing n and t.
 if optPlot==3
-    rep=10;time1=zeros(10,rep);t=3;spectral=false;time2=zeros(10,rep);
-    for r=1:rep
-        r
-        for i=1:10
-            n=5000*i;
-            [Z,VD,~,tmp]=simDynamicSBM(101,n,20,t);
-            time1(i,r)=sum(tmp);
-            if spectral==true
-                [A,~]=simGenerate(101,n,20);
-                %         if i<4
-                A=repmat(A,1,t);
-                tic
-                svds(A,3);
-                time2(i,r)=toc;
-            end
-            %         end
-        end
-    end
-    n=5000;
-    time3=zeros(10,rep);time4=zeros(10,rep);
-    for r=1:rep
-        r
-        for i=1:10
-            t=10*i;
-            [Z,VD,~,tmp]=simDynamicSBM(101,n,20,t);
-            time3(i,r)=sum(tmp);
-            if spectral==true
-                [A,~]=simGenerate(101,n,20);
-                A=repmat(A,1,t);
-                tic
-                svds(A,3);
-                time4(i,r)=toc;
+    rerun=1;rep=10;
+    if rerun==0
+        t=10;spectral=true;time1=zeros(10,rep);time2=zeros(10,rep);time3=zeros(10,rep);time4=zeros(10,rep);
+        for r=1:rep
+            r
+            for i=1:10
+                n=5000*i;
+                [~,~,~,tmp]=simDynamicSBM(101,n,20,t);
+                time1(i,r)=sum(tmp(1:end-1));
+                time2(i,r)=sum(tmp);
+                if spectral==true
+                    [A,Y]=simGenerate(101,n,20);
+                    time4(i,r)=GCNTrain(sparse(A),Y)*t;
+
+%                     A=repmat(A,1,t);
+                    tic
+                    svds(sparse(A),30);
+                    time3(i,r)=toc*t;
+                end
+                %         end
             end
         end
+        n=5000;rep=10;
+        time5=zeros(10,rep);time6=zeros(10,rep);time7=zeros(10,rep);time8=zeros(10,rep);
+        for r=1:rep
+            r
+            for i=1:10
+                t=10*i;
+                [~,~,~,tmp]=simDynamicSBM(101,n,20,t);
+                time5(i,r)=sum(tmp(1:end-1));
+                time6(i,r)=sum(tmp);
+                if spectral==true
+                    [A,Y]=simGenerate(101,n,20);
+                    time8(i,r)=GCNTrain(sparse(A),Y)*t;
+
+%                     A=repmat(A,1,t);
+                    tic
+                    svds(sparse(A),30);
+                    time7(i,r)=toc*t;
+                end
+            end
+        end
+        save('GEEDynamicTime.mat','time1','time2','time3','time4','time5','time6','time7','time8');
+    else
+        load('GEEDynamicTime.mat');
     end
 
-    myColor = brewermap(2,'RdYlBu'); fs=28;
+    myColor = brewermap(8,'Spectral'); fs=28;
     tl = tiledlayout(1,2);
     nexttile(tl)
     semilogy(1:10,mean(time1,2),'Color', myColor(1,:), 'LineStyle', '-','LineWidth',5);hold on
     semilogy(1:10,mean(time2,2),'Color', myColor(2,:), 'LineStyle', ':','LineWidth',5);
+    semilogy(1:10,mean(time3,2),'Color', myColor(7,:), 'LineStyle', '-.','LineWidth',5);
+    semilogy(1:10,mean(time4,2),'Color', myColor(8,:), 'LineStyle', '--','LineWidth',5);
     hold off
-    legend('Temporal Encoder Embedding','Unfolded Spectral Embedding','Location','SouthEast'); 
     xlim([1,10]);xticks([1 5 10]); xticklabels({'5000','25000','50000'});
     xlabel('Number of Vertices','FontSize',fs); axis('square'); set(gca,'FontSize',fs);
+    legend('Encoder Embedding w Label','Encoder Embedding w/o Label','Unfolded Spectral Embedding','Graph Convolutional NeuralNet','Location','South'); 
     nexttile(tl)
-    semilogy(1:10,mean(time3,2),'Color', myColor(1,:), 'LineStyle', '-','LineWidth',5); hold on
-    semilogy(1:10,mean(time4,2),'Color', myColor(2,:), 'LineStyle', ':','LineWidth',5);
+    semilogy(1:10,mean(time5,2),'Color', myColor(1,:), 'LineStyle', '-','LineWidth',5); hold on
+    semilogy(1:10,mean(time6,2),'Color', myColor(2,:), 'LineStyle', ':','LineWidth',5);
+    semilogy(1:10,mean(time7,2),'Color', myColor(7,:), 'LineStyle', '-.','LineWidth',5);
+    semilogy(1:10,mean(time8,2),'Color', myColor(8,:), 'LineStyle', '--','LineWidth',5);
     hold off
-    xlabel('Number of Time Steps','FontSize',fs); axis('square'); set(gca,'FontSize',fs);
-    ylabel(tl,'Running Time (log scale)','FontSize',fs); xlim([1,10]);xticks([1 5 10]); xticklabels({'10','50','100'});
+    xlabel('Number of Time Steps','FontSize',fs);axis('square');set(gca,'FontSize',fs);
+    ylabel(tl,'Running Time (log scale)','FontSize',fs);xlim([1,10]);xticks([1 5 10]);xticklabels({'10','50','100'});
     %         set(gca,'FontSize',fs);
 
     F.fname='FigDynamic3';
@@ -157,7 +172,51 @@ if optPlot==3
     print_fig(gcf,F)
 end
 
-if optPlot>3
+if optPlot==4
+    [Z,Dynamic,Y,time]=simDynamicSBM(102,30000,3,0,2);
+    Dynamic{1,2}
+    Dynamic{1,3}
+    time
+        ind1=find(Y(:,1)==1);ind2=find(Y(:,1)==2);ind3=find(Y(:,1)==3);
+        myColor = brewermap(4,'RdYlGn'); myColor2 = brewermap(6,'PuOr');
+        myColor=[myColor(2,:);myColor(3,:);myColor2(5,:);myColor2(1,:)];
+        fs=32;
+        tl = tiledlayout(2,2);t1=1;t2=2;t3=3;t4=4;
+        nexttile(tl)
+        scatter3(Z(ind1,1,t1), Z(ind1,2,t1),Z(ind1,3,t1),20,myColor(1,:),'filled');hold on
+        scatter3(Z(ind2,1,t1), Z(ind2,2,t1),Z(ind2,3,t1),20,myColor(2,:),'filled');
+        scatter3(Z(ind3,1,t1), Z(ind3,2,t1),Z(ind3,3,t1),20,myColor(3,:),'filled');
+        hold off
+        axis('square'); title('Starting Pattern (t=1)'); set(gca,'FontSize',fs); 
+        nexttile(tl)
+        scatter3(Z(ind1,1,t2), Z(ind1,2,t2),Z(ind1,3,t2),20,myColor(1,:),'filled');hold on
+        scatter3(Z(ind2,1,t2), Z(ind2,2,t2),Z(ind2,3,t2),20,myColor(2,:),'filled');
+        scatter3(Z(ind3,1,t2), Z(ind3,2,t2),Z(ind3,3,t2),20,myColor(3,:),'filled');
+        axis('square'); title('Shifting Pattern (t=2)'); set(gca,'FontSize',fs); 
+        nexttile(tl)
+        ind1=find(Y(:,2)==1);ind2=find(Y(:,2)==2);ind3=find(Y(:,2)==3);ind4=find(Y(:,2)==4);
+        scatter3(Z(ind1,1,t3), Z(ind1,2,t3),Z(ind1,3,t3),20,myColor(1,:),'filled');hold on
+        scatter3(Z(ind2,1,t3), Z(ind2,2,t3),Z(ind2,3,t3),20,myColor(2,:),'filled');
+        scatter3(Z(ind3,1,t3), Z(ind3,2,t3),Z(ind3,3,t3),20,myColor(3,:),'filled');
+        scatter3(Z(ind4,1,t3), Z(ind4,2,t3),Z(ind4,3,t3),20,myColor(4,:),'filled');
+        axis('square'); title('Shifting Pattern (t=3)'); set(gca,'FontSize',fs); 
+        %xlabel(tl,'Embedding Visualization for the First Three Communities','FontSize',fs)
+        %         set(gca,'FontSize',fs);
+        nexttile(tl)
+%         ind1=find(Y(:,3)==1);ind2=find(Y(:,3)==2);ind3=find(Y(:,3)==3);
+        scatter3(Z(ind1,1,t4), Z(ind1,2,t4),Z(ind1,3,t4),20,myColor(1,:),'filled');hold on
+        scatter3(Z(ind2,1,t4), Z(ind2,2,t4),Z(ind2,3,t4),20,myColor(2,:),'filled');
+        scatter3(Z(ind3,1,t4), Z(ind3,2,t4),Z(ind3,3,t4),20,myColor(3,:),'filled');
+        scatter3(Z(ind4,1,t4), Z(ind4,2,t4),Z(ind4,3,t4),20,myColor(4,:),'filled');
+        axis('square'); title('Ending Pattern (t=4)'); set(gca,'FontSize',fs); 
+
+        F.fname='FigDynamic8';
+        F.wh=[8 8]*2;
+        %     F.PaperPositionMode='auto';
+        print_fig(gcf,F)
+end
+
+if optPlot>10
     load('anonymized_msft.mat')
     opts = struct('Common',false,'BenchTime',1);
     [Z,Dynamic,Y,time]=GraphDynamics(G,label,opts);

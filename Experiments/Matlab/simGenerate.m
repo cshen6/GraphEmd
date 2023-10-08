@@ -1327,7 +1327,67 @@ switch option
         end
         X=[X,Dis];
         Dis=X;
-   case 101 % DC-SBM with 20 classes
+   case 102 % DC-SBM with 20 classes
+        fileName='DCSBM';
+        d=3;
+        pp=1/d*ones(d,1);
+        Bl=0.1*ones(d,d);
+        %             Bl=rand(clas,clas);
+        for i=1:d
+            Bl(i,i)=0.9;
+        end
+        Dis=cell(1,3);
+        tt=rand([n,1]);
+        Label=ones(n,1);
+        thres=0;
+        theta=betarnd(1,4,n,1);
+        for i=1:d
+            thres=thres+pp(i);
+            Label=Label+(tt>thres); 
+        end
+        Label1=Label;
+        thres=0.84;
+        Label1=Label1+(tt>thres); 
+%         Label2=Label1;Label2(Label2==2)=1;
+        k=1;
+        Dis{k}=zeros(n,n);
+        for i=1:n
+            Dis{k}(i,i)=0;%diagonals are zeros
+            for j=i+1:n
+                Dis{k}(i,j)=rand(1)<theta(i)*theta(j)*Bl(Label(i),Label(j));
+                Dis{k}(j,i)=Dis{k}(i,j);
+            end
+        end
+        k=2;Bl(1,3)=0.3;Bl(2,3)=0.3;Bl(3,3)=0.3;Bl(3,1)=0.3;Bl(3,2)=0.3;
+        Dis{k}=zeros(n,n);
+        for i=1:n
+            Dis{k}(i,i)=0;%diagonals are zeros
+            for j=i+1:n
+                Dis{k}(i,j)=rand(1)<theta(i)*theta(j)*Bl(Label(i),Label(j));
+                Dis{k}(j,i)=Dis{k}(i,j);
+            end
+        end
+        k=3;Bl2=0.1*ones(4,4);Bl2(1:3,1:3)=Bl;Bl2(4,4)=0.9;Bl2(4,3)=0.3;Bl2(3,4)=0.3;
+        Dis{k}=zeros(n,n);
+        for i=1:n
+            Dis{k}(i,i)=0;%diagonals are zeros
+            for j=i+1:n
+                Dis{k}(i,j)=rand(1)<theta(i)*theta(j)*Bl2(Label1(i),Label1(j));
+                Dis{k}(j,i)=Dis{k}(i,j);
+            end
+        end
+        k=4;Bl2(1,3)=0.9;Bl2(2,3)=0.1;Bl2(3,3)=0.9;Bl2(4,3)=0.1;Bl2(3,:)=Bl2(:,3)';
+        Dis{k}=zeros(n,n);
+        for i=1:n
+            Dis{k}(i,i)=0;%diagonals are zeros
+            for j=i+1:n
+                Dis{k}(i,j)=rand(1)<theta(i)*theta(j)*Bl2(Label1(i),Label1(j));
+                Dis{k}(j,i)=Dis{k}(i,j);
+            end
+        end
+        X=Dis;
+        Label=[Label,Label1];
+    case 101 % DC-SBM with 20 classes
         fileName='DCSBM';
         pp=1/d*ones(d,1);
         Bl=0.1*ones(d,d);
@@ -1335,30 +1395,15 @@ switch option
         for i=1:d
             Bl(i,i)=0.5;
         end
-%         if edge==0
-%             if n>30000
-%            Dis=sparse(n,n);
-%             else
-                Dis=zeros(n,n);
-%             end
-%         else
-%             Dis=[];
-%         end
+        Dis=zeros(n,n);
         tt=rand([n,1]);
         Label=ones(n,1);
         thres=0;
-%         theta=betarnd(1,10,n,1);
-%         ind=(Label==2);
-%         theta(ind)= betarnd(10,10,sum(ind),1);
-%         ind=(Label==3);
-%         theta(ind)= betarnd(10,1,sum(ind),1);
         theta=betarnd(1,4,n,1);
-%         theta=theta;
         for i=1:d
             thres=thres+pp(i);
-            Label=Label+(tt>thres); %determine the block of each data
+            Label=Label+(tt>thres); 
         end
-%         if edge==0
             for i=1:n
                 Dis(i,i)=0;%diagonals are zeros
                 for j=i+1:n
@@ -1367,16 +1412,6 @@ switch option
                     Dis(j,i)=Dis(i,j);
                 end
             end
-%         else
-%             for i=1:n
-%                 for j=i+1:n
-%                     tmp=1*(rand(1)<theta(i)*theta(j)*Bl(Label(i),Label(j)));
-%                     if tmp==1;
-%                         Dis=[Dis;i,j,1];
-%                     end
-%                 end
-%             end
-%         end
         X=Dis;
     case 120 % DC-SBM with 3 classes
         fileName='DCSBM';
@@ -1654,6 +1689,9 @@ switch option
         for i=1:3
             Bl(i,i)=0.2;
         end
+        Bl(1,1)=0.2;
+        Bl(2,2)=0.2;
+        Bl(3,3)=0.2;
 %         if d>3
 %             for j=1:d-3
 %                 Bl(3+j,1)=0.2-0.1*j/(d-2);
@@ -1675,7 +1713,7 @@ switch option
         end
         if edge==0
             for i=1:n
-                for j=1:n
+                for j=i+1:n
                     weight=1;%randi(10);
                     Dis(i,j)=weight*(rand(1)<Bl(Label(i),Label(j)));
                     Dis(j,i)=Dis(i,j);
@@ -1860,6 +1898,9 @@ switch option
         for i=1:3
             Bl(i,i)=0.9;
         end
+        Bl(1,1)=0.9;
+        Bl(2,2)=0.7;
+        Bl(3,3)=0.5;
         if edge==0
            Dis=zeros(n,n);
         else
@@ -1868,12 +1909,20 @@ switch option
         tt=rand([n,1]);
         Label=ones(n,1);
         thres=0;
-%         theta=betarnd(1,10,n,1);
-%         ind=(Label==2);
-%         theta(ind)= betarnd(10,10,sum(ind),1);
-%         ind=(Label==3);
-%         theta(ind)= betarnd(10,1,sum(ind),1);
-        theta=betarnd(1,4,n,1);
+        theta=betarnd(1,3,n,1);
+        for k=1:d
+           ind=(Label==k);
+           theta(ind)= betarnd(1,5+k/5,sum(ind),1);
+        end
+%         for k=1:d/2
+%            ind=(Label==k);
+%            theta(ind)= k/d./randi([1,2],sum(ind),1);
+%         end
+%         for k=d/2+1:d
+%            ind=(Label==k);
+%            theta(ind)= k/d./randi([1,2],sum(ind),1);
+%         end
+%         theta=betarnd(1,4,n,1);
 %         theta=theta;
         for i=1:d
             thres=thres+pp(i);
@@ -1912,15 +1961,18 @@ switch option
      case 311 % DC-SBM with 10 classes
         fileName='DCSBM';
         pp=1/d*ones(d,1);
+        Bl=0.1*ones(d,d);
         if d>3
             pp(4:end)=0.25/(d-3);
             pp(1:3)=0.25;
         end
-        Bl=0.1*ones(d,d);
         %             Bl=rand(clas,clas);
-        for i=1:d
+        for i=1:3
             Bl(i,i)=0.9;
         end
+        Bl(1,1)=0.9;
+        Bl(2,2)=0.7;
+        Bl(3,3)=0.5;
         if edge==0
            Dis=zeros(n,n);
         else
@@ -1929,12 +1981,15 @@ switch option
         tt=rand([n,1]);
         Label=ones(n,1);
         thres=0;
-%         theta=betarnd(1,10,n,1);
-%         ind=(Label==2);
-%         theta(ind)= betarnd(10,10,sum(ind),1);
-%         ind=(Label==3);
-%         theta(ind)= betarnd(10,1,sum(ind),1);
-        theta=betarnd(1,4,n,1);
+        theta=betarnd(1,3,n,1);
+        for k=1:d
+           ind=(Label==k);
+           theta(ind)= betarnd(1,5+k/5,sum(ind),1);
+        end
+        for i=1:100
+            theta(i)=ceil(i/5)/40;
+        end
+%         theta=betarnd(1,4,n,1);
 %         theta=theta;
         for i=1:d
             thres=thres+pp(i);
@@ -2058,6 +2113,65 @@ switch option
             for i=1:n
                 for j=i+1:n
                     tmp=(rand(1)<theta(i)*theta(j)*Bl(Label(i),Label(j)));
+                    if tmp==1;
+                        Dis(s,1)=i;
+                        Dis(s,2)=j;
+                        Dis(s,3)=1;
+                        s=s+1;
+                    end
+                end
+            end
+            Dis=Dis(1:s-1,:);
+        end
+        X=Dis;
+     case 320 % DC-SBM with 10 classes
+        fileName='RDPG';
+        pp=1/d*ones(d,1);
+        if d>3
+            pp(4:end)=0.25/(d-3);
+            pp(1:3)=0.25;
+        end
+        if edge==0
+           Dis=zeros(n,n);
+        end
+        tt=rand([n,1]);
+        Label=ones(n,1);
+        thres=0;
+        for i=1:d
+            thres=thres+pp(i);
+            Label=Label+(tt>thres); %determine the block of each data
+        end
+        X = unifrnd(0,0.1,n,4);
+%         X(:,2)= unifrnd(0,0.1,n,1);
+%         X(:,1)=0.05;
+        for k=1:3
+           ind=(Label==k);
+           X(ind,k)= unifrnd(0.2,0.3,sum(ind),1);
+        end
+        for k=4:d
+           ind=(Label==k);
+           X(ind,4)= unifrnd(0.1,0.2,sum(ind),1);
+        end
+        A=X*X';
+        if edge==0
+            for i=1:n
+                for j=i+1:n
+                    weight=1;%randi(10);
+                    Dis(i,j)=rand(1)<A(i,j);
+                    Dis(j,i)=Dis(i,j);
+                end
+                Dis(i,i)=0;%diagonals are zeros
+%                 for j=i+1:n
+%                     weight=1;%randi(10);
+%                     Dis(i,j)=weight*(rand(1)<theta(i)*theta(j)*Bl(Label(i),Label(j)));
+%                     Dis(j,i)=Dis(i,j);
+%                 end
+            end
+        else
+            s=1;
+            for i=1:n
+                for j=i+1:n
+                    tmp=(rand(1)<A(i,j));
                     if tmp==1;
                         Dis(s,1)=i;
                         Dis(s,2)=j;

@@ -4,7 +4,7 @@ if nargin < 4
     D=0;
 end
 if nargin < 3
-    opts = struct('eval',1,'indices',crossvalind('Kfold',Y,5),'Adjacency',1,'Laplacian',0,'Spectral',0,'LDA',1,'GNN',0,'knn',5,'dim',30,'neuron',20,'epoch',100,'training',0.05,'activation','poslin','Dimension',false); % default parameters
+    opts = struct('eval',1,'indices',crossvalind('Kfold',Y,5),'Adjacency',1,'Bayes',0,'Laplacian',0,'Spectral',0,'LDA',1,'GNN',1,'knn',5,'dim',30,'neuron',20,'epoch',100,'training',0.05,'activation','poslin','Dimension',0); % default parameters
 end
 if ~isfield(opts,'eval'); opts.eval=1; end
 if ~isfield(opts,'indices'); opts.indices=crossvalind('Kfold',Y,5); end
@@ -12,6 +12,7 @@ if ~isfield(opts,'Adjacency'); opts.Adjacency=1; end
 if ~isfield(opts,'Laplacian'); opts.Laplacian=0; end
 if ~isfield(opts,'Spectral'); opts.Spectral=0; end % 1 for ASE and Omni; 2 for USE; 3 for MASE
 if ~isfield(opts,'LDA'); opts.LDA=1; end
+if ~isfield(opts,'Bayes'); opts.Bayes=0; end
 if ~isfield(opts,'GNN'); opts.GNN=1; end
 if ~isfield(opts,'knn'); opts.knn=5; end
 if ~isfield(opts,'dim'); opts.dim=30; end
@@ -20,7 +21,7 @@ if ~isfield(opts,'neuron'); opts.neuron=20; end
 if ~isfield(opts,'epoch'); opts.epoch=100; end
 if ~isfield(opts,'training'); opts.training=0.05; end
 if ~isfield(opts,'activation'); opts.activation='poslin'; end %purelin, tansig
-if ~isfield(opts,'Dimension'); opts.Dimension=false; end
+if ~isfield(opts,'Dimension'); opts.Dimension=0; end
 warning('off','all');
 %met=[opts.AEE,opts.LDA,opts.GFN,opts.ASE,opts.LSE,opts.GCN,opts.GNN]; %AEE, LDA, GFN, ASE, GFN, ANN
 indices=opts.indices;
@@ -40,16 +41,17 @@ d=min(opts.dim,n-1);
 K=length(K);
 opts.knn=min(opts.knn,ceil(n/K/3));
 discrimType='pseudoLinear';
+% discrimType='pseudoquadratic';
 % initialize NN
-if opts.GNN>0
-netGNN = patternnet(max(opts.neuron,K),'trainscg','crossentropy'); % number of neurons, Scaled Conjugate Gradient, cross entropy
-netGNN.layers{1}.transferFcn = opts.activation;
-netGNN.trainParam.showWindow = false;
-netGNN.trainParam.epochs=opts.epoch;
-netGNN.divideParam.trainRatio = 0.9;
-netGNN.divideParam.valRatio   = 0.1;
-netGNN.divideParam.testRatio  = 0/100;
-end
+% if opts.GNN>0
+% netGNN = patternnet(max(opts.neuron,K),'trainscg','crossentropy'); % number of neurons, Scaled Conjugate Gradient, cross entropy
+% netGNN.layers{1}.transferFcn = opts.activation;
+% netGNN.trainParam.showWindow = false;
+% netGNN.trainParam.epochs=opts.epoch;
+% netGNN.divideParam.trainRatio = 0.9;
+% netGNN.divideParam.valRatio   = 0.1;
+% netGNN.divideParam.testRatio  = 0/100;
+% end
 %netGFN.trainParam.lr = 0.01;
 
 % netGFN = patterNNt(max(opts.neuron,k),'trainscg','crossentropy'); % number of neurons, Scaled Conjugate Gradient, cross entropy
@@ -105,7 +107,7 @@ if opts.Spectral>0
             dimS=30;
             Adj2=zeros(n,dimS*numK);
             for ii=1:numK
-                [U,S,~]=svds(Adj(:,(ii-1)*n+1:(ii-1)*n+n),dimS);
+                [U,S,~]=svds(sparse(Adj(:,(ii-1)*n+1:(ii-1)*n+n)),dimS);
                 Adj2(:,(ii-1)*dimS+1:(ii-1)*dimS+dimS)=U(:,1:dimS)*S(1:dimS,1:dimS)^0.5;
             end
             Adj=Adj2;
@@ -117,7 +119,7 @@ if opts.Spectral>0
             Adj=X;
         end
     end
-    [U,S,V]=svds(Adj,d);
+    [U,S,V]=svds(sparse(Adj),d);
     if opts.Spectral==2
         U=V;
     end
@@ -161,12 +163,16 @@ for i = 1:kfold
             else
                 Y3=Y2;
                 Y3{1}(tsn)=0;
-                Z=GraphEncoder(X,Y3,D,oot);
+                [Z,out]=GraphEncoder(X,Y3,D,oot);
             end
             if iscell(Z)
+                numGraph=length(Z);
+                Z2=Z;
                 Z=horzcat(Z{:});
+            else
+                numGraph=1;
             end
-            if opts.eval==0 && size(D,1)==size(Z,1);
+            if opts.eval==0 && size(D,1)==size(Z,1)
                 Z=[Z,D];
             end
 %             if opts.Elbow>0
@@ -199,8 +205,17 @@ for i = 1:kfold
             if opts.eval<2
             if opts.knn>0
                 tic
-                mdl=fitcknn(ZTrn,YTrn,'Distance','Euclidean','NumNeighbors',opts.knn);
-                tt=predict(mdl,ZTsn);
+
+                    mdl=fitcknn(ZTrn,YTrn,'Distance','Euclidean','NumNeighbors',opts.knn);
+                    tt=predict(mdl,ZTsn);
+ 
+%                     nk=horzcat(out.nk);%true bayes
+%                     entro=horzcat(out.ClassMean);
+%                     dimCh=horzcat(out.DimChoice);
+%                     nk2=nk(dimCh);entro=entro(:,dimCh);
+%                     classes=log(entro).*nk2*ZTsn'+log(1-entro).*nk2*(1-ZTsn)'+log(nk(1:K)');
+%                     tt = vec2ind(classes)';
+
                 t_AEE_NN(i)=tmp1+toc;
                 acc_AEE_NN(i)=acc_AEE_NN(i)+mean(YTsn~=tt);
             end
@@ -214,19 +229,44 @@ for i = 1:kfold
                 acc_AEE_LDA(i)=acc_AEE_LDA(i)+mean(YTsn~=tt);
             end
             if opts.GNN==1
-                tic
-                %                 Y2=onehotencode(categorical(YTrn),2)';
-                %                 mdl3 = train(netGNN,ZTrn',Y2);
-                %                 classes = mdl3(ZTsn'); % class-wise probability for tsting data
-                %                 tt = vec2ind(classes)'; % this gives the actual class for each observation
-                %                 t_GNN(i)=tmp1+toc;
-                %                 acc_GNN(i)=acc_GNN(i)+mean(YTsn~=tt);
-                %                 mdl=fitcensemble(ZTrn,YTrn,'method','Bag','Learners','Tree');
-                %                 tt=predict(mdl,ZTsn);
-                mdl=fitcknn(ZM,1:K,'Distance','Euclidean','NumNeighbors',1);
-                tt=predict(mdl,ZTsn);
-                t_GNN(i)=tmp1+toc;
-                acc_GNN(i)=acc_GNN(i)+mean(YTsn~=tt);
+%                 if opts.Bayes==0
+%                     if numGraph>1
+%                         tic
+%                         classes=zeros(sum(tsn),K);
+%                         for ii=1:numGraph
+%                             mdl=fitcdiscr(Z2{ii}(trn,:),YTrn,'discrimType',discrimType);
+%                             [~,tmp]=predict(mdl,Z2{ii}(tsn,:));
+%                             classes=max(classes,tmp);
+%                         end
+%                         tt = vec2ind(classes')';
+%                     else
+%                         tic
+%                         mdl=fitcdiscr(ZTrn,YTrn,'discrimType',discrimType);
+%                         %                 mdl=fitcensemble(ZTrn,YTrn,'Method','Bag');
+%                         tt=predict(mdl,ZTsn);
+%                     end
+%                     t_GNN(i)=tmp1+toc;
+%                     acc_GNN(i)=acc_GNN(i)+mean(YTsn~=tt);
+%                 else
+%                     nk=horzcat(out.nk);
+%                     mean1=horzcat(out.ClassMean);
+%                     std1=horzcat(out.ClassStd);
+%                     dimCh=horzcat(out.DimChoice);
+%                     nk2=nk(dimCh);mean1=mean1(:,dimCh);std1=std1(:,dimCh).^2;
+%                     std2=sum(std1.*(nk2-1)/(n-K));
+%                     classes=mean1.*std2.^-1*ZTsn'-0.5*diag(mean1.*std2.^-1*mean1')+log(nk(1:K)');
+%                     tt = vec2ind(classes)';
+%                     mean1=horzcat(out.ClassMean);
+%                     std1=horzcat(out.ClassStd);
+%                     std2=horzcat(out.Std);
+%                     classes=ZTsn*(mean1.*std2)';
+%                     tt = vec2ind(classes')';   
+                    tic
+%                     mdl=fitcensemble(ZTrn,YTrn,'Method','Bag');
+%                     tt=predict(mdl,ZTsn);
+                    [~,tt]=max(ZTsn,[],2);
+                    t_GNN(i)=tmp1+toc;
+                    acc_GNN(i)=acc_GNN(i)+mean(YTsn~=tt);
             end
             end
             if opts.eval==2
@@ -275,14 +315,14 @@ for i = 1:kfold
                     if opts.eval<2
                     if opts.LDA==1
                         tic
-                        mdl=fitcdiscr(Z(trn,:),YA(trn),'DiscrimType',discrimType);
+                        mdl=fitcdiscr(Z(trn,:),YTrn,'DiscrimType',discrimType);
                         tt=predict(mdl,Z(tsn,:));
                         t_ASE_LDA(i,j)=t1+t2;%+toc;
                         acc_ASE_LDA(i,j)=acc_ASE_LDA(i,j)+mean(YTsn~=tt);
                     end
                     if opts.knn>0
                         tic
-                        mdl=fitcknn(Z(trn,:),YA(trn),'Distance','euclidean','NumNeighbors',opts.knn);
+                        mdl=fitcknn(Z(trn,:),YTrn,'Distance','euclidean','NumNeighbors',opts.knn);
                         tt=predict(mdl,Z(tsn,:));
                         t_ASE_NN(i,j)=t1+t2;%+toc;
                         acc_ASE_NN(i,j)=acc_ASE_NN(i,j)+mean(YTsn~=tt);

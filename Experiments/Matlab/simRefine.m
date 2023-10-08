@@ -3,6 +3,9 @@ function simRefine(choice,spec, rep)
 % use choice =100/101 to plot the simulation figure
 % spec =1 for Omnibus benchmark, 2 for USE, 3 for MASE
 
+% try additional label attributes; 
+% try self-clustering label; 
+
 if nargin<2
     spec=0;
 end
