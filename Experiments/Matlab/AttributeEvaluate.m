@@ -1,9 +1,12 @@
-function tmp=AttributeEvaluate(X, Y, indices, eval)
+function tmp=AttributeEvaluate(X, Y, indices, eval,layer)
 if nargin<3
     indices=crossvalind('Kfold',Y,10);
 end
 if nargin<4
     eval=1;
+end
+if nargin<5
+    layer=20;
 end
 tmp=zeros(4,1);
 discrimType='pseudoLinear';
@@ -22,8 +25,14 @@ for j=1:rep
     trn = ~tsn; % trning indices
     ZTrn=X(trn,:);
     ZTsn=X(tsn,:);
+
     YTrn=Y(trn);
     YTsn=Y(tsn);
+%     if eval==3
+%         Z=EncoderNN(X*ZTrn(1:szz,:)',YTrn(1:szz));
+%         ZTrn=Z(trn,:);
+%         ZTsn=Z(tsn,:);
+%     end
 
 %     if size(X,2)>100
 %         Y2=onehotencode(categorical(YTrn),2)';
@@ -32,28 +41,37 @@ for j=1:rep
 %         %acc_NN = perform(mdl3,Y2Tsn',classes);
 %         tt = vec2ind(classes)'; % this gives the actual class for each observation
 %     else
-    if eval==1;
+    if eval==1
         tic
 %         mdl=fitcknn(ZTrn,YTrn,'NumNeighbors',5);
         mdl=fitcdiscr(ZTrn,YTrn,'discrimType',discrimType);
         tt=predict(mdl,ZTsn);
         err=mean(YTsn~=tt);
-        tmp(3)=tmp(3)+toc/rep;
+        tmp(2)=tmp(2)+toc/rep;
         tmp(1)=tmp(1)+err/rep;
 
+        tic
         mdl=fitcknn(ZTrn,YTrn,'Distance','Euclidean','NumNeighbors',5);
         tt=predict(mdl,ZTsn);
         err=mean(YTsn~=tt);
         tmp(4)=tmp(4)+toc/rep;
-        tmp(2)=tmp(2)+err/rep;
+        tmp(3)=tmp(3)+err/rep;
     end
-    if eval==2;
+    if eval==2
         tic
-        mdl=fitcensemble(ZTrn,YTrn,'Method','Bag');
+        mdl=fitcensemble(ZTrn,YTrn,'Method','Bag','NumLearningCycles',20);
 %         mdl=fitrnet(ZTrn,YTrn);
         tt=predict(mdl,ZTsn);
         err=mean(YTsn~=tt);
-        tmp(3)=tmp(3)+toc/rep;
+        tmp(2)=tmp(2)+toc/rep;
+        tmp(1)=tmp(1)+err/rep;
+    end
+    if eval==3
+        tic
+        mdl=fitcnet(ZTrn,YTrn,'LayerSizes',layer);
+        tt=predict(mdl,ZTsn);
+        err=mean(YTsn~=tt);
+        tmp(2)=tmp(2)+toc/rep;
         tmp(1)=tmp(1)+err/rep;
     end
         %     t_AEE_NN(i)=tmp1;

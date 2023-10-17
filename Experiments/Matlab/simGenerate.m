@@ -309,7 +309,7 @@ switch option
         if edge==0
            Dis=zeros(n,n);
         else
-            Dis=zeros(100*n,3);
+           Dis=zeros(100*n,3);
         end
         tt=rand([n,1]);
         Label=ones(n,1);
