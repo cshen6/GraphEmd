@@ -173,7 +173,7 @@ if optPlot==3
 end
 
 if optPlot==4
-    [Z,Dynamic,Y,time]=simDynamicSBM(102,30000,3,0,2);
+ [Z,Dynamic,Y,time]=simDynamicSBM(102,3000,3,0,2);
     Dynamic{1,2}
     Dynamic{1,3}
     time
@@ -187,19 +187,19 @@ if optPlot==4
         scatter3(Z(ind2,1,t1), Z(ind2,2,t1),Z(ind2,3,t1),20,myColor(2,:),'filled');
         scatter3(Z(ind3,1,t1), Z(ind3,2,t1),Z(ind3,3,t1),20,myColor(3,:),'filled');
         hold off
-        axis('square'); title('Starting Pattern (t=1)'); set(gca,'FontSize',fs); 
+        axis('square'); title('Starting Structure'); set(gca,'FontSize',fs); 
         nexttile(tl)
         scatter3(Z(ind1,1,t2), Z(ind1,2,t2),Z(ind1,3,t2),20,myColor(1,:),'filled');hold on
         scatter3(Z(ind2,1,t2), Z(ind2,2,t2),Z(ind2,3,t2),20,myColor(2,:),'filled');
         scatter3(Z(ind3,1,t2), Z(ind3,2,t2),Z(ind3,3,t2),20,myColor(3,:),'filled');
-        axis('square'); title('Shifting Pattern (t=2)'); set(gca,'FontSize',fs); 
+        axis('square'); title('Shifting Communication'); set(gca,'FontSize',fs); 
         nexttile(tl)
         ind1=find(Y(:,2)==1);ind2=find(Y(:,2)==2);ind3=find(Y(:,2)==3);ind4=find(Y(:,2)==4);
         scatter3(Z(ind1,1,t3), Z(ind1,2,t3),Z(ind1,3,t3),20,myColor(1,:),'filled');hold on
         scatter3(Z(ind2,1,t3), Z(ind2,2,t3),Z(ind2,3,t3),20,myColor(2,:),'filled');
         scatter3(Z(ind3,1,t3), Z(ind3,2,t3),Z(ind3,3,t3),20,myColor(3,:),'filled');
         scatter3(Z(ind4,1,t3), Z(ind4,2,t3),Z(ind4,3,t3),20,myColor(4,:),'filled');
-        axis('square'); title('Shifting Pattern (t=3)'); set(gca,'FontSize',fs); 
+        axis('square'); title('Community Split'); set(gca,'FontSize',fs); 
         %xlabel(tl,'Embedding Visualization for the First Three Communities','FontSize',fs)
         %         set(gca,'FontSize',fs);
         nexttile(tl)
@@ -208,7 +208,7 @@ if optPlot==4
         scatter3(Z(ind2,1,t4), Z(ind2,2,t4),Z(ind2,3,t4),20,myColor(2,:),'filled');
         scatter3(Z(ind3,1,t4), Z(ind3,2,t4),Z(ind3,3,t4),20,myColor(3,:),'filled');
         scatter3(Z(ind4,1,t4), Z(ind4,2,t4),Z(ind4,3,t4),20,myColor(4,:),'filled');
-        axis('square'); title('Ending Pattern (t=4)'); set(gca,'FontSize',fs); 
+        axis('square'); title('Community Merge'); set(gca,'FontSize',fs); 
 
         F.fname='FigDynamic8';
         F.wh=[8 8]*2;

@@ -54,7 +54,6 @@ if ~isfield(opts,'Matrix'); opts.Matrix=true; end
 % opts.Refine=1;
 % opts.Dimension=true;
 % opts.PCA=true;
-% opts.Normalize=true;
 % opts.Laplacian=true;
 % opts.Matrix=true;
 % if length(opts.Weight)~=numG
