@@ -82,5 +82,5 @@ All experiments and plots in paper 4 are in simFusion.m:
 
 > simDynamicPlot(i) 
 
-Setting i = 1,2, 3 will generate the simulation results in paper. i=100 or 101 plots the simulation figures
+Setting i = 1,2,3,4 will generate the simulation results in paper. i=100 or 101 plots the simulation figures
 i = 13 for the real data in paper.
