@@ -480,6 +480,7 @@ switch option
                     Dis{k}(j,i)=Dis{k}(i,j);
                 end
             end
+            Dis{k}=sparse(Dis{k});
         end
         X=Dis;
     case 29 % SBM with 2 classes

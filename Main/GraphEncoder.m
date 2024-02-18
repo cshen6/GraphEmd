@@ -160,7 +160,7 @@ if size(Z,2)==1
 %         end
     end
 end
-output=struct('Y',Y,'nk',nk, 'KnownIndices',indT,'Std',ZStd,'ClassMean',classMean,'ClassStd',classStd,'DimScore',dimScore,'ClusterScore',ClusterScore,'DimChoice',dimChoice);
+output=struct('Y',Y,'nk',nk, 'KnownIndices',indT,'Std',ZStd,'ClassMean',classMean,'ClassStd',classStd,'CommScore',dimScore,'CommChoice',dimChoice,'ClusterScore',ClusterScore);
 
 %% Encoder Embedding Function
 function Z=GraphEncoderEmbed(G,Y,n,nk,opts)

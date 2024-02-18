@@ -4,7 +4,7 @@ if nargin < 4
     D=0;
 end
 if nargin < 3
-    opts = struct('eval',1,'indices',crossvalind('Kfold',Y,5),'Adjacency',1,'Bayes',0,'Laplacian',0,'Spectral',0,'LDA',1,'GNN',1,'knn',5,'dim',30,'neuron',20,'epoch',100,'training',0.05,'activation','poslin','Dimension',0); % default parameters
+    opts = struct('eval',1,'indices',crossvalind('Kfold',Y,5),'Adjacency',1,'Bayes',0,'Laplacian',0,'Spectral',0,'LDA',1,'GNN',1,'GCN',0,'knn',5,'dim',30,'neuron',20,'epoch',100,'training',0.05,'activation','poslin','Dimension',0); % default parameters
 end
 if ~isfield(opts,'eval'); opts.eval=1; end
 if ~isfield(opts,'indices'); opts.indices=crossvalind('Kfold',Y,5); end
@@ -14,6 +14,7 @@ if ~isfield(opts,'Spectral'); opts.Spectral=0; end % 1 for ASE and Omni; 2 for U
 if ~isfield(opts,'LDA'); opts.LDA=1; end
 if ~isfield(opts,'Bayes'); opts.Bayes=0; end
 if ~isfield(opts,'GNN'); opts.GNN=1; end
+if ~isfield(opts,'GCN'); opts.GCN=0; end
 if ~isfield(opts,'knn'); opts.knn=5; end
 if ~isfield(opts,'dim'); opts.dim=30; end
 % if ~isfield(opts,'deg'); opts.deg=0; end
@@ -41,6 +42,7 @@ d=min(opts.dim,n-1);
 K=length(K);
 opts.knn=min(opts.knn,ceil(n/K/3));
 discrimType='pseudoLinear';
+layerSize=100;
 % discrimType='pseudoquadratic';
 % initialize NN
 % if opts.GNN>0
@@ -125,6 +127,25 @@ if opts.Spectral>0
     end
 end
 
+if opts.GCN>0
+    if ~iscell(X)
+        X={X};
+    end
+    A3=zeros(n,n*length(X));
+%     A4=zeros(n,n);
+    tic
+    for ii=1:length(X)
+        A=X{ii};
+        A2=A+eye(n);
+        Di=sum(A2);
+        Di=diag(Di);
+        tmp=Di^-0.5*A2*Di^-0.5;
+        A3(:,(ii-1)*n+1:(ii-1)*n+n)=tmp;
+%         A4=A4+tmp;
+    end
+    t_GCN=t_GCN+toc;
+end
+
 for i = 1:kfold
         %     tst = (indices == i); % tst indices
         %     trn = ~tst; % trning indices
@@ -135,7 +156,7 @@ for i = 1:kfold
         %     trn = (indices == i); % tst indices
         %     tsn = ~trn; % trning indices
         
-        val = (indices == max(mod(i+1,kfold+1),1));
+%         val = (indices == max(mod(i+1,kfold+1),1));
         %     trn2= ~(tsn+val);
         
         if opts.Adjacency==1
@@ -262,9 +283,10 @@ for i = 1:kfold
 %                     classes=ZTsn*(mean1.*std2)';
 %                     tt = vec2ind(classes')';   
                     tic
+                    mdl=fitcnet(ZTrn,YTrn,'LayerSizes',layerSize);
+                    tt=predict(mdl,ZTsn);
 %                     mdl=fitcensemble(ZTrn,YTrn,'Method','Bag');
-%                     tt=predict(mdl,ZTsn);
-                    [~,tt]=max(ZTsn,[],2);
+                    %[~,tt]=max(ZTsn,[],2);
                     t_GNN(i)=tmp1+toc;
                     acc_GNN(i)=acc_GNN(i)+mean(YTsn~=tt);
             end
@@ -343,6 +365,21 @@ for i = 1:kfold
                     end
                 end
             end
+        end
+
+        if opts.GCN==1
+            tic
+            ATrn = A3(trn, :);
+            ATsn = A3(tsn, :);
+            YTrn=Y(trn);
+            YTsn=Y(tsn);
+
+            mdl=fitcnet(ATrn,YTrn,'LayerSizes',layerSize);
+            tt=predict(mdl,ATsn);
+%                     mdl=fitcensemble(ZTrn,YTrn,'Method','Bag');
+                    %[~,tt]=max(ZTsn,[],2);
+            t_GCN(i)=t_GCN(i)+toc;
+            acc_GCN(i)=acc_GCN(i)+mean(YTsn~=tt);
         end
         
 %         if opts.Laplacian==1
@@ -481,15 +518,15 @@ t_LSE_LDA=mean(t_LSE_LDA,1); t_LSE_LDA=t_LSE_LDA(ind);
 std_GNN=std(acc_GNN);
 acc_GNN=1-mean(acc_GNN);
 t_GNN=mean(t_GNN);
-% std_GCN=std(acc_GCN);
-% acc_GCN=mean(acc_GCN);
-% t_GCN=mean(t_GCN);
+std_GCN=std(acc_GCN);
+acc_GCN=mean(acc_GCN);
+t_GCN=mean(t_GCN);
 
-accN=[acc_GNN, acc_AEE_NN,acc_AEE_LDA,acc_ASE_NN,acc_ASE_LDA, acc_LEE_NN,acc_LEE_LDA,acc_LSE_NN,acc_LSE_LDA];
-stdN=[std_GNN, std_AEE_NN,std_AEE_LDA,std_ASE_NN,std_ASE_LDA, std_LEE_NN,std_LEE_LDA,std_LSE_NN,std_LSE_LDA];
-time=[t_GNN, t_AEE_NN,t_AEE_LDA,t_ASE_NN,t_ASE_LDA, t_LEE_NN,t_LEE_LDA,t_LSE_NN,t_LSE_LDA];
+accN=[acc_GNN, acc_AEE_NN,acc_AEE_LDA,acc_ASE_NN,acc_ASE_LDA, acc_GCN,acc_LEE_NN,acc_LEE_LDA,acc_LSE_NN,acc_LSE_LDA];
+stdN=[std_GNN, std_AEE_NN,std_AEE_LDA,std_ASE_NN,std_ASE_LDA, std_GCN,std_LEE_NN,std_LEE_LDA,std_LSE_NN,std_LSE_LDA];
+time=[t_GNN, t_AEE_NN,t_AEE_LDA,t_ASE_NN,t_ASE_LDA, t_GCN,t_LEE_NN,t_LEE_LDA,t_LSE_NN,t_LSE_LDA];
 
-result = array2table([1-accN; accN; stdN; time], 'RowNames', {'err', 'acc','std', 'time'},'VariableNames', {'GEE_NN', 'AEE_KNN', 'AEE_LDA','ASE_KNN', 'ASE_LDA','LEE_KNN', 'LEE_LDA','LSE_KNN', 'LSE_LDA'});
+result = array2table([1-accN; accN; stdN; time], 'RowNames', {'err', 'acc','std', 'time'},'VariableNames', {'GEE_NN', 'GEE_KNN', 'GEE_LDA','ASE_KNN', 'ASE_LDA','GCN','LEE_KNN', 'LEE_LDA','LSE_KNN', 'LSE_LDA'});
 
 function A=Omni(A);
 if iscell(A)

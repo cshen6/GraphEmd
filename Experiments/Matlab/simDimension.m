@@ -301,7 +301,43 @@ if choice==91
     set(gca,'FontSize',fs,'xtick',[],'ytick',[]);
     [ZOri]=GraphEncoder(Dis,Label);
 
-    ind1=find(Y==1);ind2=find(Y==2);ind3=find(Y==3);
+% 
+%         nexttile(tl)
+%     imagesc(cov(ZOri))
+%     yticks([1 10 20]);xticks([1 10 20]);
+%     colorbar
+%     axis('square'); 
+%     if tab==1
+%     title('Covariance Matrix');
+%     end
+%     set(gca,'FontSize',fs); 
+
+[Z,out1]=GraphEncoder(Dis,Label,0,opts1);
+    nexttile(tl)
+    hold on
+    myColor = brewermap(8,'Spectral');
+    mc=repmat(myColor(7,:),20,1);
+    mc(1:3,:)=repmat(myColor(2,:),3,1);
+    scatter(1:20,out1.DimScore,50,mc,'filled');
+%     scatter(1:20,thres1*ones(20,1),20,myColor(5,:),'filled');
+    hold off
+    xlim([1,20]);xticks([1 10 20]);
+    if tab==1
+       title('Community Score','FontSize',fs)
+    end
+    switch tab
+        case 1
+           ylim([0,8])
+        case 2
+            ylim([0,2.5])
+        case 3
+           ylim([0,5])
+    end
+    xlabel('Dimension','FontSize',fs)
+    axis('square'); set(gca,'FontSize',fs);
+     
+
+     ind1=find(Y==1);ind2=find(Y==2);ind3=find(Y==3);
         myColor = brewermap(4,'RdYlGn'); myColor2 = brewermap(4,'PuOr');myColor3 = brewermap(17,'Spectral');
         myColor=[myColor(2,:);myColor(3,:);myColor2(3,:)];
 %     nexttile(tl)
@@ -314,8 +350,8 @@ if choice==91
 %         end
 %         hold off
 %         axis('square'); title('PCA*GEE'); set(gca,'FontSize',fs);
+
         nexttile(tl)
-        [Z,out1]=GraphEncoder(Dis,Label,0,opts1);
         scatter3(Z(ind1,1), Z(ind1,2),Z(ind1,3),20,myColor(1,:),'filled');hold on
         scatter3(Z(ind2,1), Z(ind2,2),Z(ind2,3),20,myColor(2,:),'filled');
         scatter3(Z(ind3,1), Z(ind3,2),Z(ind3,3),20,myColor(3,:),'filled');
@@ -327,44 +363,10 @@ if choice==91
         axis('square'); 
         set(gca,'FontSize',fs); 
         if tab==1
-           title('Principal Encoder'); 
+           title('Sample Embedding'); 
            legend('Community 1','Community 2','Community 3','Location','NorthWest','FontSize',20)
         end
-% 
-%         nexttile(tl)
-%     imagesc(cov(ZOri))
-%     yticks([1 10 20]);xticks([1 10 20]);
-%     colorbar
-%     axis('square'); 
-%     if tab==1
-%     title('Covariance Matrix');
-%     end
-%     set(gca,'FontSize',fs); 
-
-    nexttile(tl)
-    hold on
-    myColor = brewermap(8,'Spectral');
-    mc=repmat(myColor(7,:),20,1);
-    mc(1:3,:)=repmat(myColor(2,:),3,1);
-    scatter(1:20,out1.DimScore,50,mc,'filled');
-%     scatter(1:20,thres1*ones(20,1),20,myColor(5,:),'filled');
-    hold off
-    xlim([1,20]);xticks([1 10 20]);
-    if tab==1
-       title('Importance Score','FontSize',fs)
-    end
-    switch tab
-        case 1
-           ylim([0,8])
-        case 2
-            ylim([0,2.5])
-        case 3
-           ylim([0,5])
-    end
-    xlabel('Dimension','FontSize',fs)
-    axis('square'); set(gca,'FontSize',fs);
      end
-
     F.fname='FigDimension1';
     F.wh=[12 12]*2;
         %     F.PaperPositionMode='auto';
@@ -477,22 +479,8 @@ if choice==93
             load('GEEDimension3.mat'); titleStr='RDPG';
     end
     bayes=0.25-0.25/17;
-    hold on
-    plot(1:20,Acc1(:,ind),'Color', myColor2(1,:), 'LineStyle', '-','LineWidth',5);
-    plot(1:20,Acc2(:,ind),'Color', myColor2(4,:), 'LineStyle', '-','LineWidth',5);
-%     plot(1:20,Acc4(:,ind),'Color', myColor(8,:), 'LineStyle', '-','LineWidth',5);
-    plot(1:20,bayes*ones(20,1),'Color', myColor2(2,:), 'LineStyle', ':','LineWidth',5);
-%     ylim([0.2,0.8]);
-    xlim([1,20]); xticks([1 10 20]); xticklabels({'250','2500','5000'});
-    ylabel(titleStr,'FontSize',fs)
-    xlabel('Sample Size','FontSize',fs)
-    if tab==1
-    title('Classification Error');legend('GEE','P-GEE','Bayes','Location','NorthEast')
-    end
-    hold off
-    axis('square'); set(gca,'FontSize',fs);
 
-    nexttile(tl)
+    
     hold on
     plot(1:20,Acc3(1:20,1),'Color', myColor(2,:), 'LineStyle', '-','LineWidth',5);
     plot(1:20,Acc3(1:20,3),'Color', myColor(7,:), 'LineStyle', '-','LineWidth',5);
@@ -511,8 +499,10 @@ if choice==93
            ylim([0,5])
     end
     if tab==1
-        title('Importance Score');legend('Principal','Redundant','Location','NorthWest')
+        title('Community Score');legend('Principal','Redundant','Location','NorthWest')
     end
+    ylabel(titleStr,'FontSize',fs)
+    xlabel('Sample Size','FontSize',fs)
     hold off
     axis('square'); set(gca,'FontSize',fs);
 
@@ -526,6 +516,20 @@ if choice==93
     %ylabel('Accuracy','FontSize',fs)
     if tab==1
        title('Detection Accuracy');legend('True Positive','False Positive','Location','East');
+    end
+    hold off
+    axis('square'); set(gca,'FontSize',fs);
+
+    nexttile(tl)
+    hold on
+    plot(1:20,Acc2(:,ind),'Color', myColor2(1,:), 'LineStyle', '-','LineWidth',5);
+    plot(1:20,Acc1(:,ind),'Color', myColor2(4,:), 'LineStyle', '-','LineWidth',5);
+%     plot(1:20,Acc4(:,ind),'Color', myColor(8,:), 'LineStyle', '-','LineWidth',5);
+    plot(1:20,bayes*ones(20,1),'Color', myColor2(2,:), 'LineStyle', ':','LineWidth',5);
+%     ylim([0.2,0.8]);
+    xlim([1,20]); xticks([1 10 20]); xticklabels({'250','2500','5000'});
+    if tab==1
+    title('Classification Error');legend('P-GEE','GEE','Bayes','Location','NorthEast')
     end
     hold off
     axis('square'); set(gca,'FontSize',fs);
