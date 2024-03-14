@@ -25,7 +25,7 @@
 %% @export
 %%
 
-function [Z,dimMajor]=GraphEncoder(G,Y,opts)
+function [Z,output]=GraphEncoder(G,Y,opts)
 warning ('off','all');
 if nargin<3
     opts = struct('Normalize',true,'Refine',0,'Principal',0,'Laplacian',false,'Discriminant',true,'Softmax',false);
@@ -36,20 +36,7 @@ if ~isfield(opts,'Principal'); opts.Principal=0; end
 if ~isfield(opts,'Laplacian'); opts.Laplacian=false; end
 if ~isfield(opts,'Discriminant'); opts.Discriminant=true; end
 if ~isfield(opts,'Softmax'); opts.Softmax=false; end
-% opts.PCA=true; % this option is for internal testing only. Should always be set to false unless to test PCA. 
-% if ~isfield(opts,'Weight'); opts.Weight=1; end
-% opts.neuron=20;
-% opts.activation='poslin';
-% opts.Directed=1;
-% opts.Refine=1;
-% opts.Dimension=true;
-% opts.PCA=true;
-% opts.Laplacian=true;
-% opts.Matrix=true;
-% if length(opts.Weight)~=numG
-%     opts.Weight=ones(numG,1);
-% end
-% opts.Normalize=false;
+if opts.Refine>0; opts.Discriminant=true; end
 
 % Pre-Processing
 [G,n]=ProcessGraph(G,opts); % process input graph
@@ -58,15 +45,15 @@ if length(Y)~=n
     return;
 end
 
-% Initial Encoder Embedding
-[Z,dimMajor,Y,idx]=GraphEncoderMain(G,Y,Y,n,opts);
+% Initial Graph Encoder Embedding
+[Z,dimMajor,Y,idx,comChoice]=GraphEncoderMain(G,Y,Y,n,opts);
 
-% Refined Encoder Embedding
+% Refined Graph Encoder Embedding
 if opts.Refine>0
     K=size(Z,2);Y2=Y;
     for r=1:opts.Refine
         Y2=Y2+idx*K;
-        [Z2,dimMajor2,Y2,idx2]=GraphEncoderMain(G,Y2,Y,n,opts);
+        [Z2,dimMajor2,Y2,idx2,comChoice]=GraphEncoderMain(G,Y2,Y,n,opts);
         if sum(idx) <= sum(idx2)
             break;
         else
@@ -76,12 +63,13 @@ if opts.Refine>0
 end
 %     Z{i}=Z;%YNew{i}=tmpY;
 %Y=YNew;
+output={dimMajor,comChoice{1},comChoice{2}};
 
-function [Z,dimMajor,Y,idx]=GraphEncoderMain(G,Y,YOri,n,opts)
+%% Graph Encoder Embedding
+function [Z,dimMajor,Y,idx,comChoice]=GraphEncoderMain(G,Y,YOri,n,opts)
 [Y,indTrn,nk,indKN,indK]=ProcessLabel(Y,n);
 
-numG=length(G);
-Z=cell(numG,1);
+numG=length(G);Z=cell(numG,1);
 for i=1:numG
     X=G{i};
     [s,t]=size(X);
@@ -98,16 +86,31 @@ for i=1:numG
 end
 Z=horzcat(Z{:});
 
-Z2=EncoderDiscriminant(Z,nk,indK,opts);
+% Apply a linear discriminant to identify which dimension corresponds to
+% which class
+[Z2,~,~,S]=EncoderDiscriminant(Z,nk,indK,opts);
 [~,YVal]=max(Z2,[],2);
 dimMajor=zeros(size(Z2,2),1);
 for d=1:size(Z2,2)
     dimMajor(d)=mode(YOri( (YVal==d) & indTrn));
 end
+% The training indices that is mis-classfied by LDA
 idx=(dimMajor(YVal)~=YOri);
 idx= (indTrn & idx);
 if opts.Discriminant
     Z=Z2;
+end
+
+% Find principal communities
+if opts.Principal
+    comChoice=EncoderDimension(S);
+    % if there is only one graph, and no discriminant transformation is
+    % done, keep only the principal dimensions
+    if ~opts.Discriminant
+        Z=Z(:,comChoice{2});
+    end
+else
+    comChoice={0,0};
 end
 % tmpS=0;
 % ZStd{i}=std(ZY);
@@ -115,15 +118,17 @@ end
 % ZY=ZY(:,comChoice{i});
 
 %% LDA transform function
-function [Z,U,V]=EncoderDiscriminant(Z,mk,indK,opts)
+function [Z,U,V,S]=EncoderDiscriminant(Z,mk,indK,opts)
 m=sum(mk);
 K=length(mk);
 [~,p]=size(Z);
 mu=zeros(K,p);
 Sigma=zeros(p,p);
+Std=zeros(K,p);
 for j=1:K
     tmp=indK(:,j);
     mu(j,:)=mean(Z(tmp,:));
+    Std(j,:)=std(Z(tmp,:));
     Sigma=Sigma+cov(Z(tmp,:))*(mk(j)-1)/(m-K);
 end
 U=pinv(Sigma);
@@ -133,6 +138,7 @@ Z=Z*U+V;
 if opts.Softmax
     Z=softmax(Z')';
 end
+S={mu,Std};
 
 %% Encoder Embedding Function
 function Z=EdgeEncoderEmbed(X,Y,n,nk)
@@ -164,34 +170,25 @@ for i=1:s
 end
 
 
-function [GEEMean,GEEStd,comScore,comChoice]=GraphEncoderSummary(Z,indK,K,opts)
+function comChoice=EncoderDimension(S)
 thres2=0.7;
-[~,sz2]=size(Z);
-GEEMean=zeros(K,sz2);
-GEEStd=zeros(K,sz2);
-for j=1:K
-    tmp=indK(:,j);
-    GEEMean(j,:)=mean(Z(tmp,:));
-    GEEStd(j,:)=std(Z(tmp,:));
-end
-comScore=(max(GEEMean,[],1)-min(GEEMean,[],1));
+
+mu=S{1};Std=S{2};
+comScore=(max(mu,[],1)-min(mu,[],1));
 indTmp=(comScore>0);
-tmp=comScore./max(GEEStd,[],1);
+tmp=comScore./max(Std,[],1);
 comScore(indTmp)=tmp(indTmp);
 comScore=comScore';
 
-if opts.Principal>0
-    tmp=sort(comScore,'descend');
-    tmp(tmp==Inf)=100;
-    tmp2=getElbow(tmp,opts.Principal);
-    tmp=(comScore>=max(tmp(tmp2(end)),thres2));
-    comChoice=tmp';
+tmp=sort(comScore,'descend');
+tmp(tmp==Inf)=100;
+tmp2=getElbow(tmp,3);
+tmp=(comScore>=max(tmp(tmp2(end)),thres2));
+comChoice={comScore,tmp};
 %     if sum(tmp)~=0
 %         Z=Z(:,tmp);
 %     end
-else
-    comChoice=true(1,K);
-end
+
 
 %% pre-precess input to s*3 then diagonal augment
 function [G,n]=ProcessGraph(G,opts)
@@ -261,3 +258,36 @@ indKN=zeros(m,K); %normalized one-hot encoder
 for j=1:K
     indKN(indK(:,j),j)=1/mk(j);
 end
+
+% Given a decreasingly sorted vector, return the given number of elbows
+% dat: a input vector (e.g. a vector of standard deviations), or a input feature matrix.
+% n: the number of returned elbows.
+% q: a vector of length n. Typically 1st or 2nd elbow suffices
+% Reference: Zhu, Mu and Ghodsi, Ali (2006), "Automatic dimensionality selection from the scree plot via the use of profile likelihood", Computational Statistics & Data Analysis, Volume 51 Issue 2, pp 918-930, November, 2006.
+function q=getElbow(d, n)
+if nargin<2
+    n=3;
+end
+p=length(d);
+q=getElbow2(d);
+for i=2:n
+    if q(i-1)>=p
+        break;
+    else
+        q=[q,q(i-1)+getElbow2(d(q(i-1)+1:end))];
+    end
+end
+if length(q)<n
+    q=[q,q(end)*ones(1,n-length(q))];
+end
+
+function q=getElbow2(d)
+p=length(d);
+lq=zeros(p,1);
+for i=1:p
+    mu1 = mean(d(1:i));
+    mu2 = mean(d(i+1:end));
+    sigma2 = (sum((d(1:i) - mu1).^2) + sum((d(i+1:end) - mu2).^2)) / (p - 1 - (i < p));
+    lq(i) = sum( log(normpdf(  d(1:i), mu1, sqrt(sigma2)))) + sum( log(normpdf(  d(i+1:end), mu2, sqrt(sigma2))));
+end
+[~,q]=max(lq);

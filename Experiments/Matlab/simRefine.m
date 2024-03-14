@@ -17,11 +17,11 @@ indices = crossvalind('Kfold',Y,10);
 K=max(Y);
 error=zeros(10,3);
 time=zeros(10,3);
-normalize=0;
-classifier=0;sof=false;
+normalize=1;
+classifier=1;sof=false;
 opts1=struct('Normalize',normalize,'Refine',0,'Softmax',sof); 
 opts2=struct('Normalize',normalize,'Refine',1,'Softmax',sof); 
-opts3=struct('Normalize',normalize,'Refine',5,'Softmax',sof); 
+opts3=struct('Normalize',normalize,'Refine',10,'Softmax',sof); 
 opts={opts1,opts2,opts3};
 for j=1:10
     tsn = (indices == j); % tst indices
@@ -47,5 +47,5 @@ for j=1:10
     end
 end
 mean(error)
-mean(time)
+% mean(time)
 % mean(tmp)

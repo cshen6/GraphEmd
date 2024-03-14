@@ -6,8 +6,8 @@ end
 norma=true;thres1=0.7;
 if choice==1 || choice==2 || choice ==3 % top 3; all; none; none; repeat for DC-SBM
     lim=20;G1=cell(lim,rep);G2=cell(lim,rep);G3=cell(lim,rep);dim=20; ind=3;ind2=2;
-    opts = struct('Adjacency',1,'Laplacian',0,'Normalize',norma,'Spectral',0,'LDA',1,'GNN',0,'knn',5,'dim',30);
-    optsE = opts; optsE.Dimension=3;
+    opts = struct('Adjacency',1,'Laplacian',0,'Normalize',norma,'Discriminant',false,'Spectral',0,'LDA',1,'GNN',0,'knn',5,'dim',30);
+    optsE = opts; optsE.Principal=3;
 %     optsE2=optsE; optsE2.Dimension=2;
     Acc1=zeros(lim,6);Acc2=zeros(lim,6);Acc3=zeros(lim,6);
     type=300;
@@ -30,14 +30,14 @@ if choice==1 || choice==2 || choice ==3 % top 3; all; none; none; repeat for DC-
             G1{i,r}=GraphEncoderEvaluate(Dis,Label,opts);
             G2{i,r}=GraphEncoderEvaluate(Dis,Label,optsE);
 %             G3{i,r}=GraphEncoderEvaluate(Dis,Label,optsE2);
-            [Z,out]=GraphEncoder(Dis,Label,0,optsE);
-            Acc3(i,1)=Acc3(i,1)+sum(out.DimScore(1:3))/3/rep;
-            Acc3(i,2)=Acc3(i,2)+sum(out.DimChoice(1:3))/3/rep;
-            Acc3(i,3)=Acc3(i,3)+sum(out.DimScore(4:end))/(dim-3)/rep;
-            Acc3(i,4)=Acc3(i,4)+sum(out.DimChoice(4:end))/(dim-3)/rep;
+            [Z,out]=GraphEncoder(Dis,Label,optsE);out1=out{2};out2=out{3};
+            Acc3(i,1)=Acc3(i,1)+sum(out1(1:3))/3/rep;
+            Acc3(i,2)=Acc3(i,2)+sum(out2(1:3))/3/rep;
+            Acc3(i,3)=Acc3(i,3)+sum(out1(4:end))/(dim-3)/rep;
+            Acc3(i,4)=Acc3(i,4)+sum(out2(4:end))/(dim-3)/rep;
 %             [Z,out]=GraphEncoder(Dis,Label,0,optsE2);
-            Acc3(i,5)=Acc3(i,5)+sum(out.Std(1:3))/3/rep;
-            Acc3(i,6)=Acc3(i,6)+sum(out.Std(4:end))/(dim-3)/rep;
+%             Acc3(i,5)=Acc3(i,5)+sum(out.Std(1:3))/3/rep;
+%             Acc3(i,6)=Acc3(i,6)+sum(out.Std(4:end))/(dim-3)/rep;
         end
     end
     for i=1:lim
@@ -50,10 +50,10 @@ if choice==1 || choice==2 || choice ==3 % top 3; all; none; none; repeat for DC-
 %             Acc4(i,4)=Acc4(i,4)+G3{i,r}{4,ind2}/rep;Acc4(i,5)=Acc4(i,5)+G3{i,r}{4,ind}/rep;%Acc2(i,6)=Acc2(i,6)+G2{i,r}{4,ind2}/rep;
         end
     end
-    [Z,out]=GraphEncoder(Dis,Label,0,opts);
+    [Z,out]=GraphEncoder(Dis,Label,opts);
     save(strcat('GEEDimension',num2str(choice),'.mat'),'choice','Acc1','Acc2','Acc3','Z','out')
     [mean(Acc1);mean(Acc2);mean(Acc3)]
-    out.DimScore
+    out{2}
 %     [std(Acc1);std(Acc2)]
 end
 
@@ -69,8 +69,8 @@ if choice==4 || choice==5 || choice==6
         case 6
             type=320;
     end
-    opts = struct('Adjacency',1,'Laplacian',0,'Normalize',norma,'Spectral',0,'LDA',1,'GNN',0,'knn',5,'dim',30);
-    optsE = opts; optsE.Dimension=3;
+    opts = struct('Adjacency',1,'Laplacian',0,'Normalize',norma,'Discriminant',false,'Spectral',0,'LDA',1,'GNN',0,'knn',5,'dim',30);
+    optsE = opts; optsE.Principal=3;
 %     optsE2=optsE; optsE2.Dimension=2;
     Acc1=zeros(lim,6);Acc2=zeros(lim,6);Acc3=zeros(lim,6);
     for i=1:lim
@@ -82,13 +82,13 @@ if choice==4 || choice==5 || choice==6
             G1{i,r}=GraphEncoderEvaluate(Dis,Label,opts);
             G2{i,r}=GraphEncoderEvaluate(Dis,Label,optsE);
 %             G3{i,r}=GraphEncoderEvaluate(Dis,Label,optsE2);
-            [Z,out]=GraphEncoder(Dis,Label,0,optsE);
-            Acc3(i,1)=Acc3(i,1)+sum(out.DimScore(1:3))/3/rep;
-            Acc3(i,2)=Acc3(i,2)+sum(out.DimChoice(1:3))/3/rep;
-            Acc3(i,3)=Acc3(i,3)+sum(out.DimScore(4:end))/(dim-3)/rep;
-            Acc3(i,4)=Acc3(i,4)+sum(out.DimChoice(4:end))/(dim-3)/rep;
-            Acc3(i,5)=Acc3(i,5)+sum(out.Std(1:3))/3/rep;
-            Acc3(i,6)=Acc3(i,6)+sum(out.Std(4:end))/(dim-3)/rep;
+            [Z,out]=GraphEncoder(Dis,Label,optsE);out1=out{2};out2=out{3};
+            Acc3(i,1)=Acc3(i,1)+sum(out1(1:3))/3/rep;
+            Acc3(i,2)=Acc3(i,2)+sum(out2(1:3))/3/rep;
+            Acc3(i,3)=Acc3(i,3)+sum(out1(4:end))/(dim-3)/rep;
+            Acc3(i,4)=Acc3(i,4)+sum(out2(4:end))/(dim-3)/rep;
+%             Acc3(i,5)=Acc3(i,5)+sum(out.Std(1:3))/3/rep;
+%             Acc3(i,6)=Acc3(i,6)+sum(out.Std(4:end))/(dim-3)/rep;
         end
     end
     for i=1:lim
@@ -101,7 +101,7 @@ if choice==4 || choice==5 || choice==6
 %             Acc4(i,4)=Acc4(i,4)+G3{i,r}{4,ind2}/rep;Acc4(i,5)=Acc4(i,5)+G3{i,r}{4,ind}/rep;%Acc2(i,6)=Acc2(i,6)+G2{i,r}{4,ind2}/rep;
         end
     end
-    [Z,out]=GraphEncoder(Dis,Label,0,opts);
+    [Z,out]=GraphEncoder(Dis,Label,opts);
     save(strcat('GEEDimension',num2str(choice),'.mat'),'choice','Acc1','Acc2','Acc3','Z','out')
     [mean(Acc1);mean(Acc2);mean(Acc3)]
 %     out.DimScore
@@ -112,14 +112,14 @@ end
 % end
 if choice>=10 && choice <20
     %30-35
-    opts = struct('Adjacency',1,'Normalize',norma,'Laplacian',0,'Spectral',0,'LDA',1,'GNN',0,'knn',5,'dim',30,'Dimension',0);
+    opts = struct('Adjacency',1,'Normalize',norma,'Laplacian',0,'Spectral',0,'Discriminant',false,'LDA',1,'GNN',0,'knn',0,'dim',30,'Dimension',0);
     ind=3;ind2=2;
-    optsE = opts; optsE.Dimension=3;optsE.Spectral=0;
+    optsE = opts; optsE.Principal=3;optsE.Spectral=0;
     switch choice
         case 10
-           load('citeseer.mat');G1=Edge; %optsE.Dimension=1;%4/6
+           load('citeseer.mat');G1=Edge; %optsE.Principal=1;%4/6
         case 11
-           load('Cora.mat');G1=Edge; ind=2;ind2=4;% 3 out of 5
+           load('Cora.mat');G1=Edge; %ind=2;ind2=4;% 3 out of 5
         case 12
             load('email.mat');G1=Edge;Label=Y; %kept 39/42 dimension
         case 13
@@ -129,17 +129,17 @@ if choice>=10 && choice <20
         case 14
             load('IMDB.mat');G1=Edge2;Label=Label2+1;
         case 15
-           load('LastFM.mat');G1=Edge;Label=Y; %optsE.Dimension=2;%kept 17/18 dimension
+           load('LastFM.mat');G1=Edge;Label=Y; %optsE.Principal=2;%kept 17/18 dimension
         case 16
-           load('Letter.mat');G1=Edge1;Label=Label1;%optsE.Dimension=2; % 4/15
+           load('Letter.mat');G1=Edge1;Label=Label1;%optsE.Principal=2; % 4/15
         case 17
-            load('smartphone.mat');G1=Edge; %optsE.Dimension=3;%kept 53/71 dimension
+            load('smartphone.mat');G1=Edge; %optsE.Principal=3;%kept 53/71 dimension
         case 18
             load('protein.mat');Dist1='cosine';G1=Edge;
         case 19
             load('pubmed.mat');Dist1='cosine';G1=Edge;
 %         case 16
-%             load('Wiki_Data.mat');G1=GFAdj; optsE.Dimension=2;%kept all
+%             load('Wiki_Data.mat');G1=GFAdj; optsE.Principal=2;%kept all
 %         case 34
 %            load('anonymized_msft.mat');G1=G{1}; Label=label;
     end
@@ -156,18 +156,18 @@ if choice>=10 && choice <20
         tmp=GraphEncoderEvaluate(G1,Label,optsE);Acc2(i,1)=tmp{1,ind};Acc2(i,2)=tmp{1,ind2};Time2(i,1)=tmp{4,ind};Time2(i,2)=tmp{4,ind2};
 %         tmp=GraphEncoderEvaluate(G1,Label,optsE2);Acc2(i,3)=tmp{1,ind};Acc2(i,4)=tmp{1,ind2};Time2(i,3)=tmp{4,ind};Time2(i,4)=tmp{4,ind2};
     end
-    [Z,out]=GraphEncoder(G1,Label,0,optsE);
+    [Z,out]=GraphEncoder(G1,Label,optsE);
     save(strcat('GEEDimension',num2str(choice),'.mat'),'choice','Acc1','Acc2','Time1','Time2','out');
     [mean(Acc1);mean(Acc2);std(Acc1);std(Acc2);mean(Time1);mean(Time2)] %GEE; ASE; PGEE; PCA
-    [length(out(1).Y), length(out(1).DimScore), sum(out(1).DimChoice)]
+    [sum(out{3}),max(Label)]
 %     [std(Acc1);std(Acc2);std(Time1);std(Time2)]
 end
 
 if choice>=20 && choice <30 %noise
     %30-35
-    opts = struct('Adjacency',1,'Normalize',norma,'Laplacian',0,'Spectral',0,'LDA',1,'GNN',1,'knn',5,'dim',30,'Dimension',0);
+    opts = struct('Adjacency',1,'Normalize',norma,'Laplacian',0,'Spectral',0,'Discriminant',false,'LDA',1,'GNN',0,'knn',0,'dim',30,'Dimension',0);
     ind=3;ind2=1;
-    optsE = opts; optsE.Dimension=2;optsE.Spectral=0;
+    optsE = opts; optsE.Principal=2;optsE.Spectral=0;
     switch choice
 %        case 20
 %            load('citeseer.mat');G1=Edge; %G1=Edge+1; Label=Y; %kept 1/2 dimension
@@ -214,17 +214,17 @@ if choice>=20 && choice <30 %noise
         tmp=GraphEncoderEvaluate(G1,Label,optsE);Acc2(i,1)=tmp{1,ind};Acc2(i,2)=tmp{1,ind2};Time2(i,1)=tmp{4,ind};Time2(i,2)=tmp{4,ind2};
 %         tmp=GraphEncoderEvaluate(G1,Label,optsE2);Acc2(i,3)=tmp{1,ind};Acc2(i,4)=tmp{1,ind2};Time2(i,3)=tmp{4,ind};Time2(i,4)=tmp{4,ind2};
     end
-    [Z,out]=GraphEncoder(G1,Label,0,optsE);
+    [Z,out]=GraphEncoder(G1,Label,optsE);
     save(strcat('GEEDimension',num2str(choice),'.mat'),'choice','Acc1','Acc2','Time1','Time2','out');
     [mean(Acc1);mean(Acc2);std(Acc1);std(Acc2);mean(Time1);mean(Time2)] %GEE; ASE; PGEE; PCA
-    [length(out(1).Y), length(out(1).DimScore), sum(out(1).DimChoice)]
+    [sum(out{3}),max(Label)]
 %     [std(Acc1);std(Acc2);std(Time1);std(Time2)]
 end
 
 if choice>=30 && choice <40 %fusion
-    opts = struct('Adjacency',1,'Normalize',norma,'Laplacian',0,'Spectral',0,'LDA',1,'GNN',1,'knn',0,'dim',30,'Dimension',0);
+    opts = struct('Adjacency',1,'Normalize',norma,'Laplacian',0,'Spectral',0,'LDA',1,'Discriminant',false,'GNN',0,'knn',0,'dim',30,'Dimension',0);
     ind=3;ind2=1;%5 for Spectral
-    optsE = opts; optsE.Dimension=1;optsE.Spectral=0;
+    optsE = opts; optsE.Principal=1;optsE.Spectral=0;
     switch choice
         case 30
             load('CElegans.mat');G1=Ac;G2=Ag;Label=vcols; 
@@ -262,10 +262,10 @@ if choice>=30 && choice <40 %fusion
 %         tmp=GraphEncoderEvaluate(G2,Label,optsE2);Acc3(i,3)=tmp{1,ind};Acc3(i,4)=tmp{1,ind2};Time3(i,3)=tmp{4,ind};Time3(i,4)=tmp{4,ind2};
 %         tmp=GraphEncoderEvaluate({G1,G2},Label,optsE2);Acc3(i,5)=tmp{1,ind};Acc3(i,6)=tmp{1,ind2};Time3(i,5)=tmp{4,ind};Time3(i,6)=tmp{4,ind2};
     end
-    [Z,out]=GraphEncoder({G1,G2},Label,0,optsE);
+    [Z,out]=GraphEncoder({G1,G2},Label,optsE);
     save(strcat('GEEDimension',num2str(choice),'.mat'),'choice','Acc1','Acc2','Acc3','Time1','Time2','Time3','out')
     [mean(Acc1);mean(Acc2);std(Acc1);std(Acc2);mean(Time1);mean(Time2)] %GEE; ASE; PGEE; PCA
-    [length(out(1).Y), length(out(1).DimScore), sum(out(1).DimChoice)]
+    [sum(out{3}),max(Label)]
 %     [std(Acc1);std(Acc2);std(Time1);std(Time2)]
 end
 
@@ -312,13 +312,13 @@ if choice==91
 %     end
 %     set(gca,'FontSize',fs); 
 
-[Z,out1]=GraphEncoder(Dis,Label,0,opts1);
+[Z,out1]=GraphEncoder(Dis,Label,opts1);
     nexttile(tl)
     hold on
     myColor = brewermap(8,'Spectral');
     mc=repmat(myColor(7,:),20,1);
     mc(1:3,:)=repmat(myColor(2,:),3,1);
-    scatter(1:20,out1.DimScore,50,mc,'filled');
+    scatter(1:20,out1(3),50,mc,'filled');
 %     scatter(1:20,thres1*ones(20,1),20,myColor(5,:),'filled');
     hold off
     xlim([1,20]);xticks([1 10 20]);
@@ -685,7 +685,7 @@ end
 
 % if choice==40 %kept 20 out of 39 dimensions
 %     opts = struct('Adjacency',1,'DiagAugment',1,'Laplacian',0,'Spectral',0,'LDA',1,'GNN',0,'knn',5,'dim',30);
-%     optsE = opts; optsE.Dimension=1;ind=2;ind2=3;
+%     optsE = opts; optsE.Principal=1;ind=2;ind2=3;
 %     load('anonymized_msft.mat')
 %     Label=label;rep=1;i=1;Acc1=zeros(rep,6);Acc2=zeros(rep,6);Time1=zeros(rep,6);Time2=zeros(rep,6);
 %     indices = crossvalind('Kfold',Label,5);
