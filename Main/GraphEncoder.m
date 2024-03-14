@@ -25,15 +25,17 @@
 %% @export
 %%
 
-function [Z,output]=GraphEncoder(G,Y,opts)
+function Z=GraphEncoder(G,Y,opts)
 warning ('off','all');
 if nargin<3
-    opts = struct('Normalize',true,'Refine',0,'Principal',0,'Laplacian',false);
+    opts = struct('Normalize',true,'Refine',0,'Principal',0,'Laplacian',false,'Discriminant',true,'Softmax',false);
 end
 if ~isfield(opts,'Normalize'); opts.Normalize=true; end
 if ~isfield(opts,'Refine'); opts.Refine=0; end
 if ~isfield(opts,'Principal'); opts.Principal=0; end
 if ~isfield(opts,'Laplacian'); opts.Laplacian=false; end
+if ~isfield(opts,'Discriminant'); opts.Discriminant=true; end
+if ~isfield(opts,'Softmax'); opts.Softmax=false; end
 % opts.PCA=true; % this option is for internal testing only. Should always be set to false unless to test PCA. 
 % if ~isfield(opts,'Weight'); opts.Weight=1; end
 % opts.neuron=20;
@@ -64,16 +66,16 @@ Z=cell(numG,1);
 
 for i=1:numG
     X=G{i};
-    [ZY,output,Y,idx]=GraphEncoderMain(X,Y,Y,n,opts);
+    [ZY,dimMajor,Y,idx]=GraphEncoderMain(X,Y,Y,n,opts);
     if opts.Refine>0
         K=size(ZY,2);Y2=Y;
         for r=1:opts.Refine
             Y2=Y2+idx*K;
-            [ZY2,output2,Y2,idx2]=GraphEncoderMain(X,Y2,Y,n,opts);
+            [ZY2,dimMajor2,Y2,idx2]=GraphEncoderMain(X,Y2,Y,n,opts);
             if sum(idx) <= sum(idx2)
                 break;
             else
-                ZY=ZY2;output=output2;idx=idx2;
+                ZY=ZY2;dimMajor=dimMajor2;idx=idx2;
             end
         end
     end
@@ -90,26 +92,46 @@ if s==t
 else
     Z=EdgeEncoderEmbed(X,Y,n,nk);
 end
-if opts.Normalize==true
+if opts.Normalize
     Z = normalize(Z,2,'norm');
     Z(isnan(Z))=0;
 end
-Z=EncoderClassifier(Z,nk,indK);
 
-[~,YVal]=max(Z,[],2);
-dimMajor=zeros(size(Z,2),1);
-for d=1:size(Z,2)
+Z2=EncoderClassifier(Z,nk,indK,opts);
+[~,YVal]=max(Z2,[],2);
+dimMajor=zeros(size(Z2,2),1);
+for d=1:size(Z2,2)
     dimMajor(d)=mode(YOri( (YVal==d) & indTrn));
 end
-
 idx=(dimMajor(YVal)~=YOri);
 idx= (indTrn & idx);
+if opts.Discriminant
+    Z=Z2;
+end
 % tmpS=0;
 % ZStd{i}=std(ZY);
 % [classMean{i},classStd{i},comScore{i},comChoice{i}]=GraphEncoderSummary(ZY,indK,K,opts);
 % ZY=ZY(:,comChoice{i});
 
-
+%% LDA transform function
+function [Z,U,V]=EncoderClassifier(Z,mk,indK,opts)
+m=sum(mk);
+K=length(mk);
+[~,p]=size(Z);
+mu=zeros(K,p);
+Sigma=zeros(p,p);
+for j=1:K
+    tmp=indK(:,j);
+    mu(j,:)=mean(Z(tmp,:));
+    Sigma=Sigma+cov(Z(tmp,:))*(mk(j)-1)/(m-K);
+end
+U=pinv(Sigma);
+V=-(diag(mu*U*mu')*0.5-log(mk/m))';
+U=U*mu';
+Z=Z*U+V;
+if opts.Softmax
+    Z=softmax(Z')';
+end
 
 %% Encoder Embedding Function
 function Z=EdgeEncoderEmbed(X,Y,n,nk)
@@ -140,23 +162,6 @@ for i=1:s
     end
 end
 
-
-%% LDA transform function
-function [Z,U,V]=EncoderClassifier(Z,mk,indK)
-m=sum(mk);
-K=length(mk);
-[~,p]=size(Z);
-mu=zeros(K,p);
-Sigma=zeros(p,p);
-for j=1:K
-    tmp=indK(:,j);
-    mu(j,:)=mean(Z(tmp,:));
-    Sigma=Sigma+cov(Z(tmp,:))*(mk(j)-1)/(m-K);
-end
-U=pinv(Sigma);
-V=-(diag(mu*U*mu')*0.5-log(mk/m))';
-U=U*mu';
-Z=Z*U+V;
 
 function [GEEMean,GEEStd,comScore,comChoice]=GraphEncoderSummary(Z,indK,K,opts)
 thres2=0.7;

@@ -1,7 +1,7 @@
 function simDynamicPlot(optPlot)
 
 if optPlot==1 || optPlot==2
-    [Z,Dynamic,Y,time]=simDynamicSBM(101,30000,20,96);
+    [Z,Dynamic,Y,time]=simDynamicSBM(101,20000,20,96);
     VD=Dynamic{1}; GD=Dynamic{3};
     %%% Figure 1: 72 simulated SBM into 3 encoder visualization panel, for
     %%% 3 community only
@@ -80,7 +80,7 @@ if optPlot==1 || optPlot==2
         plot(1:i,pval(:,2),'Color', myColor(3,:), 'LineStyle', '-.','LineWidth',4);
         plot(1:i,pval(:,3),'Color', myColor(6,:), 'LineStyle', '--','LineWidth',4);
         plot(1:i,pval(:,4),'Color', myColor(8,:), 'LineStyle', '-','LineWidth',4); hold off
-        xlim([1,96]);ylim([0,0.4]);yticks([0 0.2 0.4]); yticklabels({'0','20%','40%'});
+        xlim([1,96]);ylim([0,0.5]);yticks([0 0.25 0.5]); yticklabels({'0','25%','50%'});
         axis('square'); 
         legend('0.25','0.10', '0.05','0.02','Location','NorthWest');
         set(gca,'FontSize',fs);
@@ -219,7 +219,7 @@ end
 if optPlot>10
     load('anonymized_msft.mat')
     opts = struct('Common',false,'BenchTime',1);
-    [Z,Dynamic,Y,time]=GraphDynamics(G,label,opts);
+    [Z,Dynamic,Y,time]=TemporalGraph(G,label,opts);
     VD=Dynamic{1}; GD=Dynamic{3}; CD=Dynamic{2};
     % Dist=Dist+Dist';
     %%% Figure 5: two vertex dynamics one for inlier one for outlier

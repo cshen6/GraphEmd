@@ -5,7 +5,7 @@ if nargin<5
 end
 Lapl=false;
 USE=false;
-normalize=false;
+normalize=true;
 extreme=false;
 %type=101; n=1000; K=20;t=10;
 if opts==1
@@ -43,9 +43,9 @@ if opts==1
         end
     end
     opt=struct('Normalize',normalize);
-    [Z,VD,Y,time]=GraphDynamics(G,Y,opt);
+    [Z,VD,Y,time]=TemporalGraph(G,Y,opt);
     tic
-    GraphEncoder(G{1},K);
+    GraphEncoder(G{1},Y(:,1));
     time(end+1)=toc;
     [~,ind1]=sort(VD{1},'descend');
     if USE == true
@@ -142,9 +142,9 @@ if opts==2
 %     E(:,3)=randi(100,size(E,1),1);
 %     G={E};s=size(E,1);
 
-    [Z,VD,~,time]=GraphDynamics(G,Y(:,1));
+    [Z,VD,~,time]=TemporalGraph(G,Y(:,1));
     tic
-    GraphEncoder(G{1},K);
+    GraphEncoder(G{1},Y(:,1));
     time(end+1)=toc;
 %     [~,ind1]=sort(VD{1},'descend');
 end

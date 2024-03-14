@@ -18,24 +18,26 @@
 %%         third element is the dynamic computation running time.
 %%
 %%
-function [Z,Dynamic,Y,time]=GraphDynamics(X,Y,opts)
+function [Z,Dynamic,Y,time]=TemporalGraph(X,Y,opts)
 
 if nargin<3
-    opts = struct('Common',false,'BenchTime',1,'Normalize',true);
+    opts = struct('Common',false,'BenchTime',1,'Normalize',true,'Discriminant',false,'Softmax',false);
 end
 if ~isfield(opts,'Common'); opts.Common=false; end
 if ~isfield(opts,'BenchTime'); opts.BenchTime=1; end
 if ~isfield(opts,'Normalize'); opts.Normalize=true; end
+if ~isfield(opts,'Discriminant'); opts.Discriminant=false; end
+if ~isfield(opts,'Softmax'); opts.Softmax=false; end
 
 %%% Dynamic Encoder Embedding and Reshape
 time=zeros(3,1);
 tic
-[Z,out]=GraphEncoder(X,Y,opts);
-Y=out(opts.BenchTime).Y;
+Z=GraphEncoder(X,Y,opts);
+% Y=out(opts.BenchTime).Y;
 t=length(X);
-if iscell(Z)
-    Z=cell2mat(Z');
-end
+% if iscell(Z)
+%     Z=cell2mat(Z');
+% end
 [n,Kt]=size(Z);
 K=Kt/t;
 Z=reshape(Z,n,K,t);
@@ -53,9 +55,6 @@ if t>1
         vnorm=sum(vnorm,2);
         ind=(vnorm==t);
         Z=Z(ind,:,:); %use common indices, then re-normalize
-        for j=1:t
-            Z(:,:,j) = normalize(Z(:,:,j),2,'norm');
-        end
         time(2)=toc;
         n=size(Z,1);
         Y=Y(ind);
@@ -63,6 +62,9 @@ if t>1
 
     %%% Dynamic Vertex Embedding
     tic
+%     for j=1:t
+%         Z(:,:,j) = normalize(Z(:,:,j),2,'norm');
+%     end
     VD=zeros(n,t-t_b+1);CD=zeros(K,t-t_b+1);
     for i=2:t-t_b+1
 %         VD(:,t_b+i-1)=vecnorm(Z(:,:,t_b+i-1)-Z(:,:,t_b),2,2);
