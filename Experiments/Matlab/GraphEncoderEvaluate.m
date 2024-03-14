@@ -171,20 +171,20 @@ for i = 1:kfold
             if ~iscell(Y2)
                 switch opts.eval
                     case 0
-                        [Z,out]=GraphEncoder(X,YT,0,oot);
+                        [Z,out]=GraphEncoder(X,YT,oot);
                     case 1
-                        [Z,out]=GraphEncoder(X,YT,D,oot);
+                        [Z,out]=GraphEncoder(X,YT,oot);
                     case 2
-                        [Z,out]=GraphEncoder(X,0,D,oot);
+                        [Z,out]=GraphEncoder(X,0,oot);
                 end
-                ZM=zeros(size(out(1).ClassMean,1),size(out(1).ClassMean,2)*length(out));
-                for il=1:length(out)
-                    ZM(:,size(out(1).ClassMean,2)*(il-1)+1:size(out(1).ClassMean,2)*il)=out(il).ClassMean;
-                end
+%                 ZM=zeros(size(out(1).ClassMean,1),size(out(1).ClassMean,2)*length(out));
+%                 for il=1:length(out)
+%                     ZM(:,size(out(1).ClassMean,2)*(il-1)+1:size(out(1).ClassMean,2)*il)=out(il).ClassMean;
+%                 end
             else
                 Y3=Y2;
                 Y3{1}(tsn)=0;
-                [Z,out]=GraphEncoder(X,Y3,D,oot);
+                [Z,out]=GraphEncoder(X,Y3,oot);
             end
             if iscell(Z)
                 numGraph=length(Z);

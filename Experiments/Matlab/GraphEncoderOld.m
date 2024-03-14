@@ -1,4 +1,4 @@
-function [Z,YW,err]=GraphEncoderR(Edge,Y,indT,U,opts)
+function [Z,YW,err]=GraphEncoderOld(Edge,Y,indT,U,opts)
 
 if nargin<3
     indT=ones(size(Y));

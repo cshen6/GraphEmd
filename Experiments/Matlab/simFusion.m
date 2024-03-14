@@ -108,7 +108,12 @@ if choice ==6 %time
         n=3000*i
         [Dis,Label]=simGenerate(28,n,1);
         A=horzcat(Dis{:});
+        GraphEncoder(Dis{1},Label);
         for r=1:rep
+            if r>4 && rand(1)>0.5
+                [Dis,Label]=simGenerate(28,n,1);
+                A=horzcat(Dis{:});
+            end
             tic
             GraphEncoder(Dis{1},Label);
             time1(i,r)=toc;
@@ -122,9 +127,9 @@ if choice ==6 %time
             svds(A,10);
             time4(i,r)=toc;
         end
+        [mean(time1,2),mean(time2,2),mean(time3,2),mean(time4,2)]
+        [std(time1,[],2),std(time2,[],2),std(time3,[],2),std(time4,[],2)]
     end
-    [mean(time1,2),mean(time2,2),mean(time3,2),mean(time4,2)]
-    [std(time1,[],2),std(time2,[],2),std(time3,[],2),std(time4,[],2)]
     save(strcat('GEEFusionSim',num2str(choice),'.mat'),'lim','n','time1','time2','time3','time4');
 end
 
@@ -230,7 +235,7 @@ end
 
 if choice==15
     load('Wiki_Data.mat'); 
-    opts = struct('Adjacency',1,'DiagAugment',1,'Laplacian',0,'Spectral',spec,'LDA',0,'GNN',1,'knn',5,'dim',30);
+    opts = struct('Adjacency',1,'DiagAugment',1,'Laplacian',0,'Spectral',spec,'LDA',1,'GNN',0,'knn',0,'dim',30);
     % opts2=opts;
     % opts2.deg=1;opts2.ASE=0;
     Acc1=zeros(rep,13);Acc2=zeros(rep,13);Acc3=zeros(rep,13);Time1=zeros(rep,13);Time2=zeros(rep,13);Time3=zeros(rep,13);
@@ -476,8 +481,8 @@ if choice==103;%time figure
         tl = tiledlayout(1,2);
         nexttile(tl)
         load('GEEFusionSim6.mat')
-        errorbar(1:i,mean(time1,2),3*std(time1,[],2),'Color', myColor2(1,:),'LineStyle', '-','LineWidth',lw);hold on
-        errorbar(1:i,mean(time2,2),3*std(time2,[],2),'Color', myColor2(2,:),'LineStyle', '-','LineWidth',lw);
+        errorbar(1:i,mean(time1,2),1*std(time1,[],2),'Color', myColor2(1,:),'LineStyle', '-','LineWidth',lw);hold on
+        errorbar(1:i,mean(time2,2),1*std(time2,[],2),'Color', myColor2(2,:),'LineStyle', '-','LineWidth',lw);
         legend('One Graph','Three Graphs','Location','NorthWest');
         xlim([1,10]);xticks([1 5 10]);xticklabels({'3000','15000','30000'});title('Encoder Embedding');
         set(gca,'FontSize',fs); 
@@ -485,8 +490,8 @@ if choice==103;%time figure
 
         nexttile(tl)
         load('GEEFusionSim6.mat')
-        errorbar(1:i,mean(time3,2),3*std(time3,[],2),'Color', myColor2(4,:),'LineStyle', '-','LineWidth',lw);hold on
-        errorbar(1:i,mean(time4,2),3*std(time4,[],2),'Color', myColor2(3,:),'LineStyle', '-','LineWidth',lw);
+        errorbar(1:i,mean(time3,2),1*std(time3,[],2),'Color', myColor2(4,:),'LineStyle', '-','LineWidth',lw);hold on
+        errorbar(1:i,mean(time4,2),1*std(time4,[],2),'Color', myColor2(3,:),'LineStyle', '-','LineWidth',lw);
         legend('One Graph','Three Graphs','Location','NorthWest');
         xlim([1,10]);xticks([1 5 10]);xticklabels({'3000','15000','30000'});title('Spectral Embedding');
         set(gca,'FontSize',fs); 

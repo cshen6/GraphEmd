@@ -2184,4 +2184,149 @@ switch option
             Dis=Dis(1:s-1,:);
         end
         X=Dis;
+    case 400 % DC-SBM with 4 classes
+        fileName='DCSBM';
+        d=3;
+        pp=1/d*ones(d,1);
+        Bl=zeros(d,d);
+        %             Bl=rand(clas,clas);
+        Bl(:,1)=[0.5,0.1,0.1];
+        Bl(:,2)=[0.3,0.3,0.1];
+        Bl(:,3)=[0.1,0.5,0.1];
+        if edge==0
+           Dis=zeros(n,n);
+        else
+            Dis=[];
+        end
+        tt=rand([n,1]);
+        Label=ones(n,1);
+        thres=0;
+%         theta=betarnd(1,4,n,1);
+        theta=ones(n,1);
+%         theta=unifrnd(0.5,1.5,n,1);
+%         theta=theta;
+        for i=1:d
+            thres=thres+pp(i);
+            Label=Label+(tt>thres); %determine the block of each data
+        end
+        if edge==0
+            for i=1:n
+                Dis(i,i)=0;%diagonals are zeros
+                for j=i+1:n
+                    weight=1;%randi(10);
+                    Dis(i,j)=weight*(rand(1)<theta(i)*theta(j)*Bl(Label(i),Label(j)));
+                    Dis(j,i)=Dis(i,j);
+                end
+            end
+        else
+            for i=1:n
+                for j=i+1:n
+                    tmp=(rand(1)<theta(i)*theta(j)*Bl(Label(i),Label(j)));
+                    if tmp==1;
+                        Dis=[Dis;i,j,1];
+                    end
+                end
+            end
+        end
+        Dis=sparse(Dis);
+        X=Dis;
+   case 401 % DC-SBM with 3 classes
+        fileName='DCSBM';
+        d=4;
+        pp=1/d*ones(d,1);
+        Bl=zeros(d,d);
+        %             Bl=rand(clas,clas);
+        Bl(:,1)=[0.5,0.1,0.1,0.1];
+        Bl(:,2)=[0.2,0.2,0.1,0.1];
+        Bl(:,3)=[0.1,0.5,0.1,0.1];
+        Bl(:,4)=[0.4,0.4,0.1,0.1];
+        %             Bl=rand(clas,clas);
+        if edge==0
+           Dis=zeros(n,n);
+        else
+            Dis=[];
+        end
+        tt=rand([n,1]);
+        Label=ones(n,1);
+        thres=0;
+%         theta=betarnd(1,4,n,1);
+        theta=ones(n,1);
+%         theta=unifrnd(0.5,1.5,n,1);
+%         theta=theta;
+        for i=1:d
+            thres=thres+pp(i);
+            Label=Label+(tt>thres); %determine the block of each data
+        end
+        if edge==0
+            for i=1:n
+                Dis(i,i)=0;%diagonals are zeros
+                for j=i+1:n
+                    weight=1;%randi(10);
+                    Dis(i,j)=weight*(rand(1)<theta(i)*theta(j)*Bl(Label(i),Label(j)));
+                    Dis(j,i)=Dis(i,j);
+                end
+            end
+        else
+            for i=1:n
+                for j=i+1:n
+                    tmp=(rand(1)<theta(i)*theta(j)*Bl(Label(i),Label(j)));
+                    if tmp==1;
+                        Dis=[Dis;i,j,1];
+                    end
+                end
+            end
+        end
+        Dis=sparse(Dis);
+        X=Dis;
+    case 402 % DC-SBM with 10 classes
+        fileName='DCSBM';
+        d=6;
+        pp=1/d*ones(d,1);
+        %             Bl=rand(clas,clas);
+        Bl(:,1)=[0.5,0.1,0.1,0.1,0.1,0.1];
+        Bl(:,2)=[0.1,0.5,0.1,0.1,0.1,0.1];
+        Bl(:,3)=[0.3,0.3,0.1,0.1,0.1,0.1];
+        Bl(:,4)=[0.4,0.2,0.1,0.1,0.1,0.1];
+        Bl(:,5)=[0.2,0.4,0.1,0.1,0.1,0.1];
+        Bl(:,6)=[0.3,0.3,0.1,0.1,0.1,0.1];
+%         Bl(:,7)=[0.2,0.4,0.1,0.1,0.1,0.1,0.1,0.1];
+%         Bl(:,8)=[0.1,0.1,0.3,0.3,0.1,0.1,0.1,0.1];
+        %             Bl=rand(clas,clas);
+        if edge==0
+           Dis=zeros(n,n);
+        else
+            Dis=[];
+        end
+        tt=rand([n,1]);
+        Label=ones(n,1);
+        thres=0;
+%         theta=betarnd(1,4,n,1);
+        theta=ones(n,1);
+%         theta=unifrnd(0.5,1.5,n,1);
+%         theta=theta;
+        for i=1:d
+            thres=thres+pp(i);
+            Label=Label+(tt>thres); %determine the block of each data
+        end
+        if edge==0
+            for i=1:n
+                Dis(i,i)=0;%diagonals are zeros
+                for j=i+1:n
+                    weight=1;%randi(10);
+                    Dis(i,j)=weight*(rand(1)<theta(i)*theta(j)*Bl(Label(i),Label(j)));
+                    Dis(j,i)=Dis(i,j);
+                end
+            end
+        else
+            for i=1:n
+                for j=i+1:n
+                    tmp=(rand(1)<theta(i)*theta(j)*Bl(Label(i),Label(j)));
+                    if tmp==1;
+                        Dis=[Dis;i,j,1];
+                    end
+                end
+            end
+        end
+        Dis=sparse(Dis);
+        X=Dis;
 end
