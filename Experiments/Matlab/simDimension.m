@@ -6,8 +6,8 @@ end
 norma=true;thres1=0.7;
 if choice==1 || choice==2 || choice ==3 % top 3; all; none; none; repeat for DC-SBM
     lim=20;G1=cell(lim,rep);G2=cell(lim,rep);G3=cell(lim,rep);dim=20; ind=3;ind2=2;
-    opts = struct('Adjacency',1,'Laplacian',0,'Normalize',norma,'Discriminant',false,'Spectral',0,'LDA',1,'GNN',0,'knn',5,'dim',30);
-    optsE = opts; optsE.Principal=3;
+    opts = struct('Adjacency',1,'Laplacian',0,'Normalize',norma,'Discriminant',true,'Spectral',0,'LDA',1,'GNN',0,'knn',5,'dim',30);
+    optsE = opts; optsE.Principal=2;
 %     optsE2=optsE; optsE2.Dimension=2;
     Acc1=zeros(lim,6);Acc2=zeros(lim,6);Acc3=zeros(lim,6);
     type=300;
@@ -30,7 +30,7 @@ if choice==1 || choice==2 || choice ==3 % top 3; all; none; none; repeat for DC-
             G1{i,r}=GraphEncoderEvaluate(Dis,Label,opts);
             G2{i,r}=GraphEncoderEvaluate(Dis,Label,optsE);
 %             G3{i,r}=GraphEncoderEvaluate(Dis,Label,optsE2);
-            [Z,out]=GraphEncoder(Dis,Label,optsE);out1=out{2};out2=out{3};
+            [Z,out]=GraphEncoder(Dis,Label,optsE);out1=out.comChoice;out2=out.comScore;
             Acc3(i,1)=Acc3(i,1)+sum(out1(1:3))/3/rep;
             Acc3(i,2)=Acc3(i,2)+sum(out2(1:3))/3/rep;
             Acc3(i,3)=Acc3(i,3)+sum(out1(4:end))/(dim-3)/rep;
@@ -53,7 +53,7 @@ if choice==1 || choice==2 || choice ==3 % top 3; all; none; none; repeat for DC-
     [Z,out]=GraphEncoder(Dis,Label,opts);
     save(strcat('GEEDimension',num2str(choice),'.mat'),'choice','Acc1','Acc2','Acc3','Z','out')
     [mean(Acc1);mean(Acc2);mean(Acc3)]
-    out{2}
+    sum(out.comChoice)
 %     [std(Acc1);std(Acc2)]
 end
 
@@ -69,7 +69,7 @@ if choice==4 || choice==5 || choice==6
         case 6
             type=320;
     end
-    opts = struct('Adjacency',1,'Laplacian',0,'Normalize',norma,'Discriminant',false,'Spectral',0,'LDA',1,'GNN',0,'knn',5,'dim',30);
+    opts = struct('Adjacency',1,'Laplacian',0,'Normalize',norma,'Discriminant',true,'Spectral',0,'LDA',1,'GNN',0,'knn',5,'dim',30);
     optsE = opts; optsE.Principal=3;
 %     optsE2=optsE; optsE2.Dimension=2;
     Acc1=zeros(lim,6);Acc2=zeros(lim,6);Acc3=zeros(lim,6);
@@ -82,7 +82,7 @@ if choice==4 || choice==5 || choice==6
             G1{i,r}=GraphEncoderEvaluate(Dis,Label,opts);
             G2{i,r}=GraphEncoderEvaluate(Dis,Label,optsE);
 %             G3{i,r}=GraphEncoderEvaluate(Dis,Label,optsE2);
-            [Z,out]=GraphEncoder(Dis,Label,optsE);out1=out{2};out2=out{3};
+            [Z,out]=GraphEncoder(Dis,Label,optsE);out1=out.comChoice;out2=out.comScore;
             Acc3(i,1)=Acc3(i,1)+sum(out1(1:3))/3/rep;
             Acc3(i,2)=Acc3(i,2)+sum(out2(1:3))/3/rep;
             Acc3(i,3)=Acc3(i,3)+sum(out1(4:end))/(dim-3)/rep;
@@ -112,12 +112,12 @@ end
 % end
 if choice>=10 && choice <20
     %30-35
-    opts = struct('Adjacency',1,'Normalize',norma,'Laplacian',0,'Spectral',0,'Discriminant',false,'LDA',1,'GNN',0,'knn',0,'dim',30,'Dimension',0);
+    opts = struct('Adjacency',1,'Normalize',norma,'Laplacian',0,'Spectral',0,'Discriminant',true,'LDA',1,'GNN',0,'knn',0,'dim',30);
     ind=3;ind2=2;
     optsE = opts; optsE.Principal=3;optsE.Spectral=0;
     switch choice
         case 10
-           load('citeseer.mat');G1=Edge; %optsE.Principal=1;%4/6
+           load('citeseer.mat');G1=Edge; optsE.Principal=1;%4/6
         case 11
            load('Cora.mat');G1=Edge; %ind=2;ind2=4;% 3 out of 5
         case 12
@@ -131,7 +131,7 @@ if choice>=10 && choice <20
         case 15
            load('LastFM.mat');G1=Edge;Label=Y; %optsE.Principal=2;%kept 17/18 dimension
         case 16
-           load('Letter.mat');G1=Edge1;Label=Label1;%optsE.Principal=2; % 4/15
+           load('Letter.mat');G1=Edge1;Label=Label1;%optsE.Principal=3; % 4/15
         case 17
             load('smartphone.mat');G1=Edge; %optsE.Principal=3;%kept 53/71 dimension
         case 18
@@ -159,15 +159,15 @@ if choice>=10 && choice <20
     [Z,out]=GraphEncoder(G1,Label,optsE);
     save(strcat('GEEDimension',num2str(choice),'.mat'),'choice','Acc1','Acc2','Time1','Time2','out');
     [mean(Acc1);mean(Acc2);std(Acc1);std(Acc2);mean(Time1);mean(Time2)] %GEE; ASE; PGEE; PCA
-    [sum(out{3}),max(Label)]
+    [sum(out.comChoice),max(Label)]
 %     [std(Acc1);std(Acc2);std(Time1);std(Time2)]
 end
 
 if choice>=20 && choice <30 %noise
     %30-35
-    opts = struct('Adjacency',1,'Normalize',norma,'Laplacian',0,'Spectral',0,'Discriminant',false,'LDA',1,'GNN',0,'knn',0,'dim',30,'Dimension',0);
+    opts = struct('Adjacency',1,'Normalize',norma,'Laplacian',0,'Spectral',0,'Discriminant',true,'LDA',1,'GNN',0,'knn',0,'dim',30);
     ind=3;ind2=1;
-    optsE = opts; optsE.Principal=2;optsE.Spectral=0;
+    optsE = opts; optsE.Principal=3;optsE.Spectral=0;
     switch choice
 %        case 20
 %            load('citeseer.mat');G1=Edge; %G1=Edge+1; Label=Y; %kept 1/2 dimension
@@ -217,14 +217,14 @@ if choice>=20 && choice <30 %noise
     [Z,out]=GraphEncoder(G1,Label,optsE);
     save(strcat('GEEDimension',num2str(choice),'.mat'),'choice','Acc1','Acc2','Time1','Time2','out');
     [mean(Acc1);mean(Acc2);std(Acc1);std(Acc2);mean(Time1);mean(Time2)] %GEE; ASE; PGEE; PCA
-    [sum(out{3}),max(Label)]
+    [sum(out.comChoice),max(Label)]
 %     [std(Acc1);std(Acc2);std(Time1);std(Time2)]
 end
 
 if choice>=30 && choice <40 %fusion
-    opts = struct('Adjacency',1,'Normalize',norma,'Laplacian',0,'Spectral',0,'LDA',1,'Discriminant',false,'GNN',0,'knn',0,'dim',30,'Dimension',0);
+    opts = struct('Adjacency',1,'Normalize',norma,'Laplacian',0,'Spectral',0,'LDA',1,'Discriminant',true,'GNN',0,'knn',0,'dim',30);
     ind=3;ind2=1;%5 for Spectral
-    optsE = opts; optsE.Principal=1;optsE.Spectral=0;
+    optsE = opts; optsE.Principal=3;optsE.Spectral=0;
     switch choice
         case 30
             load('CElegans.mat');G1=Ac;G2=Ag;Label=vcols; 
@@ -265,7 +265,7 @@ if choice>=30 && choice <40 %fusion
     [Z,out]=GraphEncoder({G1,G2},Label,optsE);
     save(strcat('GEEDimension',num2str(choice),'.mat'),'choice','Acc1','Acc2','Acc3','Time1','Time2','Time3','out')
     [mean(Acc1);mean(Acc2);std(Acc1);std(Acc2);mean(Time1);mean(Time2)] %GEE; ASE; PGEE; PCA
-    [sum(out{3}),max(Label)]
+    [sum(out.comChoice),max(Label)]
 %     [std(Acc1);std(Acc2);std(Time1);std(Time2)]
 end
 
@@ -318,7 +318,7 @@ if choice==91
     myColor = brewermap(8,'Spectral');
     mc=repmat(myColor(7,:),20,1);
     mc(1:3,:)=repmat(myColor(2,:),3,1);
-    scatter(1:20,out1(3),50,mc,'filled');
+    scatter(1:20,out1.comChoice,50,mc,'filled');
 %     scatter(1:20,thres1*ones(20,1),20,myColor(5,:),'filled');
     hold off
     xlim([1,20]);xticks([1 10 20]);

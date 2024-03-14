@@ -17,8 +17,8 @@ indices = crossvalind('Kfold',Y,10);
 K=max(Y);
 error=zeros(10,3);
 time=zeros(10,3);
-normalize=1;
-classifier=1;sof=false;
+normalize=0;
+classifier=0;sof=false;
 opts1=struct('Normalize',normalize,'Refine',0,'Softmax',sof); 
 opts2=struct('Normalize',normalize,'Refine',1,'Softmax',sof); 
 opts3=struct('Normalize',normalize,'Refine',10,'Softmax',sof); 
@@ -31,7 +31,8 @@ for j=1:10
 
     for i=1:3
         tic
-        [Z1,dimMajor]=GraphEncoder(X,Y2,opts{i});
+        [Z1,out]=GraphEncoder(X,Y2,opts{i});
+        dimClass=out.dimClass;
         if classifier==1
 %             Z2 = normalize(Z1,2,'norm');
 %             Z2(isnan(Z2))=0;
@@ -40,7 +41,7 @@ for j=1:10
             error(j,i)=mean(YVal(tsn)~=YTsn);
         else
             [~,YVal]=max(Z1,[],2);
-            YVal=dimMajor(YVal);
+            YVal=dimClass(YVal);
             error(j,i)=mean(YVal(tsn)~=YTsn);
         end
         time(j,i)=toc;

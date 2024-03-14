@@ -45,27 +45,27 @@ if length(Y)~=n
 end
 
 % Initial Graph Encoder Embedding
-[Z,dimMajor,Y,idx,comChoice]=GraphEncoderMain(G,Y,Y,n,opts);
+[Z,dimClass,Y,idx,comChoice]=GraphEncoderMain(G,Y,Y,n,opts);
 
 % Refined Graph Encoder Embedding
 if opts.Refine>0
     K=size(Z,2);Y2=Y;
     for r=1:opts.Refine
         Y2=Y2+idx*K;
-        [Z2,dimMajor2,Y2,idx2,comChoice]=GraphEncoderMain(G,Y2,Y,n,opts);
+        [Z2,dimClass2,Y2,idx2,comChoice]=GraphEncoderMain(G,Y2,Y,n,opts);
         if sum(idx) <= sum(idx2)
             break;
         else
-            Z=Z2;dimMajor=dimMajor2;idx=idx2;
+            Z=Z2;dimClass=dimClass2;idx=idx2;
         end
     end
 end
 %     Z{i}=Z;%YNew{i}=tmpY;
 %Y=YNew;
-output={dimMajor,comChoice{1},comChoice{2}};
+output=struct('dimClass',dimClass,'comChoice',comChoice{1},'comScore',comChoice{2});
 
 %% Graph Encoder Embedding
-function [Z,dimMajor,Y,idx,comChoice]=GraphEncoderMain(G,Y,YOri,n,opts)
+function [Z,dimClass,Y,idx,comChoice]=GraphEncoderMain(G,Y,YOri,n,opts)
 [Y,indTrn,nk,indKN,indK]=ProcessLabel(Y,n);
 
 numG=length(G);Z=cell(numG,1);
@@ -75,7 +75,7 @@ for i=1:numG
     if s==t
         tmpZ=X*indKN;
     else
-        tmpZ=EdgeEncoderEmbed(X,Y,n,nk);
+        tmpZ=EncoderEmbedEdge(X,Y,n,nk);
     end
     if opts.Normalize
         tmpZ = normalize(tmpZ,2,'norm');
@@ -87,37 +87,27 @@ Z=horzcat(Z{:});
 
 % Apply a linear discriminant to identify which dimension corresponds to
 % which class
-[Z2,~,~,S]=EncoderDiscriminant(Z,nk,indK,opts);
+[Z2,~,~,comChoice]=EncoderDiscriminant(Z,nk,indK,opts);
 [~,YVal]=max(Z2,[],2);
-dimMajor=zeros(size(Z2,2),1);
+dimClass=zeros(size(Z2,2),1);
 for d=1:size(Z2,2)
-    dimMajor(d)=mode(YOri( (YVal==d) & indTrn));
+    dimClass(d)=mode(YOri( (YVal==d) & indTrn));
 end
 % The training indices that is mis-classfied by LDA
-idx=(dimMajor(YVal)~=YOri);
+idx=(dimClass(YVal)~=YOri);
 idx= (indTrn & idx);
+
+% Output format
 if opts.Discriminant
     Z=Z2;
-end
-
-% Find principal communities
-if opts.Principal
-    comChoice=EncoderDimension(S);
-    % if there is only one graph, and no discriminant transformation is
-    % done, keep only the principal dimensions
-    if ~opts.Discriminant
-        Z=Z(:,comChoice{2});
-    end
 else
-    comChoice={0,0};
+    if opts.Principal
+        Z=Z(:,comChoice{1});
+    end
 end
-% tmpS=0;
-% ZStd{i}=std(ZY);
-% [classMean{i},classStd{i},comScore{i},comChoice{i}]=GraphEncoderSummary(ZY,indK,K,opts);
-% ZY=ZY(:,comChoice{i});
 
-%% LDA transform function
-function [Z,U,V,S]=EncoderDiscriminant(Z,mk,indK,opts)
+%% LDA transform function + Principal Dimension Reduction
+function [Z,U,V,comChoice]=EncoderDiscriminant(Z,mk,indK,opts)
 m=sum(mk);
 K=length(mk);
 [~,p]=size(Z);
@@ -130,6 +120,23 @@ for j=1:K
     Std(j,:)=std(Z(tmp,:));
     Sigma=Sigma+cov(Z(tmp,:))*(mk(j)-1)/(m-K);
 end
+S={mu,Std};
+
+% Dimension reduction via Principal Community
+if opts.Principal
+    comChoice=EncoderDimension(S,opts.Principal);
+    tmp=comChoice{1};
+    Sigma=Sigma(tmp,tmp);
+    mu=mu(:,tmp);
+    Z=Z(:,tmp);
+    if opts.Normalize
+        Z = normalize(Z,2,'norm');
+        Z(isnan(Z))=0;
+    end
+else
+    comChoice={0,0};
+end
+
 U=pinv(Sigma);
 V=-(diag(mu*U*mu')*0.5-log(mk/m))';
 U=U*mu';
@@ -137,10 +144,9 @@ Z=Z*U+V;
 if opts.Softmax
     Z=softmax(Z')';
 end
-S={mu,Std};
 
 %% Encoder Embedding Function
-function Z=EdgeEncoderEmbed(X,Y,n,nk)
+function Z=EncoderEmbedEdge(X,Y,n,nk)
 
 Z=zeros(n,size(nk,1));
 s=size(X,1);
@@ -168,8 +174,7 @@ for i=1:s
     end
 end
 
-
-function comChoice=EncoderDimension(S)
+function comChoice=EncoderDimension(S,elbow)
 thres2=0.7;
 
 mu=S{1};Std=S{2};
@@ -181,9 +186,9 @@ comScore=comScore';
 
 tmp=sort(comScore,'descend');
 tmp(tmp==Inf)=100;
-tmp2=getElbow(tmp,3);
+tmp2=getElbow(tmp,elbow);
 tmp=(comScore>=max(tmp(tmp2(end)),thres2));
-comChoice={comScore,tmp};
+comChoice={tmp,comScore};
 %     if sum(tmp)~=0
 %         Z=Z(:,tmp);
 %     end
