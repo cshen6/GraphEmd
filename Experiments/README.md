@@ -1,12 +1,8 @@
-This folder consists of simulated and real data experiments for the following papers: 
-1. C. Shen and Q. Wang and C. E. Priebe, **"One-Hot Graph Encoder Embedding"**, IEEE Transactions on Pattern Analysis and Machine Intelligence, accepted, 2023. arXiv:2109.13098
-2. C. Shen and Y. Park and C. E. Priebe, **"Graph Encoder Ensemble for Simultaneous Vertex Embedding and Community Detection"**, submitted, 2023. arXiv:2301.11290
-3. C. Shen, J. Larson, H. Trinh, X. Qin, Y. Park, and C. E. Priebe, **"Discovering Communication Pattern Shifts in Large-Scale Networks using Encoder Embedding and Vertex Dynamics"**, submitted, 2023. 
-4. C. Shen, C. E. Priebe, J. Larson, H. Trinh, **"Synergistic Graph Fusion via Encoder Embedding"**, submitted, 2023. 
+This folder consists of simulated and real data experiments for the reference papers (see readme in the parent folder).
 
-All experiments in the paper are carried out in MATLAB2022a, located under Experiments/Matlab.
+All experiments are carried out in MATLAB2022a, located under Experiments/Matlab. We used a Windows 10 PC with Intel i-7 6850K and 64GB memory.
 
-We used a Windows 10 PC with Intel i-7 6850K and 64GB memory.
+As the GEE is continuously updated, certain experiment functions may be out-of-date. Please report in the issue if you would like to replicate an experiment, but the script does not run as intended.
 
 -----------------------------------------------------------------------------------
 **Paper 1**:

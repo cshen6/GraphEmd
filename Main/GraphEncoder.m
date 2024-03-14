@@ -36,7 +36,6 @@ if ~isfield(opts,'Principal'); opts.Principal=0; end
 if ~isfield(opts,'Laplacian'); opts.Laplacian=false; end
 if ~isfield(opts,'Discriminant'); opts.Discriminant=true; end
 if ~isfield(opts,'Softmax'); opts.Softmax=false; end
-if opts.Refine>0; opts.Discriminant=true; end
 
 % Pre-Processing
 [G,n]=ProcessGraph(G,opts); % process input graph

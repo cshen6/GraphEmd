@@ -49,7 +49,7 @@ if opts.Adjacency==1
     tic
     oot=opts;
     oot.Laplacian=false;
-    [~,ind_AEE,~,minSS]=GraphEncoder(X,K,oot);
+    [~,ind_AEE]=UnsupGraph(X,K,n,oot);
     t_AEE=toc;
     ARI_AEE=RandIndex(Y,ind_AEE);
     
@@ -78,7 +78,7 @@ end
 
 if opts.Laplacian==1
     tic
-    [~,ind_LEE,~,minSSL]=GraphEncoder(X,K,opts);
+    [~,ind_LEE]=UnsupGraph(X,K,n,opts);
     t_LEE=toc;
     ARI_LEE=RandIndex(Y,ind_LEE);
     
