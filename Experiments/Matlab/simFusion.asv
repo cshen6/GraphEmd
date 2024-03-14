@@ -193,7 +193,7 @@ end
 if choice==14
     load('Letter.mat')
     spec=0;
-    opts = struct('Adjacency',1,'Laplacian',0,'Spectral',spec,'LDA',1,'GNN',0,'knn',0,'dim',30);
+    opts = struct('Adjacency',1,'Laplacian',0,'Spectral',spec,'LDA',0,'GNN',1,'knn',5,'dim',30);
     Acc1=zeros(rep,12);Acc2=zeros(rep,12);Acc3=zeros(rep,12);Time1=zeros(rep,12);Time2=zeros(rep,12); Time3=zeros(rep,12); spc=4;
     if spec>0
         G1=edge2adj(Edge1);G2=edge2adj(Edge2);G3=edge2adj(Edge3);

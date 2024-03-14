@@ -25,7 +25,7 @@
 %% @export
 %%
 
-function Z=GraphEncoder(G,Y,opts)
+function [Z,dimMajor]=GraphEncoder(G,Y,opts)
 warning ('off','all');
 if nargin<3
     opts = struct('Normalize',true,'Refine',0,'Principal',0,'Laplacian',false,'Discriminant',true,'Softmax',false);
@@ -52,52 +52,53 @@ if ~isfield(opts,'Softmax'); opts.Softmax=false; end
 % opts.Normalize=false;
 
 % Pre-Processing
-[G,numG,n]=ProcessGraph(G,opts); % process input graph
+[G,n]=ProcessGraph(G,opts); % process input graph
 if length(Y)~=n
     disp('Input Sample Size does not match Input Label Size');
     return;
 end
 
-% Pre-Processing
-Z=cell(numG,1);
-% YNew=cell(numG,1);
+% Initial Encoder Embedding
+[Z,dimMajor,Y,idx]=GraphEncoderMain(G,Y,Y,n,opts);
 
-%[Y,indT,K,n,nk,indK]=ProcessLabel(Y,n); % process label
-
-for i=1:numG
-    X=G{i};
-    [ZY,dimMajor,Y,idx]=GraphEncoderMain(X,Y,Y,n,opts);
-    if opts.Refine>0
-        K=size(ZY,2);Y2=Y;
-        for r=1:opts.Refine
-            Y2=Y2+idx*K;
-            [ZY2,dimMajor2,Y2,idx2]=GraphEncoderMain(X,Y2,Y,n,opts);
-            if sum(idx) <= sum(idx2)
-                break;
-            else
-                ZY=ZY2;dimMajor=dimMajor2;idx=idx2;
-            end
+% Refined Encoder Embedding
+if opts.Refine>0
+    K=size(Z,2);Y2=Y;
+    for r=1:opts.Refine
+        Y2=Y2+idx*K;
+        [Z2,dimMajor2,Y2,idx2]=GraphEncoderMain(G,Y2,Y,n,opts);
+        if sum(idx) <= sum(idx2)
+            break;
+        else
+            Z=Z2;dimMajor=dimMajor2;idx=idx2;
         end
     end
-    Z{i}=ZY;%YNew{i}=tmpY;
 end
+%     Z{i}=Z;%YNew{i}=tmpY;
 %Y=YNew;
+
+function [Z,dimMajor,Y,idx]=GraphEncoderMain(G,Y,YOri,n,opts)
+[Y,indTrn,nk,indKN,indK]=ProcessLabel(Y,n);
+
+numG=length(G);
+Z=cell(numG,1);
+for i=1:numG
+    X=G{i};
+    [s,t]=size(X);
+    if s==t
+        tmpZ=X*indKN;
+    else
+        tmpZ=EdgeEncoderEmbed(X,Y,n,nk);
+    end
+    if opts.Normalize
+        tmpZ = normalize(tmpZ,2,'norm');
+        tmpZ(isnan(tmpZ))=0;
+    end
+    Z{i}=tmpZ;
+end
 Z=horzcat(Z{:});
 
-function [Z,dimMajor,Y,idx]=GraphEncoderMain(X,Y,YOri,n,opts)
-[Y,indTrn,nk,indKN,indK]=ProcessLabel(Y,n);
-[s,t]=size(X);
-if s==t
-    Z=X*indKN;
-else
-    Z=EdgeEncoderEmbed(X,Y,n,nk);
-end
-if opts.Normalize
-    Z = normalize(Z,2,'norm');
-    Z(isnan(Z))=0;
-end
-
-Z2=EncoderClassifier(Z,nk,indK,opts);
+Z2=EncoderDiscriminant(Z,nk,indK,opts);
 [~,YVal]=max(Z2,[],2);
 dimMajor=zeros(size(Z2,2),1);
 for d=1:size(Z2,2)
@@ -114,7 +115,7 @@ end
 % ZY=ZY(:,comChoice{i});
 
 %% LDA transform function
-function [Z,U,V]=EncoderClassifier(Z,mk,indK,opts)
+function [Z,U,V]=EncoderDiscriminant(Z,mk,indK,opts)
 m=sum(mk);
 K=length(mk);
 [~,p]=size(Z);
@@ -193,7 +194,7 @@ else
 end
 
 %% pre-precess input to s*3 then diagonal augment
-function [G,numG,n]=ProcessGraph(G,opts)
+function [G,n]=ProcessGraph(G,opts)
 if iscell(G)
     numG=length(G);
 else
