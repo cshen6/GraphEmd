@@ -18,7 +18,7 @@
 %%         third element is the dynamic computation running time.
 %%
 %%
-function [Z,Dynamic,Y,time]=TemporalGraph(X,Y,opts)
+function [Z,Dynamic,Y,time]=TemporalGEE(X,Y,opts)
 
 if nargin<3
     opts = struct('Common',false,'BenchTime',1,'Normalize',true,'Discriminant',false,'Softmax',false);

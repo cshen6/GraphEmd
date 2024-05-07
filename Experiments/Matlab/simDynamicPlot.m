@@ -219,7 +219,7 @@ end
 if optPlot>10
     load('anonymized_msft.mat')
     opts = struct('Common',false,'BenchTime',1);
-    [Z,Dynamic,Y,time]=TemporalGraph(G,label,opts);
+    [Z,Dynamic,Y,time]=TemporalGEE(G,label,opts);
     VD=Dynamic{1}; GD=Dynamic{3}; CD=Dynamic{2};
     % Dist=Dist+Dist';
     %%% Figure 5: two vertex dynamics one for inlier one for outlier

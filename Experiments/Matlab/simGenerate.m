@@ -2190,9 +2190,9 @@ switch option
         pp=1/d*ones(d,1);
         Bl=zeros(d,d);
         %             Bl=rand(clas,clas);
-        Bl(:,1)=[0.5,0.1,0.1];
-        Bl(:,2)=[0.3,0.3,0.1];
-        Bl(:,3)=[0.1,0.5,0.1];
+        Bl(1,:)=[0.5,0.1,0.1];
+        Bl(3,:)=[0.3,0.3,0.1];
+        Bl(2,:)=[0.1,0.5,0.1];
         if edge==0
            Dis=zeros(n,n);
         else
@@ -2201,22 +2201,23 @@ switch option
         tt=rand([n,1]);
         Label=ones(n,1);
         thres=0;
-%         theta=betarnd(1,4,n,1);
-        theta=ones(n,1);
-%         theta=unifrnd(0.5,1.5,n,1);
+        theta=betarnd(1,4,n,1);
+%         theta=ones(n,1);
+%         theta=unifrnd(0.5,2,n,1);
 %         theta=theta;
         for i=1:d
             thres=thres+pp(i);
             Label=Label+(tt>thres); %determine the block of each data
         end
+        Label=[ones(floor(n/3),1);2*ones(floor(n/3),1);3*ones(n-2*floor(n/3),1)];
         if edge==0
             for i=1:n
-                Dis(i,i)=0;%diagonals are zeros
-                for j=i+1:n
+                for j=1:n
                     weight=1;%randi(10);
                     Dis(i,j)=weight*(rand(1)<theta(i)*theta(j)*Bl(Label(i),Label(j)));
-                    Dis(j,i)=Dis(i,j);
+%                     Dis(j,i)=Dis(i,j);
                 end
+                Dis(i,i)=0;%diagonals are zeros
             end
         else
             for i=1:n
@@ -2236,10 +2237,10 @@ switch option
         pp=1/d*ones(d,1);
         Bl=zeros(d,d);
         %             Bl=rand(clas,clas);
-        Bl(:,1)=[0.5,0.1,0.1,0.1];
-        Bl(:,2)=[0.2,0.2,0.1,0.1];
-        Bl(:,3)=[0.1,0.5,0.1,0.1];
-        Bl(:,4)=[0.4,0.4,0.1,0.1];
+        Bl(1,:)=[0.5,0.1,0.1,0.1];
+        Bl(2,:)=[0.2,0.2,0.1,0.1];
+        Bl(3,:)=[0.1,0.5,0.1,0.1];
+        Bl(4,:)=[0.4,0.4,0.1,0.1];
         %             Bl=rand(clas,clas);
         if edge==0
            Dis=zeros(n,n);
@@ -2249,9 +2250,9 @@ switch option
         tt=rand([n,1]);
         Label=ones(n,1);
         thres=0;
-%         theta=betarnd(1,4,n,1);
-        theta=ones(n,1);
-%         theta=unifrnd(0.5,1.5,n,1);
+        theta=betarnd(1,4,n,1);
+%         theta=ones(n,1);
+%         theta=unifrnd(0.2,2,n,1);
 %         theta=theta;
         for i=1:d
             thres=thres+pp(i);
@@ -2259,12 +2260,12 @@ switch option
         end
         if edge==0
             for i=1:n
-                Dis(i,i)=0;%diagonals are zeros
-                for j=i+1:n
+                for j=1:n
                     weight=1;%randi(10);
                     Dis(i,j)=weight*(rand(1)<theta(i)*theta(j)*Bl(Label(i),Label(j)));
-                    Dis(j,i)=Dis(i,j);
+%                     Dis(j,i)=Dis(i,j);
                 end
+                Dis(i,i)=0;%diagonals are zeros
             end
         else
             for i=1:n
@@ -2283,12 +2284,12 @@ switch option
         d=6;
         pp=1/d*ones(d,1);
         %             Bl=rand(clas,clas);
-        Bl(:,1)=[0.5,0.1,0.1,0.1,0.1,0.1];
-        Bl(:,2)=[0.1,0.5,0.1,0.1,0.1,0.1];
-        Bl(:,3)=[0.3,0.3,0.1,0.1,0.1,0.1];
-        Bl(:,4)=[0.4,0.2,0.1,0.1,0.1,0.1];
-        Bl(:,5)=[0.2,0.4,0.1,0.1,0.1,0.1];
-        Bl(:,6)=[0.3,0.3,0.1,0.1,0.1,0.1];
+        Bl(1,:)=[0.5,0.1,0.1,0.1,0.1,0.1];
+        Bl(2,:)=[0.1,0.5,0.1,0.1,0.1,0.1];
+        Bl(3,:)=[0.3,0.3,0.1,0.1,0.1,0.1];
+        Bl(4,:)=[0.4,0.2,0.1,0.1,0.1,0.1];
+        Bl(5,:)=[0.2,0.4,0.1,0.1,0.1,0.1];
+        Bl(6,:)=[0.3,0.3,0.1,0.1,0.1,0.1];
 %         Bl(:,7)=[0.2,0.4,0.1,0.1,0.1,0.1,0.1,0.1];
 %         Bl(:,8)=[0.1,0.1,0.3,0.3,0.1,0.1,0.1,0.1];
         %             Bl=rand(clas,clas);
@@ -2310,12 +2311,162 @@ switch option
         end
         if edge==0
             for i=1:n
-                Dis(i,i)=0;%diagonals are zeros
                 for j=i+1:n
                     weight=1;%randi(10);
                     Dis(i,j)=weight*(rand(1)<theta(i)*theta(j)*Bl(Label(i),Label(j)));
-                    Dis(j,i)=Dis(i,j);
+%                     Dis(j,i)=Dis(i,j);
                 end
+                Dis(i,i)=0;%diagonals are zeros
+            end
+        else
+            for i=1:n
+                for j=i+1:n
+                    tmp=(rand(1)<theta(i)*theta(j)*Bl(Label(i),Label(j)));
+                    if tmp==1;
+                        Dis=[Dis;i,j,1];
+                    end
+                end
+            end
+        end
+        Dis=sparse(Dis);
+        X=Dis;
+    case 500 % DC-SBM with 10 classes
+        fileName='DCSBM';
+        d=4;
+        pp=1/d*ones(d,1);
+        %             Bl=rand(clas,clas);
+        Bl(1,:)=[0.5,0.3,0.1,0.1];
+        Bl(2,:)=[0.2,0.2,0.1,0.1];
+        Bl(3,:)=[0.1,0.1,0.2,0.2];
+        Bl(4,:)=[0.1,0.1,0.3,0.5];
+%         Bl(:,7)=[0.2,0.4,0.1,0.1,0.1,0.1,0.1,0.1];
+%         Bl(:,8)=[0.1,0.1,0.3,0.3,0.1,0.1,0.1,0.1];
+        %             Bl=rand(clas,clas);
+        if edge==0
+           Dis=zeros(n,n);
+        else
+            Dis=[];
+        end
+        tt=rand([n,1]);
+        Label=ones(n,1);
+        thres=0;
+        % theta=betarnd(1,4,n,1);
+        % theta=ones(n,1);
+        theta=unifrnd(0.1,1,n,1);
+%         theta=theta;
+        for i=1:d
+            thres=thres+pp(i);
+            Label=Label+(tt>thres); %determine the block of each data
+        end
+        % Label(1:n/4)=1;Label(n/4+1:n/2)=2;Label(n/2+1:n/4*3)=3;Label(n/4*3+1:n)=4;
+        if edge==0
+            for i=1:n
+                for j=i+1:n
+                    weight=1;%randi(10);
+                    Dis(i,j)=weight*(rand(1)<theta(i)*theta(j)*Bl(Label(i),Label(j)));
+%                     Dis(j,i)=Dis(i,j);
+                end
+                Dis(i,i)=0;%diagonals are zeros
+            end
+        else
+            for i=1:n
+                for j=i+1:n
+                    tmp=(rand(1)<theta(i)*theta(j)*Bl(Label(i),Label(j)));
+                    if tmp==1;
+                        Dis=[Dis;i,j,1];
+                    end
+                end
+            end
+        end
+        Dis=sparse(Dis);
+        X=Dis;
+    case 501 % DC-SBM with 10 classes
+        fileName='DCSBM';
+        d=4;
+        pp=1/d*ones(d,1);
+        %             Bl=rand(clas,clas);
+        Bl(1,:)=[0.5,0.3,0.1,0.1];
+        Bl(3,:)=[0.2,0.2,0.1,0.1];
+        Bl(2,:)=[0.1,0.1,0.2,0.2];
+        Bl(4,:)=[0.1,0.1,0.3,0.5];
+%         Bl(:,7)=[0.2,0.4,0.1,0.1,0.1,0.1,0.1,0.1];
+%         Bl(:,8)=[0.1,0.1,0.3,0.3,0.1,0.1,0.1,0.1];
+        %             Bl=rand(clas,clas);
+        if edge==0
+           Dis=zeros(n,n);
+        else
+            Dis=[];
+        end
+        tt=rand([n,1]);
+        Label=ones(n,1);
+        thres=0;
+        % theta=betarnd(1,4,n,1);
+        % theta=ones(n,1);
+        theta=unifrnd(0.1,1,n,1);
+%         theta=theta;
+        for i=1:d
+            thres=thres+pp(i);
+            Label=Label+(tt>thres); %determine the block of each data
+        end
+        % Label(1:n/4)=1;Label(n/4+1:n/2)=2;Label(n/2+1:n/4*3)=3;Label(n/4*3+1:n)=4;
+        if edge==0
+            for i=1:n
+                for j=i+1:n
+                    weight=1;%randi(10);
+                    Dis(i,j)=weight*(rand(1)<theta(i)*theta(j)*Bl(Label(i),Label(j)));
+%                     Dis(j,i)=Dis(i,j);
+                end
+                Dis(i,i)=0;%diagonals are zeros
+            end
+        else
+            for i=1:n
+                for j=i+1:n
+                    tmp=(rand(1)<theta(i)*theta(j)*Bl(Label(i),Label(j)));
+                    if tmp==1;
+                        Dis=[Dis;i,j,1];
+                    end
+                end
+            end
+        end
+        Dis=sparse(Dis);
+        X=Dis;
+    case 502 % DC-SBM with 10 classes
+        fileName='DCSBM';
+        d=5;
+        pp=1/d*ones(d,1);
+        %             Bl=rand(clas,clas);
+        Bl(1,:)=[0.5,0.3,0.3,0.1,0.1];
+        Bl(2,:)=[0.3,0.3,0.3,0.1,0.3];
+        Bl(3,:)=[0.3,0.3,0.3,0.3,0.1];
+        Bl(4,:)=[0.1,0.1,0.1,0.5,0.1];
+        Bl(5,:)=[0.1,0.1,0.1,0.1,0.5];
+%         Bl(:,7)=[0.2,0.4,0.1,0.1,0.1,0.1,0.1,0.1];
+%         Bl(:,8)=[0.1,0.1,0.3,0.3,0.1,0.1,0.1,0.1];
+        %             Bl=rand(clas,clas);
+        if edge==0
+           Dis=zeros(n,n);
+        else
+            Dis=[];
+        end
+        tt=rand([n,1]);
+        Label=ones(n,1);
+        thres=0;
+        % theta=betarnd(1,4,n,1);
+        % theta=ones(n,1);
+        theta=unifrnd(0.1,1,n,1);
+%         theta=theta;
+        for i=1:d
+            thres=thres+pp(i);
+            Label=Label+(tt>thres); %determine the block of each data
+        end
+        if edge==0
+            for i=1:n
+                for j=i+1:n
+                    weight=1;%randi(10);
+                    Dis(i,j)=weight*(rand(1)<theta(i)*theta(j)*Bl(Label(i),Label(j)));
+%                     Dis(j,i)=Dis(i,j);
+                end
+                Dis(i,i)=0;%diagonals are zeros
             end
         else
             for i=1:n

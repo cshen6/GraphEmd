@@ -43,7 +43,7 @@ if opts==1
         end
     end
     opt=struct('Normalize',normalize);
-    [Z,VD,Y,time]=TemporalGraph(G,Y,opt);
+    [Z,VD,Y,time]=TemporalGEE(G,Y,opt);
     tic
     GraphEncoder(G{1},Y(:,1));
     time(end+1)=toc;
@@ -142,7 +142,7 @@ if opts==2
 %     E(:,3)=randi(100,size(E,1),1);
 %     G={E};s=size(E,1);
 
-    [Z,VD,~,time]=TemporalGraph(G,Y(:,1));
+    [Z,VD,~,time]=TemporalGEE(G,Y(:,1));
     tic
     GraphEncoder(G{1},Y(:,1));
     time(end+1)=toc;

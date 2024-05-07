@@ -1,6 +1,6 @@
 %% Compute the unsupervised Graph Encoder Embedding.
 
-function [Z,YNew]=UnsupGraph(G,Y,n,opts)
+function [Z,YNew]=UnsupGEE(G,Y,n,opts)
 warning ('off','all');
 if nargin<4
     opts = struct('MaxIter',30,'MaxIterKMeans',3,'Replicates',3,'Normalize',true,'Refine',0,'Principal',0,'Laplacian',false,'Discriminant',false,'Softmax',false);

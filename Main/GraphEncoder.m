@@ -28,15 +28,23 @@
 function [Z,output]=GraphEncoder(G,Y,opts)
 warning ('off','all');
 if nargin<3
-    opts = struct('Normalize',true,'Refine',0,'Principal',0,'Laplacian',false,'Discriminant',true,'Softmax',false);
+    opts = struct('Normalize',true,'Principal',0,'Laplacian',false,'Discriminant',true,'Softmax',false,'BenchY',Y);
 end
 if ~isfield(opts,'Normalize'); opts.Normalize=true; end
-if ~isfield(opts,'Refine'); opts.Refine=0; end
 if ~isfield(opts,'Principal'); opts.Principal=0; end
+% if ~isfield(opts,'DiagAugment'); opts.DiagAugment=true; end
 if ~isfield(opts,'Laplacian'); opts.Laplacian=false; end
 if ~isfield(opts,'Discriminant'); opts.Discriminant=true; end
 if ~isfield(opts,'Softmax'); opts.Softmax=false; end
+if ~isfield(opts,'BenchY'); opts.BenchY=Y; end
+if opts.Softmax
+    opts.Discriminant=true;
+end
+if opts.Discriminant
+    opts.Principal=0;
+end
 
+% opts.Refine=5;
 % Pre-Processing
 [G,n]=ProcessGraph(G,opts); % process input graph
 if length(Y)~=n
@@ -44,30 +52,7 @@ if length(Y)~=n
     return;
 end
 
-% Initial Graph Encoder Embedding
-[Z,dimClass,Y,idx,comChoice]=GraphEncoderMain(G,Y,Y,n,opts);
-
-% Refined Graph Encoder Embedding
-if opts.Refine>0
-    K=size(Z,2);Y2=Y;
-    for r=1:opts.Refine
-        Y2=Y2+idx*K;
-        [Z2,dimClass2,Y2,idx2,comChoice]=GraphEncoderMain(G,Y2,Y,n,opts);
-        if sum(idx) <= sum(idx2)
-            break;
-        else
-            Z=Z2;dimClass=dimClass2;idx=idx2;
-        end
-    end
-end
-%     Z{i}=Z;%YNew{i}=tmpY;
-%Y=YNew;
-output=struct('dimClass',dimClass,'comChoice',comChoice{1},'comScore',comChoice{2});
-
-%% Graph Encoder Embedding
-function [Z,dimClass,Y,idx,comChoice]=GraphEncoderMain(G,Y,YOri,n,opts)
 [Y,indTrn,nk,indKN,indK]=ProcessLabel(Y,n);
-
 numG=length(G);Z=cell(numG,1);
 for i=1:numG
     X=G{i};
@@ -78,8 +63,10 @@ for i=1:numG
         tmpZ=EncoderEmbedEdge(X,Y,n,nk);
     end
     if opts.Normalize
-        tmpZ = normalize(tmpZ,2,'norm');
+        [tmpZ,~,normZ] = normalize(tmpZ,2,'norm');
         tmpZ(isnan(tmpZ))=0;
+    else
+        normZ=0;
     end
     Z{i}=tmpZ;
 end
@@ -88,23 +75,51 @@ Z=horzcat(Z{:});
 % Apply a linear discriminant to identify which dimension corresponds to
 % which class
 [Z2,~,~,comChoice]=EncoderDiscriminant(Z,nk,indK,opts);
+% Z3=softmax(Z2')';
 [~,YVal]=max(Z2,[],2);
 dimClass=zeros(size(Z2,2),1);
 for d=1:size(Z2,2)
-    dimClass(d)=mode(YOri( (YVal==d) & indTrn));
+    dimClass(d)=mode(opts.BenchY( (YVal==d) & indTrn));
 end
 % The training indices that is mis-classfied by LDA
-idx=(dimClass(YVal)~=YOri);
+idx=(dimClass(YVal)~=opts.BenchY);
 idx= (indTrn & idx);
+% idx= (indTrn & (ZMax<thres)); %all training data where embedding probability is less than thres
+% for i=1:max(YOri) %same as above, but also considering the original class
+%     tmpZ=sum(Z3(:,dimClass==i),2);
+%     idx= (idx & (tmpZ<thres));
+% end
+
+% K=size(indK,2);
+% for i=1:K
+%     tmpIdx=find(indK(:,i) & idx);
+%     if length(tmpIdx)==nk(i) && nk(i)>5
+%         try
+%             tmpG=X(tmpIdx,tmpIdx)+0.001;
+% %             (sum(tmpG,2)*sum(tmpG)).^0.5
+% %             tmpG=tmpG./(sum(tmpG,2)).^0.5;
+%             tmpY=kmeans(tmpG,2,'Distance','Cosine','MaxIter',30);
+%             tmpY=(tmpY==1);
+%             idx(tmpIdx(tmpY))=0;
+%         catch
+%             idx(tmpIdx)=0;
+%         end
+%     end
+% end
 
 % Output format
 if opts.Discriminant
     Z=Z2;
+    if opts.Softmax
+        Z=softmax(Z')';
+    end
 else
     if opts.Principal
         Z=Z(:,comChoice{1});
     end
 end
+
+output=struct('dimClass',dimClass,'comChoice',comChoice{1},'comScore',comChoice{2},'Y',Y,'norm',normZ,'idx',idx);
 
 %% LDA transform function + Principal Dimension Reduction
 function [Z,U,V,comChoice]=EncoderDiscriminant(Z,mk,indK,opts)
@@ -120,11 +135,10 @@ for j=1:K
     Std(j,:)=std(Z(tmp,:));
     Sigma=Sigma+cov(Z(tmp,:))*(mk(j)-1)/(m-K);
 end
-S={mu,Std};
 
 % Dimension reduction via Principal Community
 if opts.Principal
-    comChoice=EncoderDimension(S,opts.Principal);
+    comChoice=EncoderDimension({mu,Std},opts.Principal);
     tmp=comChoice{1};
     Sigma=Sigma(tmp,tmp);
     mu=mu(:,tmp);
@@ -141,9 +155,6 @@ U=pinv(Sigma);
 V=-(diag(mu*U*mu')*0.5-log(mk/m))';
 U=U*mu';
 Z=Z*U+V;
-if opts.Softmax
-    Z=softmax(Z')';
-end
 
 %% Encoder Embedding Function
 function Z=EncoderEmbedEdge(X,Y,n,nk)
@@ -208,7 +219,10 @@ for i=1:numG
     [s,t]=size(X);
     if s==t % graph is matrix input
         n=max(s,n);
-        if opts.Laplacian==true 
+%         if opts.DiagAugment
+%             X=X+eye(s);
+%         end
+        if opts.Laplacian
             D=sum(X,2);
             D=D.^-0.5;
             X=D'*X*D;
@@ -218,7 +232,7 @@ for i=1:numG
             X=[X,ones(s,1)];
         end
         n=max(max(max(X(:,1:2))),n);
-        if opts.Laplacian==true % convert the edge weight from raw weight to Laplacian
+        if opts.Laplacian % convert the edge weight from raw weight to Laplacian
             D=zeros(n,1);
             for j=1:s
                 a=X(j,1);
@@ -234,12 +248,11 @@ for i=1:numG
                 X(j,3)=X(j,3)*D(X(j,1))*D(X(j,2));
             end
         end
+%         if opts.DiagAugment
+%             XNew=[1:n;1:n;ones(1,n)]';
+%             X=[X;XNew];
+%         end
     end
-    %     if opts.DiagAugment==true
-    %         XNew=[1:n;1:n;ones(1,n)]';
-    %         tmpG=[tmpG;XNew];
-    %         s=s+n;
-    %     end
     G{i}=X;
 end
 
