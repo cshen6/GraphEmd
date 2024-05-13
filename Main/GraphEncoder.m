@@ -28,18 +28,18 @@
 function [Z,output]=GraphEncoder(G,Y,opts)
 warning ('off','all');
 if nargin<3
-    opts = struct('Normalize',true,'Principal',0,'Laplacian',false,'Discriminant',true,'Softmax',false,'BenchY',Y);
+    opts = struct('Normalize',true,'DiagAugment',false,'Principal',0,'Laplacian',false,'Discriminant',true);
 end
 if ~isfield(opts,'Normalize'); opts.Normalize=true; end
+if ~isfield(opts,'DiagAugment'); opts.DiagAugment=false; end
 if ~isfield(opts,'Principal'); opts.Principal=0; end
-% if ~isfield(opts,'DiagAugment'); opts.DiagAugment=true; end
 if ~isfield(opts,'Laplacian'); opts.Laplacian=false; end
 if ~isfield(opts,'Discriminant'); opts.Discriminant=true; end
-if ~isfield(opts,'Softmax'); opts.Softmax=false; end
-if ~isfield(opts,'BenchY'); opts.BenchY=Y; end
-if opts.Softmax
-    opts.Discriminant=true;
-end
+% if ~isfield(opts,'Softmax'); opts.Softmax=false; end
+% if ~isfield(opts,'BenchY'); opts.BenchY=Y; end
+% if opts.Softmax
+%     opts.Discriminant=true;
+% end
 if opts.Discriminant
     opts.Principal=0;
 end
@@ -75,17 +75,13 @@ Z=horzcat(Z{:});
 % Apply a linear discriminant to identify which dimension corresponds to
 % which class
 [Z2,~,~,comChoice]=EncoderDiscriminant(Z,nk,indK,opts);
-% Z3=softmax(Z2')';
 [~,YVal]=max(Z2,[],2);
-dimClass=zeros(size(Z2,2),1);
-for d=1:size(Z2,2)
-    dimClass(d)=mode(opts.BenchY( (YVal==d) & indTrn));
-end
-% The training indices that is mis-classfied by LDA
-idx=(dimClass(YVal)~=opts.BenchY);
+idx=(YVal~=Y);
 idx= (indTrn & idx);
+YVal(~indTrn)=0;
+% thres=0.95;
 % idx= (indTrn & (ZMax<thres)); %all training data where embedding probability is less than thres
-% for i=1:max(YOri) %same as above, but also considering the original class
+% for i=1:max(opts.BenchY) %same as above, but also considering the original class
 %     tmpZ=sum(Z3(:,dimClass==i),2);
 %     idx= (idx & (tmpZ<thres));
 % end
@@ -110,16 +106,13 @@ idx= (indTrn & idx);
 % Output format
 if opts.Discriminant
     Z=Z2;
-    if opts.Softmax
-        Z=softmax(Z')';
-    end
 else
     if opts.Principal
         Z=Z(:,comChoice{1});
     end
 end
 
-output=struct('dimClass',dimClass,'comChoice',comChoice{1},'comScore',comChoice{2},'Y',Y,'norm',normZ,'idx',idx);
+output=struct('comChoice',comChoice{1},'comScore',comChoice{2},'Y',Y,'YVal',YVal,'norm',normZ,'idx',idx);
 
 %% LDA transform function + Principal Dimension Reduction
 function [Z,U,V,comChoice]=EncoderDiscriminant(Z,mk,indK,opts)
@@ -219,9 +212,9 @@ for i=1:numG
     [s,t]=size(X);
     if s==t % graph is matrix input
         n=max(s,n);
-%         if opts.DiagAugment
-%             X=X+eye(s);
-%         end
+        if opts.DiagAugment
+            X=X+eye(s);
+        end
         if opts.Laplacian
             D=sum(X,2);
             D=D.^-0.5;
@@ -248,10 +241,10 @@ for i=1:numG
                 X(j,3)=X(j,3)*D(X(j,1))*D(X(j,2));
             end
         end
-%         if opts.DiagAugment
-%             XNew=[1:n;1:n;ones(1,n)]';
-%             X=[X;XNew];
-%         end
+        if opts.DiagAugment
+            XNew=[1:n;1:n;ones(1,n)]';
+            X=[X;XNew];
+        end
     end
     G{i}=X;
 end

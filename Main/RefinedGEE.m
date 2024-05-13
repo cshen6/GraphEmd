@@ -25,22 +25,19 @@
 %% @export
 %%
 
-function [Z,output1]=RefinedGEE(G,Y,opts)
+function [Z,output]=RefinedGEE(G,Y,opts)
 warning ('off','all');
 if nargin<3
-    opts = struct('Normalize',true,'Refine',0,'Principal',0,'Laplacian',false,'Discriminant',true,'Softmax',false);
+    opts = struct('Normalize',true,'RefineK',3,'RefineY',3,'eps',0.4);
 end
 if ~isfield(opts,'Normalize'); opts.Normalize=true; end
-if ~isfield(opts,'Refine'); opts.Refine=0; end
-if ~isfield(opts,'Principal'); opts.Principal=0; end
-% if ~isfield(opts,'DiagAugment'); opts.DiagAugment=true; end
-if ~isfield(opts,'Laplacian'); opts.Laplacian=false; end
-if ~isfield(opts,'Discriminant'); opts.Discriminant=true; end
-if ~isfield(opts,'Softmax'); opts.Softmax=false; end
-if (opts.Refine || opts.Discriminant) && opts.Principal
-    opts.Principal=0;
-end
-opts.BenchY=Y;
+if ~isfield(opts,'RefineK'); opts.RefineK=3; end
+if ~isfield(opts,'RefineY'); opts.RefineY=3; end
+if ~isfield(opts,'eps'); opts.eps=0.4; end
+opts.Discriminant = true;
+opts.Principal=0;
+opts.eps=0.4;
+% opts.BenchY=Y;
 
 % opts.Refine=5;
 % Pre-Processing
@@ -49,31 +46,40 @@ opts.BenchY=Y;
 %     disp('Input Sample Size does not match Input Label Size');
 %     return;
 % end
-eps=0;
 
 % Initial Graph Encoder Embedding
-[Z,output1]=GraphEncoder(G,Y,opts);
+[Z,output]=GraphEncoder(G,Y,opts);
+K=size(Z,2);
+
 % Refined Graph Encoder Embedding
-if opts.Refine>0
-    ZNew=cell(opts.Refine+1,1);
-    ZNew{1}=Z;
-    K=size(Z,2);Y2=Y;
-    for r=1:opts.Refine
-        Y2=Y2+output1.idx*K;
-        [Z2,output2]=GraphEncoder(G,Y2,opts);
-        if sum(output1.idx)-sum(output2.idx)<0
-            r=r-1;
+if opts.RefineK>0
+    ZK=cell(opts.RefineK,1);
+    output1=output;idx=output1.idx;
+    for rK=1:opts.RefineK
+        Y1=output1.YVal+output1.idx*K;
+        [Z2,output2]=GraphEncoder(G,Y1,opts);
+        % [sum(idx),sum(output2.idx & idx)]
+        if sum(idx)-sum(output2.idx & idx)<= max(sum(idx)*opts.eps,2)
             break;
         else
-            % Z=Z2;
-            % Z=[Z,Z2];
-            ZNew{r+1}=Z2;output1=output2;
-            %dimClass=dimClass2;idx=idx2;%normZ=[normZ,norm2];
+            ZK{rK,1}=Z2;output1=output2;idx=output2.idx & idx;
         end
     end
-    % Z=ZNew{r+1};
-    Z=horzcat(ZNew{1:r+1});
+    ZK=horzcat(ZK{:});
+    Z=[Z,ZK];
 end
-%     Z{i}=Z;%YNew{i}=tmpY;
-%Y=YNew;
-% output=struct('dimClass',dimClass,'comChoice',comChoice{1},'comScore',comChoice{2},'Y',Y,'norm',normZ,'idx',idx);
+
+if opts.RefineY>0
+    ZY=cell(opts.RefineY,1);
+    output1=output;idx=output1.idx;
+    for r=1:opts.RefineY
+        [Z2,output2]=GraphEncoder(G,output1.YVal,opts);
+        if sum(idx)-sum(output2.idx & idx)<= max(sum(idx)*opts.eps,2)
+            break;
+        else
+            ZY{r}=Z2;output1=output2;idx=output2.idx & idx;
+        end
+    end
+    ZY=horzcat(ZY{:});
+    Z=[Z,ZY];
+end

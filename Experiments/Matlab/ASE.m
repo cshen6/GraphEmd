@@ -15,5 +15,11 @@ if Lap
         Adj(:,j)=Adj(:,j)/D(j)./D';
     end
 end
-[~,S,V]=svds(Adj,d);
+[~,S,V]=svds(sparse(Adj),d);
 Z=V(:,1:d)*S(1:d,1:d)^0.5;
+% 
+% 
+% 
+% [~,S,V]=svds(sparse(A),d);
+        % Z=S^0.5*V';
+        % Z=reshape(Z,d,n,t);

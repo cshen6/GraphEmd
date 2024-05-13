@@ -13,4 +13,4 @@ Adj=zeros(n,n);
 for i=1:size(Edge,1)
     Adj(Edge(i,1),Edge(i,2))=1;
 end
-Adj=Adj+Adj';
+Adj=double(Adj+Adj'>0);

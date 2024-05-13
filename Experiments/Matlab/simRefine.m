@@ -7,7 +7,7 @@ end
 if nargin<3
 cvf=10;
 end
-thres=0.98;
+% thres=0.98;
 % if choice==1
 %     load('Wiki_Data.mat');
 %     opts = struct('Normalize',true,'Refine',10,'Principal',0,'Laplacian',false,'Discriminant',true,'Softmax',true);
@@ -36,74 +36,80 @@ thres=0.98;
 % end
 
 if choice>=10 && choice <30
+    skip=1;
     switch choice
         case 10
-            load('Cora.mat');X=edge2adj(Edge);Y=Label;
+            load('adjnoun.mat'); X=Adj;
         case 11
             load('citeseer.mat');X=edge2adj(Edge);Y=Label;
-        case 12 %remove
-            load('email.mat'); X=AdjOri;
+        case 12
+            load('Cora.mat');X=edge2adj(Edge);Y=Label;
         case 13 
             load('karate.mat'); X=G;
-        case 14 %remove
-            load('IIP.mat'); X=Adj;
+        case 14
+            load('IIP.mat'); X=double(Adj+Adj'>0);
         case 15
-            load('lastfm.mat'); X=AdjOri;
+            load('letter.mat'); X=edge2adj(Edge1);Y=Label1;LeidenY=LeidenY1;
         case 16
             load('polblogs.mat');X=Adj;
         case 17
             load('pubmed.mat');X=edge2adj(Edge);Y=Label;
         case 18
-            load('CElegans.mat');X=Ac;Y=vcols;LeidenY=AcLeidenY;
-        case 19
-            load('CElegans.mat');X=Ag;Y=vcols;LeidenY=AgLeidenY;
+            load('soc-political-retweet.mat'); X=edge2adj(Edge);Y=Label;    
+            
         case 20
-            load('Gene.mat'); X=AdjOri;
-        case 21 % improve
-            load('Wiki_Data.mat'); X=TE;Y=Label;LeidenY=TELeidenY;
-        case 22 % improve
-            load('Wiki_Data.mat'); X=TF;Y=Label;LeidenY=TFLeidenY;
+            load('CElegans.mat');X=double(Ac+Ac'>0);Y=vcols;LeidenY=AcLeidenY;
+        case 21
+            load('CElegans.mat');X=double(Ag+Ag'>0);Y=vcols;LeidenY=AgLeidenY;
+        case 22 %RGEE better
+            load('email.mat'); X=Adj;
         case 23
-            load('Wiki_Data.mat'); X=GEAdj;Y=Label;LeidenY=GELeidenY;
-        case 24
-            load('Wiki_Data.mat'); X=GFAdj;Y=Label;LeidenY=GFLeidenY;
-        case 25
-            load('adjnoun.mat'); X=Adj;
-        % case 27
-        %     load('letter.mat'); X=edge2adj(Edge1);Y=Label1;LeidenY=LeidenY1;
-        % case 28
-        %     load('protein.mat'); X=edge2adj(Edge);Y=Label;
-        % case 29
-        %     load('soc-political-retweet.mat'); X=edge2adj(Edge);Y=Label;
-        case 26
-            load('SBM.mat'); X=Adj1;Y=Y1;LeidenY=LeidenY1;%Y(Y==2)=1;Y(Y==3)=4;Y(Y==4)=2;
+            load('Gene.mat'); X=AdjOri;
+        case 24 %RGEE better
+            load('lastfm.mat'); X=Adj;
+        case 25 % improve
+            load('Wiki_Data.mat'); X=TE;Y=Label;LeidenY=TELeidenY;
+        case 26 % improve
+            load('Wiki_Data.mat'); X=TF;Y=Label;LeidenY=TFLeidenY;
         case 27
-            load('SBM.mat'); X=Adj1;Y=Y1;LeidenY=LeidenY1;Y(Y==2)=1;Y(Y==3)=4;Y(Y==4)=2;
+            load('Wiki_Data.mat'); X=GEAdj;Y=Label;LeidenY=GELeidenY;
         case 28
-            load('SBM.mat'); X=Adj2;Y=Y2;LeidenY=LeidenY2;%Y(Y==2)=1;Y(Y==3)=4;Y(Y==4)=2;
-        case 29
-            load('SBM.mat'); X=Adj2;Y=Y2;LeidenY=LeidenY2;Y(Y==2)=1;Y(Y==3)=4;Y(Y==4)=2;
+            load('Wiki_Data.mat'); X=GFAdj;Y=Label;LeidenY=GFLeidenY;
     end
     %RefineEvaluate(X,Y);
     K=max(Y);
-    tic
-    %[Z]=UnsupGraph(X,max(Y)*5,length(Y));
-    [ZASE]=ASE(X,20);
-    ZLeiden=GraphEncoder(X,LeidenY);
-    tt=toc;
+    if skip==1
+    else
+        tic
+        %[Z]=UnsupGraph(X,max(Y)*5,length(Y));
+        dim=20;
+        [ZASE]=ASE(X,dim);
+        tt1=toc;
+        tic
+        % ZLSE = node2vec(X+X', 128, 10, 80, 1, 1);
+        [ZLSE]=ASE(Lap(X),dim);
+        % ZLeiden=GraphEncoder(X,LeidenY);
+        tt2=toc;
+    end
     % tic
     % [Z2]=ASE(X,10,true);
     % tt2=toc;
-    error=zeros(rep,9);time=zeros(rep,9);
+    error1=zeros(rep,6);error2=zeros(rep,4);time1=zeros(rep,6);time2=zeros(rep,4);
     for r=1:rep
         indices=crossvalind('Kfold',Y,cvf); 
+        if skip==1
+        else
         tmp=AttributeEvaluate({ZASE,X},Y,indices); %K=6
-        error(r,1:3)=tmp(1,:);time(r,1:3)=tmp(2,:)+tt;
-        tmp=AttributeEvaluate({ZLeiden,X},Y,indices); %K=6
-        error(r,4:6)=tmp(1,:);time(r,4:6)=tmp(2,:);
+        error1(r,1:3)=tmp(1,:);time1(r,1:3)=tmp(2,:)+tt1;
+        tmp=AttributeEvaluate({ZLSE,X},Y,indices); %K=6
+        error1(r,4:6)=tmp(1,:);time1(r,4:6)=tmp(2,:)+tt2;
+        end
         [tmp,tmp1]=RefineEvaluate(X,Y,indices);
-        error(r,7:9)=mean(tmp);time(r,7:9)=mean(tmp1);
+        error2(r,1:4)=mean(tmp);time2(r,1:4)=mean(tmp1);
     end
+    [mean(error1);std(error1);]
+    [mean(error2);std(error2);]
+    save(strcat('GraphRefine',num2str(choice),'CV',num2str(cvf),'.mat'),'choice','error1','time1','error2','time2','cvf');
     % ARI=zeros(4,1);
     % YASE=kmeans(ZASE,K);ARI(1)=RandIndex(Y,YASE);
     % ARI(3)=RandIndex(Y,LeidenY+1);
@@ -111,86 +117,103 @@ if choice>=10 && choice <30
     % ARI(4)=RandIndex(Y,Y2);
     % [~,Y2]=UnsupGEE(X,K,size(X,1));
     % ARI(2)=RandIndex(Y,Y2);
-    [mean(error);std(error);mean(time);std(time)]
     % ARI
-    save(strcat('GraphRefine',num2str(choice),'CV',num2str(cvf),'.mat'),'choice','error','time','cvf');
 end
 
 if choice>=30 && choice<=40
     load('Wiki_Data.mat'); Y=Label;
-    error=zeros(rep,9);
-    tic
+    error1=zeros(rep,6);error2=zeros(rep,4);time1=zeros(rep,6);time2=zeros(rep,4);dim=20;
     if choice==30 % improve
         X={TE,TF};
         % [Z1]=UnsupGraph(TE,max(Y)*5,length(Y));[Z2]=UnsupGraph(TF,max(Y)*5,length(Y));
         % Z=[Z1,Z2];
-        ZASE=ASE([TE,TF],20);
-        ZLeidenTE=GraphEncoder(TE,TELeidenY);ZLeidenTF=GraphEncoder(TF,TFLeidenY);ZLeiden=[ZLeidenTE,ZLeidenTF];
+        tic;ZASE=ASE([X{1},X{2}],dim);n=size(X{1},1);Z1=[ZASE(1:n,:),ZASE(n+1:2*n,:)];t1=toc;
+        tic;ZLSE=ASE([Lap(X{1}),Lap(X{2})],dim);Z2=[ZLSE(1:n,:),ZLSE(n+1:2*n,:)];t2=toc;
+        % ZLeidenTE=GraphEncoder(TE,TELeidenY);ZLeidenTF=GraphEncoder(TF,TFLeidenY);ZLeiden=[ZLeidenTE,ZLeidenTF];
     end
     if choice==31 % improve
         X={TE,GEAdj};
         % [Z1]=UnsupGraph(TE,max(Y)*5,length(Y));[Z2]=UnsupGraph(TF,max(Y)*5,length(Y));
         % Z=[Z1,Z2];
-        ZASE=ASE([TE,GEAdj],20);
-        ZLeidenTE=GraphEncoder(TE,TELeidenY);ZLeidenTF=GraphEncoder(GEAdj,GELeidenY);ZLeiden=[ZLeidenTE,ZLeidenTF];
+        tic;ZASE=ASE([X{1},X{2}],dim);n=size(X{1},1);Z1=[ZASE(1:n,:),ZASE(n+1:2*n,:)];t1=toc;
+        tic;ZLSE=ASE([Lap(X{1}),Lap(X{2})],dim);Z2=[ZLSE(1:n,:),ZLSE(n+1:2*n,:)];t2=toc;
+        % ZLeidenTE=GraphEncoder(TE,TELeidenY);ZLeidenTF=GraphEncoder(GEAdj,GELeidenY);ZLeiden=[ZLeidenTE,ZLeidenTF];
     end
     if choice==32 % improve
         X={TE,GFAdj};
         % [Z1]=UnsupGraph(TE,max(Y)*5,length(Y));[Z2]=UnsupGraph(TF,max(Y)*5,length(Y));
         % Z=[Z1,Z2];
-        ZASE=ASE([TE,GFAdj],20);
-        ZLeidenTE=GraphEncoder(TF,TFLeidenY);ZLeidenTF=GraphEncoder(GFAdj,GFLeidenY);ZLeiden=[ZLeidenTE,ZLeidenTF];
+        tic;ZASE=ASE([X{1},X{2}],dim);n=size(X{1},1);Z1=[ZASE(1:n,:),ZASE(n+1:2*n,:)];t1=toc;
+        tic;ZLSE=ASE([Lap(X{1}),Lap(X{2})],dim);Z2=[ZLSE(1:n,:),ZLSE(n+1:2*n,:)];t2=toc;
     end
     if choice==33 % improve
         X={TE,TF,GEAdj};
         % [Z1]=UnsupGraph(TE,max(Y)*5,length(Y));[Z2]=UnsupGraph(TF,max(Y)*5,length(Y));
         % Z=[Z1,Z2];
-        ZASE=ASE([TE,TF,GEAdj],20);
-        ZLeidenTE=GraphEncoder(TF,TFLeidenY);ZLeidenTF=GraphEncoder(TF,TFLeidenY);ZLeidenGE=GraphEncoder(GEAdj,GELeidenY);ZLeiden=[ZLeidenTE,ZLeidenTF,ZLeidenGE];
+        tic;ZASE=ASE([X{1},X{2},X{3}],dim);n=size(X{1},1);Z1=[ZASE(1:n,:),ZASE(n+1:2*n,:),ZASE(2*n+1:3*n,:)];t1=toc;
+        tic;ZLSE=ASE([Lap(X{1}),Lap(X{2}),Lap(X{3})],dim);Z2=[ZLSE(1:n,:),ZLSE(n+1:2*n,:),ZLSE(2*n+1:3*n,:)];t2=toc;
     end
     if choice==34 % improve
         X={TE,TF,GFAdj};
         % [Z1]=UnsupGraph(TE,max(Y)*5,length(Y));[Z2]=UnsupGraph(TF,max(Y)*5,length(Y));
         % Z=[Z1,Z2];
-        ZASE=ASE([TE,TF,GFAdj],20);
-        ZLeidenTE=GraphEncoder(TF,TFLeidenY);ZLeidenTF=GraphEncoder(TF,TFLeidenY);ZLeidenGE=GraphEncoder(GFAdj,GFLeidenY);ZLeiden=[ZLeidenTE,ZLeidenTF,ZLeidenGE];
+        tic;ZASE=ASE([X{1},X{2},X{3}],dim);n=size(X{1},1);Z1=[ZASE(1:n,:),ZASE(n+1:2*n,:),ZASE(2*n+1:3*n,:)];t1=toc;
+        tic;ZLSE=ASE([Lap(X{1}),Lap(X{2}),Lap(X{3})],dim);Z2=[ZLSE(1:n,:),ZLSE(n+1:2*n,:),ZLSE(2*n+1:3*n,:)];t2=toc;
     end
     if choice==35 % improve
+        X={TE,GEAdj,GFAdj};
+        % [Z1]=UnsupGraph(TE,max(Y)*5,length(Y));[Z2]=UnsupGraph(TF,max(Y)*5,length(Y));
+        % Z=[Z1,Z2];
+        tic;ZASE=ASE([X{1},X{2},X{3}],dim);n=size(X{1},1);Z1=[ZASE(1:n,:),ZASE(n+1:2*n,:),ZASE(2*n+1:3*n,:)];t1=toc;
+        tic;ZLSE=ASE([Lap(X{1}),Lap(X{2}),Lap(X{3})],dim);Z2=[ZLSE(1:n,:),ZLSE(n+1:2*n,:),ZLSE(2*n+1:3*n,:)];t2=toc;
+    end
+    if choice==36 % improve
+        X={TF,GEAdj,GFAdj};
+        % [Z1]=UnsupGraph(TE,max(Y)*5,length(Y));[Z2]=UnsupGraph(TF,max(Y)*5,length(Y));
+        % Z=[Z1,Z2];
+        tic;ZASE=ASE([X{1},X{2},X{3}],dim);n=size(X{1},1);Z1=[ZASE(1:n,:),ZASE(n+1:2*n,:),ZASE(2*n+1:3*n,:)];t1=toc;
+        tic;ZLSE=ASE([Lap(X{1}),Lap(X{2}),Lap(X{3})],dim);Z2=[ZLSE(1:n,:),ZLSE(n+1:2*n,:),ZLSE(2*n+1:3*n,:)];t2=toc;
+    end
+    if choice==37 % improve
         X={TE,TF,GEAdj,GFAdj};
         % [Z1]=UnsupGraph(TE,max(Y)*5,length(Y));[Z2]=UnsupGraph(TF,max(Y)*5,length(Y));[Z3]=UnsupGraph(GEAdj,max(Y)*5,length(Y));[Z4]=UnsupGraph(GFAdj,max(Y)*5,length(Y));
         % Z=[Z1,Z2,Z3,Z4];
-        ZASE=ASE([TE,TF,GEAdj,GFAdj],20);
-        ZLeidenTE=GraphEncoder(TF,TFLeidenY);ZLeidenTF=GraphEncoder(TF,TFLeidenY);ZLeidenGE=GraphEncoder(GEAdj,GELeidenY);ZLeidenGF=GraphEncoder(GFAdj,GFLeidenY);ZLeiden=[ZLeidenTE,ZLeidenTF,ZLeidenGE,ZLeidenGF];
+        tic;ZASE=ASE([X{1},X{2},X{3},X{4}],dim);n=size(X{1},1);Z1=[ZASE(1:n,:),ZASE(n+1:2*n,:),ZASE(2*n+1:3*n,:),ZASE(3*n+1:4*n,:)];t1=toc;
+        tic;ZLSE=ASE([Lap(X{1}),Lap(X{2}),Lap(X{3}),Lap(X{4})],dim);Z2=[ZLSE(1:n,:),ZLSE(n+1:2*n,:),ZLSE(2*n+1:3*n,:),ZLSE(3*n+1:4*n,:)];t2=toc;
     end
-    if choice==36 % improve
-        load('CElegans.mat');X={Ac,Ag};Y=vcols;
-        ZASE=ASE([Ac,Ag],20);
-        ZLeidenTE=GraphEncoder(Ac,AcLeidenY);ZLeidenTF=GraphEncoder(Ag,AgLeidenY);ZLeiden=[ZLeidenTE,ZLeidenTF];
+    if choice==38 % improve
+        load('CElegans.mat');X={double(Ac+Ac'>0),double(Ag+Ag'>0)};Y=vcols;
+        tic;ZASE=ASE([X{1},X{2}],dim);n=size(X{1},1);Z1=[ZASE(1:n,:),ZASE(n+1:2*n,:)];t1=toc;
+        tic;ZLSE=ASE([Lap(X{1}),Lap(X{2})],dim);Z2=[ZLSE(1:n,:),ZLSE(n+1:2*n,:)];t2=toc;
     end
-    % if choice==32 % improve
-    %     load('IMDB.mat');X={Edge1,Edge2};Y=Label2;
+    % if choice==40 % improve
+    %     load('IMDB.mat');X={Edge1,Edge2};Y=Label2;Z1=0;Z2=0;
     % end
-    % if choice==33 % improve
-    %     load('Letter.mat');X={Edge1,Edge2,Edge3};Y=Label2;
+    % if choice==39 % improve
+    %     load('Letter.mat');X={Edge1,Edge2,Edge3};Y=Label2;Z1=0;Z2=0;
     % end
-    % if choice==34 % improve
-    %    load('Cora.mat');Dist1='cosine';D = 1-squareform(pdist(X, Dist1));X={Edge,D};Y=Label;
+    % if choice==39 % improve
+    %    load('Cora.mat');Dist1='cosine';D = 1-squareform(pdist(X, Dist1));X={Edge,D};Y=Label;Z1=0;Z2=0;
     % end
     % if choice==35 % improve
     %    load('citeseer.mat');Dist1='cosine';D = 1-squareform(pdist(X, Dist1));X={Edge,D};Y=Label;
     % end
-    tt=toc;
     for r=1:rep
         indices=crossvalind('Kfold',Y,cvf); 
-        tmp=AttributeEvaluate({ZASE,X},Y,indices); %K=6
-        error(r,1:3)=tmp(1,:);time(r,1:3)=tmp(2,:)+tt;
-        tmp=AttributeEvaluate({ZLeiden,X},Y,indices); %K=6
-        error(r,4:6)=tmp(1,:);time(r,4:6)=tmp(2,:)+tt;
+        if Z1~=0
+        tmp=AttributeEvaluate({Z1,X},Y,indices); %K=6
+        error1(r,1:3)=tmp(1,:);time1(r,1:3)=tmp(2,:)+t1;
+        end
+        if Z2~=0
+        tmp=AttributeEvaluate({Z2,X},Y,indices); %K=6
+        error1(r,4:6)=tmp(1,:);time1(r,4:6)=tmp(2,:)+t2;
+        end
         [tmp,tmp1]=RefineEvaluate(X,Y,indices);
-        error(r,7:9)=mean(tmp);time(r,7:9)=mean(tmp1);
+        error2(r,1:4)=mean(tmp);time2(r,1:4)=mean(tmp1);
     end
-    [mean(error);std(error);mean(time);std(time)]
-    save(strcat('GraphRefine',num2str(choice),'CV',num2str(cvf),'.mat'),'choice','error','time','cvf');
+    [mean(error1);std(error1);]
+    [mean(error2);std(error2);]
+    save(strcat('GraphRefine',num2str(choice),'CV',num2str(cvf),'.mat'),'choice','error1','time1','error2','time2','cvf');
 end
 
 
@@ -209,45 +232,55 @@ if choice==51
     [Z]=UnsupGraph(X,6,length(Y));AttributeEvaluate({Z,X},Y2)
 end
 
-if choice==1 || choice==2 || choice==3
+if choice==1 || choice==2 || choice==3 || choice==4
+    n=500;
     switch choice
         case 1
             load('karate.mat'); X=G;figName='FigRefine1';str1='Karate Club';Y0=Y;
         case 2
-            [X,Y]=simGenerate(500,100,4,0);G=X;figName='FigRefine2';str1='Stochastic Block Model 1';
-            Y0=Y;Y0(Y==2)=3;Y0(Y==4)=2;Y0(Y==3)=4;
-            Y(Y==2)=1;Y(Y==3)=4;Y(Y==4)=2;
+            [X,Y]=simGenerate(500,n,4,0);G=X;figName='FigRefine2';str1='Stochastic Block Model 1';
+            Y0=Y;Y(Y<=2)=1;Y(Y>=3)=2;%Y(Y==4)=2;
         case 3
-            [X,Y]=simGenerate(501,100,4,0);G=X;figName='FigRefine2';str1='Stochastic Block Model 2';
+            [X,Y]=simGenerate(501,n,4,0);G=X;figName='FigRefine3';str1='Stochastic Block Model 2';
+            Y0=Y;Y(Y<=2)=1;Y(Y>=3)=2;%Y(Y==4)=2;
+        case 4
+            [X,Y]=simGenerate(502,n,4,0);G=X;figName='FigRefine4';str1='Stochastic Block Model 3';
             Y0=Y;Y(Y<=3)=1;Y(Y==4)=2;Y(Y==5)=3;
     end
     % else
     %     load('polblogs.mat');ind=[1:200,1001:1200];X=Adj(ind,ind);G=X;Y=Y(ind);figName='FigRefine2';
     % else
     %     load('polblogs.mat');ind=[1:200,1001:1200];X=Adj(ind,ind);G=X;Y=Y(ind);figName='FigRefine2';
+    indTrn = (sum(X)>0);
+
     fs=12;
     opts = struct('Normalize',true,'Refine',0,'Principal',0,'Laplacian',false,'Discriminant',true,'Softmax',true);
-    [Z1,out1]=RefinedGEE(X,Y,opts);
-    idx1=out1.idx;
+    [Z1,out1]=GraphEncoder(X,Y,opts);
+    idx1=out1.idx;sum(idx1)
 
     opts = struct('Normalize',true,'Refine',1,'Principal',0,'Laplacian',false,'Discriminant',true,'Softmax',true);
-    [Z2,out2]=RefinedGEE(X,Y,opts);
-    idx2=out2.idx;Y2=Y;
-    Y2(idx2)=Y2(idx2)+2;
+    Y2=out1.YNew; Y2(idx1)=Y2(idx1)+2;
+    [Z2,out2]=GraphEncoder(X,Y2,opts);
+    idx2=out2.idx;sum(idx2 & idx1)
 
+    idxOri=((Y0==2) | (Y0==3));
+    acc1=sum(idxOri & idx2)/sum(idx2)
+    acc2=sum(idxOri & idx2)/sum(idxOri)
+
+    G=G(indTrn,indTrn); 
     A = graph(G,'omitselfloops','upper');
     myColor = brewermap(8,'PiYg');
     colorY=Y;colorY(Y==2)=8; colorY=myColor(colorY,:);
     t1 = tiledlayout(1,2);
     nexttile();
-    plot(A,'-.r','NodeLabel',Y0,'NodeColor',colorY,'MarkerSize',10);
+    plot(A,'-.r','NodeLabel',Y0(indTrn),'NodeColor',colorY(indTrn,:),'MarkerSize',10);
     axis('square'); 
     xlabel('Ground-Truth Class');
     set(gca,'fontSize',fs);
 
     nexttile();
     colorY=Y2;colorY(Y2==2)=8;colorY(Y2==3)=3;colorY(Y2==4)=6; colorY=myColor(colorY,:);
-    plot(A,'-.r','NodeLabel',Y0,'NodeColor',colorY,'MarkerSize',10);
+    plot(A,'-.r','NodeLabel',Y0(indTrn),'NodeColor',colorY(indTrn,:),'MarkerSize',10);
     axis('square'); 
     xlabel('GEE-Refined Class')
     set(gca,'fontSize',fs);
@@ -272,43 +305,89 @@ if choice==6 || choice==7 || choice==8
     %         [X,Y]=simGenerate(501,1000,4,0);G=X;figName='FigRefine2';str1='Stochastic Block Model 2';
     %         Y0=Y;Y(Y<=3)=1;Y(Y==4)=2;Y(Y==5)=3;
     % end
-    rep=10;ll=10;fs=12;
+    ll=10;fs=12;
     opts = struct('Normalize',true,'Refine',0,'Principal',0,'Laplacian',false,'Discriminant',true,'Softmax',false);
     % else
     %     load('polblogs.mat');ind=[1:200,1001:1200];X=Adj(ind,ind);G=X;Y=Y(ind);figName='FigRefine2';
     % else
     %     load('polblogs.mat');ind=[1:200,1001:1200];X=Adj(ind,ind);G=X;Y=Y(ind);figName='FigRefine2';
-    acc1=zeros(rep,ll);acc2=zeros(rep,ll);error1=zeros(rep,ll);error2=zeros(rep,ll);error3=zeros(rep,ll);error4=zeros(rep,ll);
+    acc1=zeros(rep,ll);acc2=zeros(rep,ll);error1=zeros(rep,ll);error2=zeros(rep,ll);error3=zeros(rep,ll);error4=zeros(rep,ll);error5=zeros(rep,ll);
     for r=1:rep
         for i=1:ll;
-            n=200*i;
+            n=300*i;
             [X,Y0]=simGenerate(500+choice-6,n,4,0);G=X;figName='FigRefine4';str1='Stochastic Block Model 1';
             %Y0=Y;Y0(Y==2)=3;Y0(Y==4)=2;Y0(Y==3)=4;%Y0 original; Y reduced; Y2 refined from Y.
             Y=Y0;
             Y(Y==2)=1;Y(Y==3)=4;Y(Y==4)=2;
+            if choice==8
+                Y(Y0<4)=1;
+            end
             % 
             [Z2,out2]=RefinedGEE(X,Y,opts);
-            idx2=out2.idx;Y2=Y;
-            Y2(idx2)=Y2(idx2)+max(Y);
+            idx2=out2.idx;
             % 
-            % % [Z2,out2]=RefinedGEE(X,Y2,opts);
+            % % [Z2,out2]=GraphEncoder(X,Y2,opts);
             % % idx2=out2.idx;
             % 
-            % idxOri=(Y0>2);
-            % acc1(r,i)=sum(idxOri & idx2)/sum(idx2);
-            % acc2(r,i)=sum(idxOri & idx2)/sum(idxOri);
+            idxOri=((Y0==2) | (Y0==3));
+            acc1(r,i)=sum(idxOri & idx2)/sum(idx2);
+            acc2(r,i)=sum(idxOri & idx2)/sum(idxOri);
 
             indices=crossvalind('Kfold',Y,5);
             [tmp,~]=RefineEvaluate(X,Y0,indices); error1(r,i)=mean(tmp(:,1));
-            [tmp,~]=RefineEvaluate(X,Y,indices); error2(r,i)=mean(tmp(:,1));error3(r,i)=mean(tmp(:,3));
-            [tmp,~]=RefineEvaluate(X,Y2,indices); error4(r,i)=mean(tmp(:,1));
+            [tmp,~]=RefineEvaluate(X,Y,indices); error2(r,i)=mean(tmp(:,1));error3(r,i)=mean(tmp(:,2));error4(r,i)=mean(tmp(:,3));error5(r,i)=mean(tmp(:,4));
+            % [tmp,~]=RefineEvaluate(X,Y2,indices); error4(r,i)=mean(tmp(:,1));
         end
     end
-    mean(acc1)
-    mean(acc2)
-    mean(error1)
-    mean(error2)
-    mean(error3)
-    mean(error4)
+    [mean(acc1);mean(acc2)]
+    [mean(error1);mean(error2);mean(error3);mean(error4);mean(error5)]
+    save(strcat('GraphRefine',num2str(choice),'CV',num2str(cvf),'.mat'),'choice','error1','acc1','error2','acc2','cvf');
     % ground-truth classifier, given classifier, refined classifier
 end
+% 
+% if choice==8
+%     % switch choice
+%     %     case 60
+%     %         load('karate.mat'); X=G;figName='FigRefine1';str1='Karate Club';Y0=Y;
+%     %     case 63
+%     %         [X,Y]=simGenerate(500,200,4,0);G=X;figName='FigRefine2';str1='Stochastic Block Model 1';
+%     %         Y0=Y;Y0(Y==2)=3;Y0(Y==4)=2;Y0(Y==3)=4;
+%     %         Y(Y==2)=1;Y(Y==3)=4;Y(Y==4)=2;
+%     %     case 64
+%     %         [X,Y]=simGenerate(501,1000,4,0);G=X;figName='FigRefine2';str1='Stochastic Block Model 2';
+%     %         Y0=Y;Y(Y<=3)=1;Y(Y==4)=2;Y(Y==5)=3;
+%     % end
+%     ll=10;fs=12;
+%     opts = struct('Normalize',true,'Refine',0,'Principal',0,'Laplacian',false,'Discriminant',true,'Softmax',false);
+%     % else
+%     %     load('polblogs.mat');ind=[1:200,1001:1200];X=Adj(ind,ind);G=X;Y=Y(ind);figName='FigRefine2';
+%     % else
+%     %     load('polblogs.mat');ind=[1:200,1001:1200];X=Adj(ind,ind);G=X;Y=Y(ind);figName='FigRefine2';
+%     acc1=zeros(rep,ll);acc2=zeros(rep,ll);error1=zeros(rep,ll);error2=zeros(rep,ll);error3=zeros(rep,ll);error4=zeros(rep,ll);error5=zeros(rep,ll);
+%     for r=1:rep
+%         for i=1:ll;
+%             n=500*i;
+%             [X,Y0]=simGenerate(503,n,4,0);G=X;figName='FigRefine4';str1='Stochastic Block Model 1';
+%             %Y0=Y;Y0(Y==2)=3;Y0(Y==4)=2;Y0(Y==3)=4;%Y0 original; Y reduced; Y2 refined from Y.
+%             Y=Y0; Y(Y0==2)=1;Y(Y0==3)=1;Y(Y0==4)=2;Y(Y0==5)=3;
+%             % 
+%             % [Z2,out2]=RefinedGEE(X,Y,opts);
+%             % idx2=out2.idx;
+%             % 
+%             % % [Z2,out2]=GraphEncoder(X,Y2,opts);
+%             % % idx2=out2.idx;
+%             % 
+%             % idxOri=((Y0==2) | (Y0==3));
+%             % acc1(r,i)=sum(idxOri & idx2)/sum(idx2);
+%             % acc2(r,i)=sum(idxOri & idx2)/sum(idxOri);
+% 
+%             indices=crossvalind('Kfold',Y,5);
+%             [tmp,~]=RefineEvaluate(X,Y0,indices); error1(r,i)=mean(tmp(:,1));
+%             [tmp,~]=RefineEvaluate(X,Y,indices,0); error2(r,i)=mean(tmp(:,1));error3(r,i)=mean(tmp(:,2));error4(r,i)=mean(tmp(:,3));error5(r,i)=mean(tmp(:,4));
+%             % [tmp,~]=RefineEvaluate(X,Y2,indices); error4(r,i)=mean(tmp(:,1));
+%         end
+%     end
+%     [mean(acc1);mean(acc2)]
+%     [mean(error1);mean(error2);mean(error3);mean(error4);mean(error5)]
+%     % ground-truth classifier, given classifier, refined classifier
+% end

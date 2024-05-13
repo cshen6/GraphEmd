@@ -1,24 +1,33 @@
-function [error,time]=RefineEvaluate(X,Y,indices)
+function [error,time]=RefineEvaluate(X,Y,indices,err)
 
 if nargin<3
     indices=crossvalind('Kfold',Y,5);
 end
+if nargin<4
+    err=0;
+end
 cvf=max(indices);
-error=zeros(cvf,3);
-time=zeros(cvf,3);
+error=zeros(cvf,4);
+time=zeros(cvf,4);
 normalize=1;
-classifier=1;sof=0;
-opts1=struct('Normalize',normalize,'Refine',0,'Softmax',sof); 
-opts2=struct('Normalize',normalize,'Refine',1,'Softmax',sof); 
-opts3=struct('Normalize',normalize,'Refine',10,'Softmax',sof); 
-opts={opts1,opts2,opts3};
+classifier=1;
+opts1=struct('Normalize',normalize,'RefineK',0,'RefineY',0); 
+opts2=struct('Normalize',normalize,'RefineK',2,'RefineY',2); %best!
+opts3=struct('Normalize',normalize,'RefineK',3,'RefineY',3); %best?
+opts4=struct('Normalize',normalize,'RefineK',10,'RefineY',10);
+opts={opts1,opts2,opts3,opts4};
+K=max(Y);
 for j=1:cvf
     tsn = (indices == j); % tst indices
     trn = ~tsn; % trn indices
     YTsn=Y(tsn);
     Y2=Y; Y2(tsn)=0;
+    if err>0
+        nrr=rand(length(trn),1)<err;
+        Y(trn(nrr))=randi(K,sum(trn(nrr)),1);
+    end
 
-    for i=1:3
+    for i=1:4
         tic
         [Z1,out]=RefinedGEE(X,Y2,opts{i});
         % if iscell(Z1)
@@ -33,11 +42,13 @@ for j=1:cvf
 
         % Z1=[Z1,out.norm];
 %         Z1=X*Z1;
-        dimClass=out.dimClass;
+        % dimClass=out.dimClass;
         if classifier==1
 %             Z2 = normalize(Z1,2,'norm');
 %             Z2(isnan(Z2))=0;
+            % [~,Z1]=pca(Z1,'NumComponents',min(100,size(Z1,2)));
             mdl=fitcdiscr(Z1(trn,:),Y(trn),'discrimType','pseudoLinear');
+            % mdl=fitcnet(Z1(trn,:),Y(trn),'LayerSizes',10*max(Y));
             YVal=predict(mdl,Z1);
             error(j,i)=mean(YVal(tsn)~=YTsn);
         else
