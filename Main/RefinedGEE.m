@@ -28,15 +28,15 @@
 function [Z,output]=RefinedGEE(G,Y,opts)
 warning ('off','all');
 if nargin<3
-    opts = struct('Normalize',true,'RefineK',3,'RefineY',3,'eps',0.4);
+    opts = struct('Normalize',true,'RefineK',3,'RefineY',3,'eps',0.2,'epsn',5);
 end
 if ~isfield(opts,'Normalize'); opts.Normalize=true; end
 if ~isfield(opts,'RefineK'); opts.RefineK=3; end
 if ~isfield(opts,'RefineY'); opts.RefineY=3; end
-if ~isfield(opts,'eps'); opts.eps=0.4; end
+if ~isfield(opts,'eps'); opts.eps=0.2; end
+if ~isfield(opts,'epsn'); opts.epsn=5; end
 opts.Discriminant = true;
 opts.Principal=0;
-opts.eps=0.4;
 % opts.BenchY=Y;
 
 % opts.Refine=5;
@@ -59,7 +59,7 @@ if opts.RefineK>0
         Y1=output1.YVal+output1.idx*K;
         [Z2,output2]=GraphEncoder(G,Y1,opts);
         % [sum(idx),sum(output2.idx & idx)]
-        if sum(idx)-sum(output2.idx & idx)<= max(sum(idx)*opts.eps,2)
+        if sum(idx)-sum(output2.idx & idx)<= max(sum(idx)*opts.eps,opts.epsn)
             break;
         else
             ZK{rK,1}=Z2;output1=output2;idx=output2.idx & idx;
@@ -74,7 +74,7 @@ if opts.RefineY>0
     output1=output;idx=output1.idx;
     for r=1:opts.RefineY
         [Z2,output2]=GraphEncoder(G,output1.YVal,opts);
-        if sum(idx)-sum(output2.idx & idx)<= max(sum(idx)*opts.eps,2)
+        if sum(idx)-sum(output2.idx & idx)<= max(sum(idx)*opts.eps,opts.epsn)
             break;
         else
             ZY{r}=Z2;output1=output2;idx=output2.idx & idx;

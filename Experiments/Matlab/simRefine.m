@@ -1,6 +1,7 @@
 function simRefine(choice,rep,cvf)
 
 rng("default")
+    skip=0;
 if nargin<2
 rep=3;
 end
@@ -36,7 +37,6 @@ end
 % end
 
 if choice>=10 && choice <30
-    skip=1;
     switch choice
         case 10
             load('adjnoun.mat'); X=Adj;
@@ -47,7 +47,7 @@ if choice>=10 && choice <30
         case 13 
             load('karate.mat'); X=G;
         case 14
-            load('IIP.mat'); X=double(Adj+Adj'>0);
+            load('IIP.mat'); X=Adj;
         case 15
             load('letter.mat'); X=edge2adj(Edge1);Y=Label1;LeidenY=LeidenY1;
         case 16
@@ -140,48 +140,55 @@ if choice>=30 && choice<=40
         % ZLeidenTE=GraphEncoder(TE,TELeidenY);ZLeidenTF=GraphEncoder(GEAdj,GELeidenY);ZLeiden=[ZLeidenTE,ZLeidenTF];
     end
     if choice==32 % improve
-        X={TE,GFAdj};
+        X={TF,GFAdj};
         % [Z1]=UnsupGraph(TE,max(Y)*5,length(Y));[Z2]=UnsupGraph(TF,max(Y)*5,length(Y));
         % Z=[Z1,Z2];
         tic;ZASE=ASE([X{1},X{2}],dim);n=size(X{1},1);Z1=[ZASE(1:n,:),ZASE(n+1:2*n,:)];t1=toc;
         tic;ZLSE=ASE([Lap(X{1}),Lap(X{2})],dim);Z2=[ZLSE(1:n,:),ZLSE(n+1:2*n,:)];t2=toc;
     end
     if choice==33 % improve
-        X={TE,TF,GEAdj};
+        X={GEAdj,GFAdj};
         % [Z1]=UnsupGraph(TE,max(Y)*5,length(Y));[Z2]=UnsupGraph(TF,max(Y)*5,length(Y));
         % Z=[Z1,Z2];
-        tic;ZASE=ASE([X{1},X{2},X{3}],dim);n=size(X{1},1);Z1=[ZASE(1:n,:),ZASE(n+1:2*n,:),ZASE(2*n+1:3*n,:)];t1=toc;
-        tic;ZLSE=ASE([Lap(X{1}),Lap(X{2}),Lap(X{3})],dim);Z2=[ZLSE(1:n,:),ZLSE(n+1:2*n,:),ZLSE(2*n+1:3*n,:)];t2=toc;
+        tic;ZASE=ASE([X{1},X{2}],dim);n=size(X{1},1);Z1=[ZASE(1:n,:),ZASE(n+1:2*n,:)];t1=toc;
+        tic;ZLSE=ASE([Lap(X{1}),Lap(X{2})],dim);Z2=[ZLSE(1:n,:),ZLSE(n+1:2*n,:)];t2=toc;
     end
+    % if choice==33 % improve
+    %     X={TE,TF,GEAdj};
+    %     % [Z1]=UnsupGraph(TE,max(Y)*5,length(Y));[Z2]=UnsupGraph(TF,max(Y)*5,length(Y));
+    %     % Z=[Z1,Z2];
+    %     tic;ZASE=ASE([X{1},X{2},X{3}],dim);n=size(X{1},1);Z1=[ZASE(1:n,:),ZASE(n+1:2*n,:),ZASE(2*n+1:3*n,:)];t1=toc;
+    %     tic;ZLSE=ASE([Lap(X{1}),Lap(X{2}),Lap(X{3})],dim);Z2=[ZLSE(1:n,:),ZLSE(n+1:2*n,:),ZLSE(2*n+1:3*n,:)];t2=toc;
+    % end
+    % if choice==34 % improve
+    %     X={TE,TF,GFAdj};
+    %     % [Z1]=UnsupGraph(TE,max(Y)*5,length(Y));[Z2]=UnsupGraph(TF,max(Y)*5,length(Y));
+    %     % Z=[Z1,Z2];
+    %     tic;ZASE=ASE([X{1},X{2},X{3}],dim);n=size(X{1},1);Z1=[ZASE(1:n,:),ZASE(n+1:2*n,:),ZASE(2*n+1:3*n,:)];t1=toc;
+    %     tic;ZLSE=ASE([Lap(X{1}),Lap(X{2}),Lap(X{3})],dim);Z2=[ZLSE(1:n,:),ZLSE(n+1:2*n,:),ZLSE(2*n+1:3*n,:)];t2=toc;
+    % end
+    % if choice==35 % improve
+    %     X={TE,GEAdj,GFAdj};
+    %     % [Z1]=UnsupGraph(TE,max(Y)*5,length(Y));[Z2]=UnsupGraph(TF,max(Y)*5,length(Y));
+    %     % Z=[Z1,Z2];
+    %     tic;ZASE=ASE([X{1},X{2},X{3}],dim);n=size(X{1},1);Z1=[ZASE(1:n,:),ZASE(n+1:2*n,:),ZASE(2*n+1:3*n,:)];t1=toc;
+    %     tic;ZLSE=ASE([Lap(X{1}),Lap(X{2}),Lap(X{3})],dim);Z2=[ZLSE(1:n,:),ZLSE(n+1:2*n,:),ZLSE(2*n+1:3*n,:)];t2=toc;
+    % end
+    % if choice==36 % improve
+    %     X={TF,GEAdj,GFAdj};
+    %     % [Z1]=UnsupGraph(TE,max(Y)*5,length(Y));[Z2]=UnsupGraph(TF,max(Y)*5,length(Y));
+    %     % Z=[Z1,Z2];
+    %     tic;ZASE=ASE([X{1},X{2},X{3}],dim);n=size(X{1},1);Z1=[ZASE(1:n,:),ZASE(n+1:2*n,:),ZASE(2*n+1:3*n,:)];t1=toc;
+    %     tic;ZLSE=ASE([Lap(X{1}),Lap(X{2}),Lap(X{3})],dim);Z2=[ZLSE(1:n,:),ZLSE(n+1:2*n,:),ZLSE(2*n+1:3*n,:)];t2=toc;
+    % end
     if choice==34 % improve
-        X={TE,TF,GFAdj};
-        % [Z1]=UnsupGraph(TE,max(Y)*5,length(Y));[Z2]=UnsupGraph(TF,max(Y)*5,length(Y));
-        % Z=[Z1,Z2];
-        tic;ZASE=ASE([X{1},X{2},X{3}],dim);n=size(X{1},1);Z1=[ZASE(1:n,:),ZASE(n+1:2*n,:),ZASE(2*n+1:3*n,:)];t1=toc;
-        tic;ZLSE=ASE([Lap(X{1}),Lap(X{2}),Lap(X{3})],dim);Z2=[ZLSE(1:n,:),ZLSE(n+1:2*n,:),ZLSE(2*n+1:3*n,:)];t2=toc;
-    end
-    if choice==35 % improve
-        X={TE,GEAdj,GFAdj};
-        % [Z1]=UnsupGraph(TE,max(Y)*5,length(Y));[Z2]=UnsupGraph(TF,max(Y)*5,length(Y));
-        % Z=[Z1,Z2];
-        tic;ZASE=ASE([X{1},X{2},X{3}],dim);n=size(X{1},1);Z1=[ZASE(1:n,:),ZASE(n+1:2*n,:),ZASE(2*n+1:3*n,:)];t1=toc;
-        tic;ZLSE=ASE([Lap(X{1}),Lap(X{2}),Lap(X{3})],dim);Z2=[ZLSE(1:n,:),ZLSE(n+1:2*n,:),ZLSE(2*n+1:3*n,:)];t2=toc;
-    end
-    if choice==36 % improve
-        X={TF,GEAdj,GFAdj};
-        % [Z1]=UnsupGraph(TE,max(Y)*5,length(Y));[Z2]=UnsupGraph(TF,max(Y)*5,length(Y));
-        % Z=[Z1,Z2];
-        tic;ZASE=ASE([X{1},X{2},X{3}],dim);n=size(X{1},1);Z1=[ZASE(1:n,:),ZASE(n+1:2*n,:),ZASE(2*n+1:3*n,:)];t1=toc;
-        tic;ZLSE=ASE([Lap(X{1}),Lap(X{2}),Lap(X{3})],dim);Z2=[ZLSE(1:n,:),ZLSE(n+1:2*n,:),ZLSE(2*n+1:3*n,:)];t2=toc;
-    end
-    if choice==37 % improve
         X={TE,TF,GEAdj,GFAdj};
         % [Z1]=UnsupGraph(TE,max(Y)*5,length(Y));[Z2]=UnsupGraph(TF,max(Y)*5,length(Y));[Z3]=UnsupGraph(GEAdj,max(Y)*5,length(Y));[Z4]=UnsupGraph(GFAdj,max(Y)*5,length(Y));
         % Z=[Z1,Z2,Z3,Z4];
         tic;ZASE=ASE([X{1},X{2},X{3},X{4}],dim);n=size(X{1},1);Z1=[ZASE(1:n,:),ZASE(n+1:2*n,:),ZASE(2*n+1:3*n,:),ZASE(3*n+1:4*n,:)];t1=toc;
         tic;ZLSE=ASE([Lap(X{1}),Lap(X{2}),Lap(X{3}),Lap(X{4})],dim);Z2=[ZLSE(1:n,:),ZLSE(n+1:2*n,:),ZLSE(2*n+1:3*n,:),ZLSE(3*n+1:4*n,:)];t2=toc;
     end
-    if choice==38 % improve
+    if choice==35 % improve
         load('CElegans.mat');X={double(Ac+Ac'>0),double(Ag+Ag'>0)};Y=vcols;
         tic;ZASE=ASE([X{1},X{2}],dim);n=size(X{1},1);Z1=[ZASE(1:n,:),ZASE(n+1:2*n,:)];t1=toc;
         tic;ZLSE=ASE([Lap(X{1}),Lap(X{2})],dim);Z2=[ZLSE(1:n,:),ZLSE(n+1:2*n,:)];t2=toc;
@@ -200,11 +207,9 @@ if choice>=30 && choice<=40
     % end
     for r=1:rep
         indices=crossvalind('Kfold',Y,cvf); 
-        if Z1~=0
+        if skip~=1
         tmp=AttributeEvaluate({Z1,X},Y,indices); %K=6
         error1(r,1:3)=tmp(1,:);time1(r,1:3)=tmp(2,:)+t1;
-        end
-        if Z2~=0
         tmp=AttributeEvaluate({Z2,X},Y,indices); %K=6
         error1(r,4:6)=tmp(1,:);time1(r,4:6)=tmp(2,:)+t2;
         end
@@ -259,7 +264,7 @@ if choice==1 || choice==2 || choice==3 || choice==4
     idx1=out1.idx;sum(idx1)
 
     opts = struct('Normalize',true,'Refine',1,'Principal',0,'Laplacian',false,'Discriminant',true,'Softmax',true);
-    Y2=out1.YNew; Y2(idx1)=Y2(idx1)+2;
+    Y2=out1.YVal; Y2(idx1)=Y2(idx1)+2;
     [Z2,out2]=GraphEncoder(X,Y2,opts);
     idx2=out2.idx;sum(idx2 & idx1)
 
