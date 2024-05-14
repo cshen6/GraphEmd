@@ -1,6 +1,5 @@
 function simRefine(choice,rep,cvf)
 
-rng("default")
     skip=0;
 if nargin<2
 rep=3;
@@ -37,6 +36,7 @@ end
 % end
 
 if choice>=10 && choice <30
+    rng("default")
     switch choice
         case 10
             load('adjnoun.mat'); X=Adj;
@@ -121,6 +121,7 @@ if choice>=10 && choice <30
 end
 
 if choice>=30 && choice<=40
+    rng("default")
     load('Wiki_Data.mat'); Y=Label;
     error1=zeros(rep,6);error2=zeros(rep,4);time1=zeros(rep,6);time2=zeros(rep,4);dim=20;
     if choice==30 % improve
@@ -238,67 +239,107 @@ if choice==51
 end
 
 if choice==1 || choice==2 || choice==3 || choice==4
-    n=500;
+    n=100;lss=12;
     switch choice
         case 1
-            load('karate.mat'); X=G;figName='FigRefine1';str1='Karate Club';Y0=Y;
+            [X,Y]=simGenerate(500,n,4,0);G=X;figName='FigRefine1';str1='Simulated Graph 1';
+            Y0=Y;Y(Y<=2)=1;Y(Y>=3)=2;%Y(Y==4)=2;
         case 2
-            [X,Y]=simGenerate(500,n,4,0);G=X;figName='FigRefine2';str1='Stochastic Block Model 1';
+            [X,Y]=simGenerate(501,n,4,0);G=X;figName='FigRefine2';str1='Simulated Graph2';
             Y0=Y;Y(Y<=2)=1;Y(Y>=3)=2;%Y(Y==4)=2;
         case 3
-            [X,Y]=simGenerate(501,n,4,0);G=X;figName='FigRefine3';str1='Stochastic Block Model 2';
-            Y0=Y;Y(Y<=2)=1;Y(Y>=3)=2;%Y(Y==4)=2;
+            load('karate.mat'); X=G;G=X;figName='FigRefine3';str1='Karate Club Graph';Y0=Y;lss=8;
         case 4
-            [X,Y]=simGenerate(502,n,4,0);G=X;figName='FigRefine4';str1='Stochastic Block Model 3';
-            Y0=Y;Y(Y<=3)=1;Y(Y==4)=2;Y(Y==5)=3;
+            load('polblogs.mat'); per=randperm(length(Y));X=Adj(per(1:300),per(1:300));G=X;figName='FigRefine4';str1='Political Blog Graph';Y0=Y(per(1:300));Y=Y0;lss=8;
+        % case 4
+        %     [X,Y]=simGenerate(502,n,4,0);G=X;figName='FigRefine4';str1='Stochastic Block Model 3';
+        %     Y0=Y;Y(Y<=3)=1;Y(Y==4)=2;Y(Y==5)=3;
     end
     % else
     %     load('polblogs.mat');ind=[1:200,1001:1200];X=Adj(ind,ind);G=X;Y=Y(ind);figName='FigRefine2';
     % else
     %     load('polblogs.mat');ind=[1:200,1001:1200];X=Adj(ind,ind);G=X;Y=Y(ind);figName='FigRefine2';
-    indTrn = (sum(X)>0);
 
-    fs=12;
-    opts = struct('Normalize',true,'Refine',0,'Principal',0,'Laplacian',false,'Discriminant',true,'Softmax',true);
+    fs=28;
+    opts = struct('Normalize',true,'RefinedK',1,'RefinedY',1,'Principal',0,'Laplacian',false,'Discriminant',true,'Softmax',true);
     [Z1,out1]=GraphEncoder(X,Y,opts);
     idx1=out1.idx;sum(idx1)
 
-    opts = struct('Normalize',true,'Refine',1,'Principal',0,'Laplacian',false,'Discriminant',true,'Softmax',true);
-    Y2=out1.YVal; Y2(idx1)=Y2(idx1)+2;
-    [Z2,out2]=GraphEncoder(X,Y2,opts);
-    idx2=out2.idx;sum(idx2 & idx1)
-
+    [Z2,out2]=RefinedGEE(G,out1.YVal+idx1*size(Z1,2),opts);
+    idx2=out2.idx;
     idxOri=((Y0==2) | (Y0==3));
     acc1=sum(idxOri & idx2)/sum(idx2)
     acc2=sum(idxOri & idx2)/sum(idxOri)
+    Y2=out2.Y; 
 
-    G=G(indTrn,indTrn); 
     A = graph(G,'omitselfloops','upper');
-    myColor = brewermap(8,'PiYg');
-    colorY=Y;colorY(Y==2)=8; colorY=myColor(colorY,:);
-    t1 = tiledlayout(1,2);
+    [C] = conncomp(A);
+    % Find the sizes of each connected component
+    component_sizes = histcounts(C, 1:max(C)+1);
+    % Find the index of the largest connected component
+    [~, largest_component_index] = max(component_sizes);
+    % Find the indices of nodes belonging to the largest connected component
+    indTrn = find(C == largest_component_index);
+    A = graph(G(indTrn,indTrn),'omitselfloops','upper');
+
+    myColor = brewermap(18,'RdYlGn');
+    colorY=Y0;colorY(Y0==4)=18; colorY(Y0==2)=5;colorY(Y0==3)=14;
+    % if choice ==4
+    %     colorY(Y0==5)=18; colorY(Y0==4)=10;colorY(Y0==3)=14;colorY(Y0==2)=5;
+    % end
+    colorY=myColor(colorY,:);
+    if choice>2
+        t1 = tiledlayout(1,2);
+    else
+    t1 = tiledlayout(1,3);
     nexttile();
-    plot(A,'-.r','NodeLabel',Y0(indTrn),'NodeColor',colorY(indTrn,:),'MarkerSize',10);
+    h=plot(A,'-.r','NodeLabel', {},'NodeColor',colorY(indTrn,:),'MarkerSize',12);%'NodeLabel',Y0(indTrn),
+    h.EdgeColor = [0.7, 0.7, 0.7];
+    h.LineWidth = 0.5; 
     axis('square'); 
-    xlabel('Ground-Truth Class');
+    xlabel('Ground-Truth Community');
+    set(gca,'fontSize',fs);
+    end
+
+    colorY=Y;colorY(Y==2)=18; 
+    % if choice ==4
+    %     colorY(Y==3)=18; colorY(Y==2)=10; 
+    % end
+    colorY=myColor(colorY,:);
+    nexttile();
+    h=plot(A,'-.r','NodeLabel', {},'NodeColor',colorY(indTrn,:),'MarkerSize',12);
+    h.EdgeColor = [0.7, 0.7, 0.7];
+    h.LineWidth = 0.5; 
+    axis('square'); 
+    xlabel('Observed Community');
     set(gca,'fontSize',fs);
 
     nexttile();
-    colorY=Y2;colorY(Y2==2)=8;colorY(Y2==3)=3;colorY(Y2==4)=6; colorY=myColor(colorY,:);
-    plot(A,'-.r','NodeLabel',Y0(indTrn),'NodeColor',colorY(indTrn,:),'MarkerSize',10);
+    colorY=Y2;colorY(Y2==2)=18;colorY(Y2==4)=5;colorY(Y2==3)=14; 
+    % if choice ==4
+    %     colorY(Y2==5)=18; colorY(Y2==4)=10;colorY(Y2==3)=14;colorY(Y2==2)=5;
+    % end
+    colorY=myColor(colorY,:);
+    h=plot(A,'-.r','NodeLabel', {},'NodeColor',colorY(indTrn,:),'MarkerSize',12);
+    h.EdgeColor = [0.7, 0.7, 0.7];
+    h.LineWidth = 0.5;
+    xlabel('GEE-Refined Community');
     axis('square'); 
-    xlabel('GEE-Refined Class')
+    if choice>2
+    else
+        title(strcat('Precision / Recall = ', '[',num2str(floor(acc1*100)/100),',', num2str(floor(acc2*100)/100),']'));
+    end
     set(gca,'fontSize',fs);
 
     title(t1,str1,'fontSize',fs+12);
 
     F.fname=figName;
-        F.wh=[8 4]*2;
+        F.wh=[lss 4]*2;
         %     F.PaperPositionMode='auto';
         print_fig(gcf,F)
 end
 
-if choice==6 || choice==7 || choice==8
+if choice==101 || choice==102 || choice==103
     % switch choice
     %     case 60
     %         load('karate.mat'); X=G;figName='FigRefine1';str1='Karate Club';Y0=Y;
@@ -310,17 +351,19 @@ if choice==6 || choice==7 || choice==8
     %         [X,Y]=simGenerate(501,1000,4,0);G=X;figName='FigRefine2';str1='Stochastic Block Model 2';
     %         Y0=Y;Y(Y<=3)=1;Y(Y==4)=2;Y(Y==5)=3;
     % end
-    ll=10;fs=12;
+    ll=10;fs=12;dim=20;
     opts = struct('Normalize',true,'Refine',0,'Principal',0,'Laplacian',false,'Discriminant',true,'Softmax',false);
     % else
     %     load('polblogs.mat');ind=[1:200,1001:1200];X=Adj(ind,ind);G=X;Y=Y(ind);figName='FigRefine2';
     % else
     %     load('polblogs.mat');ind=[1:200,1001:1200];X=Adj(ind,ind);G=X;Y=Y(ind);figName='FigRefine2';
-    acc1=zeros(rep,ll);acc2=zeros(rep,ll);error1=zeros(rep,ll);error2=zeros(rep,ll);error3=zeros(rep,ll);error4=zeros(rep,ll);error5=zeros(rep,ll);
+    acc1=zeros(rep,ll);acc2=zeros(rep,ll);error0=zeros(rep,ll);error1=zeros(rep,ll);error2=zeros(rep,ll);error3=zeros(rep,ll);error4=zeros(rep,ll);error5=zeros(rep,ll);
     for r=1:rep
         for i=1:ll;
-            n=300*i;
-            [X,Y0]=simGenerate(500+choice-6,n,4,0);G=X;figName='FigRefine4';str1='Stochastic Block Model 1';
+            n=200*i;
+            [X,Y0]=simGenerate(500+choice-101,n,4,0);G=X;
+            [ZASE]=ASE(X,dim);
+
             %Y0=Y;Y0(Y==2)=3;Y0(Y==4)=2;Y0(Y==3)=4;%Y0 original; Y reduced; Y2 refined from Y.
             Y=Y0;
             Y(Y==2)=1;Y(Y==3)=4;Y(Y==4)=2;
@@ -339,15 +382,102 @@ if choice==6 || choice==7 || choice==8
             acc2(r,i)=sum(idxOri & idx2)/sum(idxOri);
 
             indices=crossvalind('Kfold',Y,5);
+            tmp=AttributeEvaluate(ZASE,Y,indices); error0(r,i)=tmp(1,1);
             [tmp,~]=RefineEvaluate(X,Y0,indices); error1(r,i)=mean(tmp(:,1));
             [tmp,~]=RefineEvaluate(X,Y,indices); error2(r,i)=mean(tmp(:,1));error3(r,i)=mean(tmp(:,2));error4(r,i)=mean(tmp(:,3));error5(r,i)=mean(tmp(:,4));
             % [tmp,~]=RefineEvaluate(X,Y2,indices); error4(r,i)=mean(tmp(:,1));
         end
     end
     [mean(acc1);mean(acc2)]
-    [mean(error1);mean(error2);mean(error3);mean(error4);mean(error5)]
-    save(strcat('GraphRefine',num2str(choice),'CV',num2str(cvf),'.mat'),'choice','error1','acc1','error2','acc2','cvf');
-    % ground-truth classifier, given classifier, refined classifier
+    [mean(error0);mean(error1);mean(error2);mean(error3);mean(error4);mean(error5)]
+    save(strcat('GraphRefine',num2str(choice),'CV',num2str(cvf),'.mat'),'choice','error0','error1','acc1','error2','error3','error4','error5','acc2','cvf');
+end
+
+if choice ==104 %time
+    opts = struct('Normalize',true,'DiagAugment',false,'Principal',0,'Laplacian',false,'Discriminant',false);
+    lim=20;time1=zeros(lim,rep);time2=zeros(lim,rep);time3=zeros(lim,rep);numEdges=zeros(lim);
+    for i=1:lim
+        n=5000*i
+        [X,Label]=simGenerate(502,n,4,0);
+        X=sparse(X);
+        numEdges(i)=sum(sum(X));
+        % GraphEncoder(Dis{1},Label);
+        for r=1:rep
+            tic
+            GraphEncoder(X,Label,opts);
+            time1(i,r)=toc;
+            tic
+            RefinedGEE(X,Label);
+            time2(i,r)=toc;
+            tic
+            tic
+            svds(X,20);
+            time3(i,r)=toc;
+        end
+        [mean(time1,2),mean(time2,2),mean(time3,2)]
+        [std(time1,[],2),std(time2,[],2),std(time3,[],2)]
+    end
+    save(strcat('GraphRefine',num2str(choice),'.mat'),'lim','n','time1','time2','time3','numEdges');
+end
+
+if choice==5
+    % myColor = brewermap(18,'Spectral');
+    figName='FigRefine5';
+    myColor2 = brewermap(10,'RdYlBu');lw=4;fs=28;n=10;
+    t1 = tiledlayout(1,3);
+    for i=1:3
+        nexttile();
+        switch i
+            case 1
+                load('GraphRefine101CV10.mat');str='Simulated Graph 1';
+            case 2
+                load('GraphRefine102CV10.mat');str='Simulated Graph 2';
+            case 3
+                load('GraphRefine103CV10.mat');str='Simulated Graph 3';
+        end
+        errorbar(1:n,mean(error1,1),1*std(error1,[],1),'Color', myColor2(4,:),'LineStyle', ':','LineWidth',lw-2);hold on
+        errorbar(1:n,mean(error2,1),1*std(error2,[],1),'Color', myColor2(7,:),'LineStyle', '-','LineWidth',lw);
+        errorbar(1:n,mean(error4,1),1*std(error4,[],1),'Color', myColor2(10,:),'LineStyle', '-','LineWidth',lw);
+        errorbar(1:n,mean(error0,1),1*std(error0,[],1),'Color', myColor2(2,:),'LineStyle', '-','LineWidth',lw);
+        if i==3
+            legend('GEE0','GEE','R-GEE','ASE','Location','NorthEast');
+        end
+        xlim([1,10]);xticks([1 5 10]);xticklabels({'200','1000','2000'});%ylim([0,0.5]);
+        title(str);
+
+        set(gca,'FontSize',fs);
+        axis('square');
+    end
+    ylabel(t1,'Classification Error','FontSize',fs)
+    xlabel(t1,'Number of Vertices','FontSize',fs)
+
+    F.fname=figName;
+    F.wh=[12 4]*2;
+    %     F.PaperPositionMode='auto';
+    print_fig(gcf,F)
+end
+
+
+if choice==6;%time figure
+%         Spec=2;
+        i=10;ind=1;lw=4;F.fname='FigRefineTime';str1='Running Time';loc='East';
+        myColor = brewermap(11,'RdYlGn'); myColor2 = brewermap(4,'RdYlBu');myColor(10,:)=myColor2(4,:);
+%         myColor=[myColor(2,:);myColor(3,:);myColor2(3,:)];
+        fs=28;
+        load('GEEFusionSim6.mat')
+        errorbar(1:i,mean(time1,2),1*std(time1,[],2),'Color', myColor2(1,:),'LineStyle', '-','LineWidth',lw);hold on
+        errorbar(1:i,mean(time2,2),1*std(time2,[],2),'Color', myColor2(2,:),'LineStyle', '-','LineWidth',lw);
+        errorbar(1:i,mean(time3,2),1*std(time3,[],2),'Color', myColor2(3,:),'LineStyle', '-','LineWidth',lw);
+        legend('One Graph','Three Graphs','Location','NorthWest');
+        xlim([1,10]);xticks([1 5 10]);xticklabels({'3000','15000','30000'});
+        set(gca,'FontSize',fs); 
+        ylabel(tl,'Running Time (s)','FontSize',fs)
+        xlabel(tl,'Number of Vertices','FontSize',fs)
+        axis('square'); 
+        %         set(gca,'FontSize',fs);
+        F.wh=[4 4]*2;
+        %     F.PaperPositionMode='auto';
+        print_fig(gcf,F)
 end
 % 
 % if choice==8

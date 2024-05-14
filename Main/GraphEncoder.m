@@ -72,13 +72,25 @@ for i=1:numG
 end
 Z=horzcat(Z{:});
 
-% Apply a linear discriminant to identify which dimension corresponds to
-% which class
-[Z2,~,~,comChoice]=EncoderDiscriminant(Z,nk,indK,opts);
-[~,YVal]=max(Z2,[],2);
-idx=(YVal~=Y);
-idx= (indTrn & idx);
-YVal(~indTrn)=0;
+if opts.Discriminant
+    % Apply a linear discriminant to identify which dimension corresponds to
+    % which class
+    [Z2,~,~,comChoice]=EncoderDiscriminant(Z,nk,indK,opts);
+    [~,YVal]=max(Z2,[],2);
+    idx=(YVal~=Y);
+    idx= (indTrn & idx);
+    YVal(~indTrn)=0;
+    Z=Z2;
+else
+    comChoice={0,0};YVal=Y;idx=0;
+    if opts.Principal
+        Z=Z(:,comChoice{1});
+    end
+end
+
+output=struct('comChoice',comChoice{1},'comScore',comChoice{2},'Y',Y,'YVal',YVal,'norm',normZ,'idx',idx);
+
+
 % thres=0.95;
 % idx= (indTrn & (ZMax<thres)); %all training data where embedding probability is less than thres
 % for i=1:max(opts.BenchY) %same as above, but also considering the original class
@@ -102,17 +114,6 @@ YVal(~indTrn)=0;
 %         end
 %     end
 % end
-
-% Output format
-if opts.Discriminant
-    Z=Z2;
-else
-    if opts.Principal
-        Z=Z(:,comChoice{1});
-    end
-end
-
-output=struct('comChoice',comChoice{1},'comScore',comChoice{2},'Y',Y,'YVal',YVal,'norm',normZ,'idx',idx);
 
 %% LDA transform function + Principal Dimension Reduction
 function [Z,U,V,comChoice]=EncoderDiscriminant(Z,mk,indK,opts)
