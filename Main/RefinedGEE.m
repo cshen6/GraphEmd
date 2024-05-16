@@ -28,12 +28,12 @@
 function [Z,output]=RefinedGEE(G,Y,opts)
 warning ('off','all');
 if nargin<3
-    opts = struct('Normalize',true,'RefineK',3,'RefineY',3,'eps',0.2,'epsn',5);
+    opts = struct('Normalize',true,'RefineK',3,'RefineY',3,'eps',0.05,'epsn',5);
 end
 if ~isfield(opts,'Normalize'); opts.Normalize=true; end
 if ~isfield(opts,'RefineK'); opts.RefineK=3; end
 if ~isfield(opts,'RefineY'); opts.RefineY=3; end
-if ~isfield(opts,'eps'); opts.eps=0.2; end
+if ~isfield(opts,'eps'); opts.eps=0.05; end
 if ~isfield(opts,'epsn'); opts.epsn=5; end
 opts.Discriminant = true;
 opts.Principal=0;
@@ -56,9 +56,8 @@ if opts.RefineK>0
     ZK=cell(opts.RefineK,1);
     output1=output;idx=output1.idx;
     for rK=1:opts.RefineK
-        Y1=output1.YVal+output1.idx*K;
+        Y1=output1.YVal+idx*K;
         [Z2,output2]=GraphEncoder(G,Y1,opts);
-        % [sum(idx),sum(output2.idx & idx)]
         if sum(idx)-sum(output2.idx & idx)<= max(sum(idx)*opts.eps,opts.epsn)
             break;
         else

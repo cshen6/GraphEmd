@@ -1,6 +1,6 @@
 function simRefine(choice,rep,cvf)
 
-    skip=0;
+    skip=1;%skip spectral embedding in evaluation
 if nargin<2
 rep=3;
 end
@@ -47,7 +47,7 @@ if choice>=10 && choice <30
         case 13 
             load('karate.mat'); X=G;
         case 14
-            load('IIP.mat'); X=Adj;
+            load('IIP.mat'); X=double(Adj+Adj'>0);
         case 15
             load('letter.mat'); X=edge2adj(Edge1);Y=Label1;LeidenY=LeidenY1;
         case 16
@@ -56,7 +56,6 @@ if choice>=10 && choice <30
             load('pubmed.mat');X=edge2adj(Edge);Y=Label;
         case 18
             load('soc-political-retweet.mat'); X=edge2adj(Edge);Y=Label;    
-            
         case 20
             load('CElegans.mat');X=double(Ac+Ac'>0);Y=vcols;LeidenY=AcLeidenY;
         case 21
@@ -250,7 +249,7 @@ if choice==1 || choice==2 || choice==3 || choice==4
         case 3
             load('karate.mat'); X=G;G=X;figName='FigRefine3';str1='Karate Club Graph';Y0=Y;lss=8;
         case 4
-            load('polblogs.mat'); per=randperm(length(Y));X=Adj(per(1:300),per(1:300));G=X;figName='FigRefine4';str1='Political Blog Graph';Y0=Y(per(1:300));Y=Y0;lss=8;
+            load('polblogs.mat'); X=Adj;G=X;figName='FigRefine4';str1='Political Blog Graph';Y0=Y;Y=Y0;lss=8;
         % case 4
         %     [X,Y]=simGenerate(502,n,4,0);G=X;figName='FigRefine4';str1='Stochastic Block Model 3';
         %     Y0=Y;Y(Y<=3)=1;Y(Y==4)=2;Y(Y==5)=3;
@@ -325,16 +324,111 @@ if choice==1 || choice==2 || choice==3 || choice==4
     h.LineWidth = 0.5;
     xlabel('GEE-Refined Community');
     axis('square'); 
-    if choice>2
-    else
-        title(strcat('Precision / Recall = ', '[',num2str(floor(acc1*100)/100),',', num2str(floor(acc2*100)/100),']'));
-    end
+    % if choice>2
+    % else
+    %     title(strcat('Precision / Recall = ', '[',num2str(floor(acc1*100)/100),',', num2str(floor(acc2*100)/100),']'));
+    % end
     set(gca,'fontSize',fs);
 
     title(t1,str1,'fontSize',fs+12);
 
     F.fname=figName;
         F.wh=[lss 4]*2;
+        %     F.PaperPositionMode='auto';
+        print_fig(gcf,F)
+end
+
+
+if choice==5
+    % myColor = brewermap(18,'Spectral');
+    figName='FigRefine5A';
+    myColor2 = brewermap(10,'RdYlBu');lw=4;fs=28;n=10;
+    t1 = tiledlayout(1,3);
+    for i=1:3
+        nexttile();
+        switch i
+            case 1
+                load('GraphRefine101CV10.mat');str='Simulated Graph 1';
+            case 2
+                load('GraphRefine102CV10.mat');str='Simulated Graph 2';
+            case 3
+                load('GraphRefine103CV10.mat');str='Simulated Graph 3';
+        end
+        errorbar(1:n,mean(error1,1),1*std(error1,[],1),'Color', myColor2(4,:),'LineStyle', ':','LineWidth',lw-2);hold on
+        errorbar(1:n,mean(error2,1),1*std(error2,[],1),'Color', myColor2(7,:),'LineStyle', '-','LineWidth',lw);
+        errorbar(1:n,mean(error4,1),1*std(error4,[],1),'Color', myColor2(10,:),'LineStyle', '-','LineWidth',lw);
+        errorbar(1:n,mean(error0,1),1*std(error0,[],1),'Color', myColor2(2,:),'LineStyle', '-','LineWidth',lw);
+        if i==3
+            legend('GEE0','GEE','R-GEE','ASE','Location','NorthEast');
+        end
+        xlim([1,10]);xticks([1 5 10]);xticklabels({'200','1000','2000'});%ylim([0,0.5]);
+        title(str);
+
+        set(gca,'FontSize',fs);
+        axis('square');
+    end
+    ylabel(t1,'Classification Error','FontSize',fs)
+    xlabel(t1,'Number of Vertices','FontSize',fs)
+
+    F.fname=figName;
+    F.wh=[12 4]*2;
+    %     F.PaperPositionMode='auto';
+    print_fig(gcf,F)
+
+    % myColor = brewermap(18,'Spectral');
+    figName='FigRefine5B';
+    myColor2 = brewermap(10,'Spectral');lw=4;fs=28;n=10;
+    t1 = tiledlayout(1,3);
+    for i=1:3
+        nexttile();
+        switch i
+            case 1
+                load('GraphRefine101CV10.mat');str='Simulated Graph 1';
+            case 2
+                load('GraphRefine102CV10.mat');str='Simulated Graph 2';
+            case 3
+                load('GraphRefine103CV10.mat');str='Simulated Graph 3';
+        end
+        errorbar(1:n,mean(acc1,1),1*std(acc1,[],1),'Color', myColor2(8,:),'LineStyle', '-','LineWidth',lw);hold on
+        errorbar(1:n,mean(acc2,1),1*std(acc2,[],1),'Color', myColor2(3,:),'LineStyle', '-','LineWidth',lw);
+        if i==3
+            legend('R-GEE Precision','R-GEE Recall','Location','East');
+        end
+        xlim([1,10]);xticks([1 5 10]);xticklabels({'200','1000','2000'});ylim([0,1]);
+        title(str);
+
+        set(gca,'FontSize',fs);
+        axis('square');
+    end
+    ylabel(t1,'Community Discovery','FontSize',fs)
+    xlabel(t1,'Number of Vertices','FontSize',fs)
+
+    F.fname=figName;
+    F.wh=[12 4]*2;
+    %     F.PaperPositionMode='auto';
+    print_fig(gcf,F)
+end
+
+if choice==6;%time figure
+%         Spec=2;
+        i=10;lw=4;F.fname='FigRefine6';str1='Running Time';loc='East';
+        myColor2 = brewermap(10,'RdYlBu');%myColor2 = brewermap(4,'RdYlBu');myColor(10,:)=myColor2(4,:);
+%         myColor=[myColor(2,:);myColor(3,:);myColor2(3,:)];
+        fs=28;
+        load('GraphRefineTime.mat')
+        time1=log10(time1);time2=log10(time2);time3=log10(time3);
+        errorbar(1:i,mean(time1,2),1*std(time1,[],2),'Color', myColor2(7,:),'LineStyle', '-','LineWidth',lw);hold on
+        errorbar(1:i,mean(time2,2),1*std(time2,[],2),'Color', myColor2(10,:),'LineStyle', '-','LineWidth',lw);
+        errorbar(1:i,mean(time3,2),1*std(time3,[],2),'Color', myColor2(2,:),'LineStyle', '-','LineWidth',lw);
+        legend('GEE','R-GEE','SVD (d=20)','Location','SouthEast');
+        xlim([1,10]);xticks([1 5 10]);xticklabels({'0.5M','10M','50M'});
+        ylim([-3,3]);yticks([-2 -1 0 1 2]);yticklabels({'0.01','0.1','1','10','100'});
+        set(gca,'FontSize',fs); 
+        ylabel('Running Time (Log Scale)','FontSize',fs)
+        xlabel('Approximate Number of Edges','FontSize',fs)
+        axis('square'); 
+        %         set(gca,'FontSize',fs);
+        F.wh=[4 4]*2;
         %     F.PaperPositionMode='auto';
         print_fig(gcf,F)
 end
@@ -395,14 +489,14 @@ end
 
 if choice ==104 %time
     opts = struct('Normalize',true,'DiagAugment',false,'Principal',0,'Laplacian',false,'Discriminant',false);
-    lim=20;time1=zeros(lim,rep);time2=zeros(lim,rep);time3=zeros(lim,rep);numEdges=zeros(lim);
+    lim=10;time1=zeros(lim,rep);time2=zeros(lim,rep);time3=zeros(lim,rep);numEdges=zeros(lim,rep);
     for i=1:lim
-        n=5000*i
-        [X,Label]=simGenerate(502,n,4,0);
-        X=sparse(X);
-        numEdges(i)=sum(sum(X));
+        n=3000*i
         % GraphEncoder(Dis{1},Label);
         for r=1:rep
+            [X,Label]=simGenerate(502,n,4,0);
+            X=sparse(X);
+            numEdges(i,r)=sum(sum(X));
             tic
             GraphEncoder(X,Label,opts);
             time1(i,r)=toc;
@@ -417,68 +511,9 @@ if choice ==104 %time
         [mean(time1,2),mean(time2,2),mean(time3,2)]
         [std(time1,[],2),std(time2,[],2),std(time3,[],2)]
     end
-    save(strcat('GraphRefine',num2str(choice),'.mat'),'lim','n','time1','time2','time3','numEdges');
+    save('GraphRefineTime.mat','lim','n','time1','time2','time3','numEdges');
 end
 
-if choice==5
-    % myColor = brewermap(18,'Spectral');
-    figName='FigRefine5';
-    myColor2 = brewermap(10,'RdYlBu');lw=4;fs=28;n=10;
-    t1 = tiledlayout(1,3);
-    for i=1:3
-        nexttile();
-        switch i
-            case 1
-                load('GraphRefine101CV10.mat');str='Simulated Graph 1';
-            case 2
-                load('GraphRefine102CV10.mat');str='Simulated Graph 2';
-            case 3
-                load('GraphRefine103CV10.mat');str='Simulated Graph 3';
-        end
-        errorbar(1:n,mean(error1,1),1*std(error1,[],1),'Color', myColor2(4,:),'LineStyle', ':','LineWidth',lw-2);hold on
-        errorbar(1:n,mean(error2,1),1*std(error2,[],1),'Color', myColor2(7,:),'LineStyle', '-','LineWidth',lw);
-        errorbar(1:n,mean(error4,1),1*std(error4,[],1),'Color', myColor2(10,:),'LineStyle', '-','LineWidth',lw);
-        errorbar(1:n,mean(error0,1),1*std(error0,[],1),'Color', myColor2(2,:),'LineStyle', '-','LineWidth',lw);
-        if i==3
-            legend('GEE0','GEE','R-GEE','ASE','Location','NorthEast');
-        end
-        xlim([1,10]);xticks([1 5 10]);xticklabels({'200','1000','2000'});%ylim([0,0.5]);
-        title(str);
-
-        set(gca,'FontSize',fs);
-        axis('square');
-    end
-    ylabel(t1,'Classification Error','FontSize',fs)
-    xlabel(t1,'Number of Vertices','FontSize',fs)
-
-    F.fname=figName;
-    F.wh=[12 4]*2;
-    %     F.PaperPositionMode='auto';
-    print_fig(gcf,F)
-end
-
-
-if choice==6;%time figure
-%         Spec=2;
-        i=10;ind=1;lw=4;F.fname='FigRefineTime';str1='Running Time';loc='East';
-        myColor = brewermap(11,'RdYlGn'); myColor2 = brewermap(4,'RdYlBu');myColor(10,:)=myColor2(4,:);
-%         myColor=[myColor(2,:);myColor(3,:);myColor2(3,:)];
-        fs=28;
-        load('GEEFusionSim6.mat')
-        errorbar(1:i,mean(time1,2),1*std(time1,[],2),'Color', myColor2(1,:),'LineStyle', '-','LineWidth',lw);hold on
-        errorbar(1:i,mean(time2,2),1*std(time2,[],2),'Color', myColor2(2,:),'LineStyle', '-','LineWidth',lw);
-        errorbar(1:i,mean(time3,2),1*std(time3,[],2),'Color', myColor2(3,:),'LineStyle', '-','LineWidth',lw);
-        legend('One Graph','Three Graphs','Location','NorthWest');
-        xlim([1,10]);xticks([1 5 10]);xticklabels({'3000','15000','30000'});
-        set(gca,'FontSize',fs); 
-        ylabel(tl,'Running Time (s)','FontSize',fs)
-        xlabel(tl,'Number of Vertices','FontSize',fs)
-        axis('square'); 
-        %         set(gca,'FontSize',fs);
-        F.wh=[4 4]*2;
-        %     F.PaperPositionMode='auto';
-        print_fig(gcf,F)
-end
 % 
 % if choice==8
 %     % switch choice
