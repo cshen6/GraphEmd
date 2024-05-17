@@ -1,11 +1,16 @@
-function simRefine(choice,rep,cvf)
+function simRefine(choice,rep,cvf,spectral,n2v)
 
-    skip=1;%skip spectral embedding in evaluation
 if nargin<2
 rep=3;
 end
 if nargin<3
 cvf=10;
+end
+if nargin<4
+    spectral=0;
+end
+if nargin<5
+    n2v=0;
 end
 % thres=0.98;
 % if choice==1
@@ -39,46 +44,49 @@ if choice>=10 && choice <30
     rng("default")
     switch choice
         case 10
-            load('adjnoun.mat'); X=Adj;
+            load('adjnoun.mat'); X=Adj;n2vstr='AdjNoun';
         case 11
-            load('citeseer.mat');X=edge2adj(Edge);Y=Label;
+            load('citeseer.mat');X=edge2adj(Edge);Y=Label;n2vstr='Citeseer';
         case 12
-            load('Cora.mat');X=edge2adj(Edge);Y=Label;
-        case 13 
-            load('karate.mat'); X=G;
-        case 14
-            load('IIP.mat'); X=double(Adj+Adj'>0);
+            load('Cora.mat');X=edge2adj(Edge);Y=Label;n2vstr='Cora'; %unmatched
+        case 13
+            load('Coil-Rag.mat');X=edge2adj(Edge);Y=Label;n2vstr='Coil';%unmatched
+        case 14 
+            load('karate.mat'); X=G;n2vstr='karate';
         case 15
-            load('letter.mat'); X=edge2adj(Edge1);Y=Label1;LeidenY=LeidenY1;
+            load('IIP.mat'); X=double(Adj+Adj'>0);n2vstr='IIP';
         case 16
-            load('polblogs.mat');X=Adj;
+            load('letter.mat'); X=edge2adj(Edge1);Y=Label1;LeidenY=LeidenY1;n2vstr='letter1';%unmatched
         case 17
-            load('pubmed.mat');X=edge2adj(Edge);Y=Label;
+            load('polblogs.mat');X=Adj;n2vstr='polblogs';
         case 18
-            load('soc-political-retweet.mat'); X=edge2adj(Edge);Y=Label;    
+            load('pubmed.mat');X=edge2adj(Edge);Y=Label;n2vstr='pubmed';%unmatched
+        case 19
+            load('soc-political-retweet.mat'); X=edge2adj(Edge);Y=Label;n2vstr='poltweet'; 
         case 20
-            load('CElegans.mat');X=double(Ac+Ac'>0);Y=vcols;LeidenY=AcLeidenY;
+            load('CElegans.mat');X=double(Ac+Ac'>0);Y=vcols;LeidenY=AcLeidenY;n2vstr='CElegansAc';
         case 21
-            load('CElegans.mat');X=double(Ag+Ag'>0);Y=vcols;LeidenY=AgLeidenY;
+            load('CElegans.mat');X=double(Ag+Ag'>0);Y=vcols;LeidenY=AgLeidenY;n2vstr='CElegansAg';
         case 22 %RGEE better
-            load('email.mat'); X=Adj;
+            load('email.mat'); X=Adj;n2vstr='email';
         case 23
-            load('Gene.mat'); X=AdjOri;
+            load('Gene.mat'); X=double(AdjOri+AdjOri'>0);n2vstr='Gene';
         case 24 %RGEE better
-            load('lastfm.mat'); X=Adj;
+            load('lastfm.mat'); X=Adj;n2vstr='lastfm';
         case 25 % improve
-            load('Wiki_Data.mat'); X=TE;Y=Label;LeidenY=TELeidenY;
+            load('Wiki_Data.mat'); X=TE;Y=Label;LeidenY=TELeidenY;n2v=0;
         case 26 % improve
-            load('Wiki_Data.mat'); X=TF;Y=Label;LeidenY=TFLeidenY;
+            load('Wiki_Data.mat'); X=TF;Y=Label;LeidenY=TFLeidenY;n2v=0;
         case 27
-            load('Wiki_Data.mat'); X=GEAdj;Y=Label;LeidenY=GELeidenY;
+            load('Wiki_Data.mat'); X=GEAdj;Y=Label;LeidenY=GELeidenY;n2vstr='WikiGE';
         case 28
-            load('Wiki_Data.mat'); X=GFAdj;Y=Label;LeidenY=GFLeidenY;
+            load('Wiki_Data.mat'); X=GFAdj;Y=Label;LeidenY=GFLeidenY;n2vstr='WikiGF';%unmatched
     end
     %RefineEvaluate(X,Y);
     K=max(Y);
-    if skip==1
-    else
+    ind=(sum(X)>0);%length(Y)-sum(ind)
+    X=X(ind,ind);Y=Y(ind);
+    if spectral==1
         tic
         %[Z]=UnsupGraph(X,max(Y)*5,length(Y));
         dim=20;
@@ -87,21 +95,29 @@ if choice>=10 && choice <30
         tic
         % ZLSE = node2vec(X+X', 128, 10, 80, 1, 1);
         [ZLSE]=ASE(Lap(X),dim);
+        % ZLSE=ZNV;
         % ZLeiden=GraphEncoder(X,LeidenY);
         tt2=toc;
+    end
+    if n2v==1
+        ZNV=load('n2v.mat',n2vstr);
+        ZNV=ZNV.(n2vstr);
     end
     % tic
     % [Z2]=ASE(X,10,true);
     % tt2=toc;
-    error1=zeros(rep,6);error2=zeros(rep,4);time1=zeros(rep,6);time2=zeros(rep,4);
+    error1=zeros(rep,7);error2=zeros(rep,4);time1=zeros(rep,7);time2=zeros(rep,4);
     for r=1:rep
         indices=crossvalind('Kfold',Y,cvf); 
-        if skip==1
-        else
+        if spectral==1
         tmp=AttributeEvaluate({ZASE,X},Y,indices); %K=6
         error1(r,1:3)=tmp(1,:);time1(r,1:3)=tmp(2,:)+tt1;
         tmp=AttributeEvaluate({ZLSE,X},Y,indices); %K=6
         error1(r,4:6)=tmp(1,:);time1(r,4:6)=tmp(2,:)+tt2;
+        end
+        if n2v==1
+            tmp=AttributeEvaluate(ZNV,Y,indices); %K=6
+            error1(r,7)=tmp(1,1);
         end
         [tmp,tmp1]=RefineEvaluate(X,Y,indices);
         error2(r,1:4)=mean(tmp);time2(r,1:4)=mean(tmp1);
@@ -122,36 +138,51 @@ end
 if choice>=30 && choice<=40
     rng("default")
     load('Wiki_Data.mat'); Y=Label;
-    error1=zeros(rep,6);error2=zeros(rep,4);time1=zeros(rep,6);time2=zeros(rep,4);dim=20;
+    error1=zeros(rep,7);error2=zeros(rep,4);time1=zeros(rep,7);time2=zeros(rep,4);dim=20;
     if choice==30 % improve
-        X={TE,TF};
+        X={TE,TF};n2v=0;
         % [Z1]=UnsupGraph(TE,max(Y)*5,length(Y));[Z2]=UnsupGraph(TF,max(Y)*5,length(Y));
         % Z=[Z1,Z2];
+        if spectral==1
         tic;ZASE=ASE([X{1},X{2}],dim);n=size(X{1},1);Z1=[ZASE(1:n,:),ZASE(n+1:2*n,:)];t1=toc;
         tic;ZLSE=ASE([Lap(X{1}),Lap(X{2})],dim);Z2=[ZLSE(1:n,:),ZLSE(n+1:2*n,:)];t2=toc;
+        end
         % ZLeidenTE=GraphEncoder(TE,TELeidenY);ZLeidenTF=GraphEncoder(TF,TFLeidenY);ZLeiden=[ZLeidenTE,ZLeidenTF];
     end
     if choice==31 % improve
-        X={TE,GEAdj};
+        X={TE,GEAdj};n2v=0;
         % [Z1]=UnsupGraph(TE,max(Y)*5,length(Y));[Z2]=UnsupGraph(TF,max(Y)*5,length(Y));
         % Z=[Z1,Z2];
+        if spectral==1
         tic;ZASE=ASE([X{1},X{2}],dim);n=size(X{1},1);Z1=[ZASE(1:n,:),ZASE(n+1:2*n,:)];t1=toc;
         tic;ZLSE=ASE([Lap(X{1}),Lap(X{2})],dim);Z2=[ZLSE(1:n,:),ZLSE(n+1:2*n,:)];t2=toc;
+        end
         % ZLeidenTE=GraphEncoder(TE,TELeidenY);ZLeidenTF=GraphEncoder(GEAdj,GELeidenY);ZLeiden=[ZLeidenTE,ZLeidenTF];
     end
     if choice==32 % improve
-        X={TF,GFAdj};
+        X={TF,GFAdj};n2v=0;
         % [Z1]=UnsupGraph(TE,max(Y)*5,length(Y));[Z2]=UnsupGraph(TF,max(Y)*5,length(Y));
         % Z=[Z1,Z2];
+        if spectral==1
         tic;ZASE=ASE([X{1},X{2}],dim);n=size(X{1},1);Z1=[ZASE(1:n,:),ZASE(n+1:2*n,:)];t1=toc;
         tic;ZLSE=ASE([Lap(X{1}),Lap(X{2})],dim);Z2=[ZLSE(1:n,:),ZLSE(n+1:2*n,:)];t2=toc;
+        end
     end
     if choice==33 % improve
         X={GEAdj,GFAdj};
         % [Z1]=UnsupGraph(TE,max(Y)*5,length(Y));[Z2]=UnsupGraph(TF,max(Y)*5,length(Y));
         % Z=[Z1,Z2];
+        if spectral==1
         tic;ZASE=ASE([X{1},X{2}],dim);n=size(X{1},1);Z1=[ZASE(1:n,:),ZASE(n+1:2*n,:)];t1=toc;
         tic;ZLSE=ASE([Lap(X{1}),Lap(X{2})],dim);Z2=[ZLSE(1:n,:),ZLSE(n+1:2*n,:)];t2=toc;
+        end
+        if n2v==1
+            load('n2v.mat')
+            ind=(sum(GFAdj)>0);
+            GF2=zeros(1382,128);
+            GF2(ind,:)=WikiGF;
+            ZNV=[WikiGE,GF2];
+        end
     end
     % if choice==33 % improve
     %     X={TE,TF,GEAdj};
@@ -182,16 +213,24 @@ if choice>=30 && choice<=40
     %     tic;ZLSE=ASE([Lap(X{1}),Lap(X{2}),Lap(X{3})],dim);Z2=[ZLSE(1:n,:),ZLSE(n+1:2*n,:),ZLSE(2*n+1:3*n,:)];t2=toc;
     % end
     if choice==34 % improve
-        X={TE,TF,GEAdj,GFAdj};
+        X={TE,TF,GEAdj,GFAdj};n2v=0;
         % [Z1]=UnsupGraph(TE,max(Y)*5,length(Y));[Z2]=UnsupGraph(TF,max(Y)*5,length(Y));[Z3]=UnsupGraph(GEAdj,max(Y)*5,length(Y));[Z4]=UnsupGraph(GFAdj,max(Y)*5,length(Y));
         % Z=[Z1,Z2,Z3,Z4];
+        if spectral==1
         tic;ZASE=ASE([X{1},X{2},X{3},X{4}],dim);n=size(X{1},1);Z1=[ZASE(1:n,:),ZASE(n+1:2*n,:),ZASE(2*n+1:3*n,:),ZASE(3*n+1:4*n,:)];t1=toc;
         tic;ZLSE=ASE([Lap(X{1}),Lap(X{2}),Lap(X{3}),Lap(X{4})],dim);Z2=[ZLSE(1:n,:),ZLSE(n+1:2*n,:),ZLSE(2*n+1:3*n,:),ZLSE(3*n+1:4*n,:)];t2=toc;
+        end
     end
     if choice==35 % improve
         load('CElegans.mat');X={double(Ac+Ac'>0),double(Ag+Ag'>0)};Y=vcols;
+        if spectral==1
         tic;ZASE=ASE([X{1},X{2}],dim);n=size(X{1},1);Z1=[ZASE(1:n,:),ZASE(n+1:2*n,:)];t1=toc;
         tic;ZLSE=ASE([Lap(X{1}),Lap(X{2})],dim);Z2=[ZLSE(1:n,:),ZLSE(n+1:2*n,:)];t2=toc;
+        end
+        if n2v==1
+            load('n2v.mat')
+            ZNV=[CElegansAc,CElegansAg];
+        end
     end
     % if choice==40 % improve
     %     load('IMDB.mat');X={Edge1,Edge2};Y=Label2;Z1=0;Z2=0;
@@ -207,11 +246,15 @@ if choice>=30 && choice<=40
     % end
     for r=1:rep
         indices=crossvalind('Kfold',Y,cvf); 
-        if skip~=1
+        if spectral==1
         tmp=AttributeEvaluate({Z1,X},Y,indices); %K=6
         error1(r,1:3)=tmp(1,:);time1(r,1:3)=tmp(2,:)+t1;
         tmp=AttributeEvaluate({Z2,X},Y,indices); %K=6
         error1(r,4:6)=tmp(1,:);time1(r,4:6)=tmp(2,:)+t2;
+        end
+        if n2v==1
+            tmp=AttributeEvaluate(ZNV,Y,indices); %K=6
+            error1(r,7)=tmp(1,1);
         end
         [tmp,tmp1]=RefineEvaluate(X,Y,indices);
         error2(r,1:4)=mean(tmp);time2(r,1:4)=mean(tmp1);
