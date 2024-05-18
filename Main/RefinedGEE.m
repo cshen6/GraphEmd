@@ -1,6 +1,6 @@
 %% A refined graph encoder embedding
 
-function [Z,output]=RefinedGEE(G,Y,opts)
+function [Z,YConcat]=RefinedGEE(G,Y,opts)
 warning ('off','all');
 if nargin<3
     opts = struct('Normalize',true,'RefineK',5,'RefineY',5,'eps',0.3,'epsn',5);
@@ -15,7 +15,7 @@ opts.Principal=0;
 version=2;
 
 [Z,output]=GraphEncoder(G,Y,opts);
-
+YConcat=Y;
 % Refined on K
 if version==2 % new version 
     if opts.RefineK>0
@@ -32,6 +32,7 @@ if version==2 % new version
                 break;
             else
                 Y1=output1.YVal+idx*sum(idxK);
+                YConcat=[YConcat,Y1];
                 [Z1,output1]=GraphEncoder(G,Y1,opts);%idx=output1.idx;K=size(Z1,2);
                 ZK{rK,1}=Z1;idx=output1.idx & idx;
             end
@@ -52,7 +53,7 @@ if version==1 % old version for paper, simpler and has similar vertex error in m
             if sum(idx)-sum(output2.idx & idx)< max(sum(idx)*opts.eps,opts.epsn)
                 break;
             else
-                ZK{rK,1}=Z2;output1=output2;idx=output2.idx & idx;
+                ZK{rK,1}=Z2;output1=output2;idx=output2.idx & idx;YConcat=[YConcat,Y1];
             end
         end
         ZK=horzcat(ZK{:});
@@ -69,7 +70,7 @@ if opts.RefineY>0
         if sum(idx)-sum(output2.idx & idx)< max(sum(idx)*opts.eps,opts.epsn)
             break;
         else
-            ZY{r}=Z2;output1=output2;idx=output2.idx & idx;
+            ZY{r}=Z2;output1=output2;idx=output2.idx & idx;YConcat=[YConcat,Y1];
         end
     end
     ZY=horzcat(ZY{:});
