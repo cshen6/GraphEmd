@@ -281,7 +281,7 @@ if choice==51
 end
 
 if choice==1 || choice==2 || choice==3 || choice==4
-    n=100;lss=12;
+    n=200;lss=12;
     switch choice
         case 1
             [X,Y]=simGenerate(500,n,4,0);G=X;figName='FigRefine1';str1='Simulated Graph 1';
@@ -307,7 +307,7 @@ if choice==1 || choice==2 || choice==3 || choice==4
     [Z1,out1]=GraphEncoder(X,Y,opts);
     idx1=out1.idx;sum(idx1)
 
-    [Z2,out2]=RefinedGEE(G,out1.YVal+idx1*size(Z1,2),opts);
+    [Z2,out2]=GraphEncoder(G,out1.YVal+idx1*size(Z1,2),opts);
     idx2=out2.idx;
     idxOri=((Y0==2) | (Y0==3));
     acc1=sum(idxOri & idx2)/sum(idx2)
@@ -339,7 +339,7 @@ if choice==1 || choice==2 || choice==3 || choice==4
     h.EdgeColor = [0.7, 0.7, 0.7];
     h.LineWidth = 0.5; 
     axis('square'); 
-    xlabel('Ground-Truth Community');
+    xlabel('Latent Community');
     set(gca,'fontSize',fs);
     end
 
