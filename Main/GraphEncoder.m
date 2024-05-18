@@ -88,7 +88,7 @@ else
     end
 end
 
-output=struct('comChoice',comChoice{1},'comScore',comChoice{2},'Y',Y,'YVal',YVal,'norm',normZ,'idx',idx);
+output=struct('comChoice',comChoice{1},'comScore',comChoice{2},'Y',Y,'YVal',YVal,'norm',normZ,'idx',idx,'indK',indK);
 
 
 % thres=0.95;

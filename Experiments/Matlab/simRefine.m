@@ -547,9 +547,11 @@ if choice ==104 %time
             RefinedGEE(X,Label);
             time2(i,r)=toc;
             tic
+            if spectral==1
             tic
             svds(X,20);
             time3(i,r)=toc;
+            end
         end
         [mean(time1,2),mean(time2,2),mean(time3,2)]
         [std(time1,[],2),std(time2,[],2),std(time3,[],2)]
