@@ -74,7 +74,25 @@ for j=1:rep
 %             Error(3,i)=Error(3,i)+err/rep;
         end
     end
-    if eval==2
+     if eval==2
+        for i=1:optGraph
+            tic
+                    mdl=fitcknn(ZTrn{i},YTrn,'NumNeighbors',5);
+            % mdl=fitcdiscr(ZTrn{i},YTrn,'discrimType',discrimType);
+            tt=predict(mdl,ZTsn{i});
+            err=mean(YTsn~=tt);
+            Error(2,i)=Error(2,i)+toc/rep;
+            Error(1,i)=Error(1,i)+err/rep;
+
+%             tic
+%             mdl=fitcknn(ZTrn{i},YTrn,'Distance','Euclidean','NumNeighbors',5);
+%             tt=predict(mdl,ZTsn{i});
+%             err=mean(YTsn~=tt);
+%             Error(4,i)=Error(4,i)+toc/rep;
+%             Error(3,i)=Error(3,i)+err/rep;
+        end
+    end
+    if eval==4
         for i=1:optGraph
             tic
             mdl=fitcensemble(ZTrn{i},YTrn,'Method','Bag','NumLearningCycles',20);
