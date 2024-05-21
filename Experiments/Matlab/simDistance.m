@@ -216,9 +216,9 @@ if choice>=10 && choice<=30
         case 11
             load('citeseer.mat');Dist1='spearman';D = 1-squareform(pdist(X, Dist1));%?
         case 12
-            load('Isolet.mat');X=fea;Label=gnd; Dist1='Euclidean';D = 1-squareform(pdist(X, Dist1));%?
-        case 13
-            load('COIL20.mat');X=fea;Label=gnd;Dist1='Euclidean';D = 1-squareform(pdist(X, Dist1));%?
+            load('Isolet.mat');X=fea;Label=gnd; Dist1='spearman';D=X*X';%D = 1-squareform(pdist(X, Dist1));%?
+        % case 13
+        %     load('COIL20.mat');X=fea;Label=gnd;Dist1='Euclidean';D=X*X';%D = 1-squareform(pdist(X, Dist1));%?
         case 14
            load("faceYaleB_32x32"); X=fea;Label=gnd;Dist1='spearman';D = 1-squareform(pdist(X, Dist1));%?
         % case 15
@@ -260,18 +260,18 @@ if choice>=10 && choice<=30
 %         case 17
 %             load('protein.mat');Dist1='euclidean';D = 1-squareform(pdist(X, Dist1));%?
     end
-    opts = struct('Adjacency',1,'DiagAugment',1,'Laplacian',0,'Spectral',0,'LDA',1,'GNN',0,'knn',5,'dim',30,'Normalization',true);
+    opts = struct('Adjacency',1,'DiagAugment',0,'Laplacian',0,'Spectral',0,'LDA',1,'GNN',0,'knn',5,'dim',30,'Normalization',true,'Discriminant',false);
     Acc1=zeros(rep,6);Time1=zeros(rep,6);
     for i=1:rep
         i
        indices = crossvalind('Kfold',Label,5);
        opts.indices=indices;
        tmp=GraphEncoderEvaluate(D,Label,opts); Acc1(i,1)=tmp{1,ind};Acc1(i,2)=tmp{1,ind2};Acc1(i,3)=tmp{1,ind3};Time1(i,1)=tmp{4,ind};Time1(i,2)=tmp{4,ind2};Time1(i,3)=tmp{4,ind3};
-       tmp=AttributeEvaluate(X,Label,indices,1); Acc1(i,4)=tmp(1,1);Time1(i,4)=tmp(2,1);
-       tmp=AttributeEvaluate(X,Label,indices,2); Acc1(i,5)=tmp(1,1);Time1(i,5)=tmp(2,1);
-       tmp=AttributeEvaluate(X,Label,indices,3); Acc1(i,6)=tmp(1,1);Time1(i,6)=tmp(2,1);
+       % tmp=AttributeEvaluate(X,Label,indices,1); Acc1(i,4)=tmp(1,1);Time1(i,4)=tmp(2,1);
+       % tmp=AttributeEvaluate(X,Label,indices,2); Acc1(i,5)=tmp(1,1);Time1(i,5)=tmp(2,1);
+       % tmp=AttributeEvaluate(X,Label,indices,3); Acc1(i,6)=tmp(1,1);Time1(i,6)=tmp(2,1);
     end
     save(strcat('GEELDA',num2str(choice),'Spec',num2str(spec),'.mat'),'choice','Acc1','Time1','rep');
-     [mean(Acc1);mean(Time1);std(Acc1);std(Time1);]
+     [mean(Acc1);std(Acc1);mean(Time1);std(Time1);]
 %     [std(Acc1);std(Acc2);std(Time1);std(Time2)]
 end
