@@ -10,7 +10,7 @@ cvf=max(indices);
 error=zeros(cvf,4);
 time=zeros(cvf,4);
 normalize=1;
-classifier=1;
+classifier=0;
 opts1=struct('Normalize',normalize,'RefineK',0,'RefineY',0); 
 opts2=struct('Normalize',normalize,'RefineK',3,'RefineY',3); %best!
 opts3=struct('Normalize',normalize,'RefineK',5,'RefineY',5); %best?
@@ -43,6 +43,13 @@ for j=1:cvf
         % Z1=[Z1,out.norm];
 %         Z1=X*Z1;
         % dimClass=out.dimClass;
+        if classifier==0
+            output=FeedForward(Z1(trn,:),Y(trn),0);
+            Z1=Z1*output.W+output.b;
+            % Z1=max(Z1*output.W1+output.b1,0)*output.W2+output.b2;
+            [~,YVal]=max(Z1,[],2);
+            error(j,i)=mean(YVal(tsn)~=YTsn);
+        end
         if classifier==1
 %             Z2 = normalize(Z1,2,'norm');
 %             Z2(isnan(Z2))=0;
@@ -51,7 +58,8 @@ for j=1:cvf
             % mdl=fitcnet(Z1(trn,:),Y(trn),'LayerSizes',10*max(Y));
             YVal=predict(mdl,Z1);
             error(j,i)=mean(YVal(tsn)~=YTsn);
-        else
+        end
+        if classifier==2
             [~,YVal]=max(Z1,[],2);
             YVal=dimClass(YVal);
             % for k=1:max(Y) %same as above, but also considering the original class

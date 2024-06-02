@@ -28,13 +28,13 @@
 function [Z,output]=GraphEncoder(G,Y,opts)
 warning ('off','all');
 if nargin<3
-    opts = struct('Normalize',true,'DiagAugment',false,'Principal',0,'Laplacian',false,'Discriminant',true);
+    opts = struct('Normalize',1,'DiagAugment',0,'Principal',0,'Laplacian',0,'Discriminant',1);
 end
-if ~isfield(opts,'Normalize'); opts.Normalize=true; end
-if ~isfield(opts,'DiagAugment'); opts.DiagAugment=false; end
+if ~isfield(opts,'Normalize'); opts.Normalize=1; end
+if ~isfield(opts,'DiagAugment'); opts.DiagAugment=0; end
 if ~isfield(opts,'Principal'); opts.Principal=0; end
-if ~isfield(opts,'Laplacian'); opts.Laplacian=false; end
-if ~isfield(opts,'Discriminant'); opts.Discriminant=true; end
+if ~isfield(opts,'Laplacian'); opts.Laplacian=0; end
+if ~isfield(opts,'Discriminant'); opts.Discriminant=1; end
 % if ~isfield(opts,'Softmax'); opts.Softmax=false; end
 % if ~isfield(opts,'BenchY'); opts.BenchY=Y; end
 % if opts.Softmax
@@ -71,24 +71,26 @@ for i=1:numG
     Z{i}=tmpZ;
 end
 Z=horzcat(Z{:});
+outTransform={0,0};YVal=Y;idx=0;
 
-if opts.Discriminant
+if opts.Discriminant || opts.Principal>0
     % Apply a linear discriminant to identify which dimension corresponds to
     % which class
-    [Z2,~,~,comChoice]=EncoderDiscriminant(Z,nk,indK,opts);
+    [Z2,outTransform]=EncoderTransform(Z,nk,indK,opts);
+end
+
+if opts.Discriminant
     [~,YVal]=max(Z2,[],2);
     idx=(YVal~=Y);
     idx= (indTrn & idx);
     YVal(~indTrn)=0;
     Z=Z2;
-else
-    comChoice={0,0};YVal=Y;idx=0;
-    if opts.Principal
-        Z=Z(:,comChoice{1});
-    end
+end
+if opts.Principal>0
+    Z=Z2;
 end
 
-output=struct('comChoice',comChoice{1},'comScore',comChoice{2},'Y',Y,'YVal',YVal,'norm',normZ,'idx',idx,'indK',indK);
+output=struct('out1',outTransform{1},'out2',outTransform{2},'Y',Y,'YVal',YVal,'norm',normZ,'idx',idx,'indK',indK);
 
 
 % thres=0.95;
@@ -116,7 +118,7 @@ output=struct('comChoice',comChoice{1},'comScore',comChoice{2},'Y',Y,'YVal',YVal
 % end
 
 %% LDA transform function + Principal Dimension Reduction
-function [Z,U,V,comChoice]=EncoderDiscriminant(Z,mk,indK,opts)
+function [Z,outTransform]=EncoderTransform(Z,mk,indK,opts)
 m=sum(mk);
 K=length(mk);
 [~,p]=size(Z);
@@ -131,9 +133,9 @@ for j=1:K
 end
 
 % Dimension reduction via Principal Community
-if opts.Principal
-    comChoice=EncoderDimension({mu,Std},opts.Principal);
-    tmp=comChoice{1};
+if opts.Principal>0
+    outTransform=EncoderDimension({mu,Std},opts.Principal);
+    tmp=outTransform{1};
     Sigma=Sigma(tmp,tmp);
     mu=mu(:,tmp);
     Z=Z(:,tmp);
@@ -142,13 +144,16 @@ if opts.Principal
         Z(isnan(Z))=0;
     end
 else
-    comChoice={0,0};
+    outTransform={0,0};
 end
 
-U=pinv(Sigma);
-V=-(diag(mu*U*mu')*0.5-log(mk/m))';
-U=U*mu';
-Z=Z*U+V;
+if opts.Discriminant
+    U=pinv(Sigma);
+    V=-(diag(mu*U*mu')*0.5-log(mk/m))';
+    U=U*mu';
+    Z=Z*U+V;
+    outTransform={U,V};
+end
 
 %% Encoder Embedding Function
 function Z=EncoderEmbedEdge(X,Y,n,nk)
