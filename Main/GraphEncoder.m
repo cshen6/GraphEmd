@@ -28,9 +28,10 @@
 function [Z,output]=GraphEncoder(G,Y,opts)
 warning ('off','all');
 if nargin<3
-    opts = struct('Normalize',1,'DiagAugment',0,'Principal',0,'Laplacian',0,'Discriminant',1);
+    opts = struct('Normalize',1,'Unbiased',0,'DiagAugment',0,'Principal',0,'Laplacian',0,'Discriminant',1);
 end
 if ~isfield(opts,'Normalize'); opts.Normalize=1; end
+if ~isfield(opts,'Unbiased'); opts.Unbiased=0; end
 if ~isfield(opts,'DiagAugment'); opts.DiagAugment=0; end
 if ~isfield(opts,'Principal'); opts.Principal=0; end
 if ~isfield(opts,'Laplacian'); opts.Laplacian=0; end
@@ -59,6 +60,11 @@ for i=1:numG
     [s,t]=size(X);
     if s==t
         tmpZ=X*indKN;
+        if opts.Unbiased
+            for j=1:length(nk)
+                tmpZ(indK(:,j),j)=tmpZ(indK(:,j),j)*nk(j)/(nk(j)-1);
+            end
+        end
     else
         tmpZ=EncoderEmbedEdge(X,Y,n,nk);
     end
