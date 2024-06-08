@@ -1,7 +1,7 @@
 function simPrincipal(choice,rep)
 
 if nargin<2
-    rep=2;
+    rep=100;
 end
 norma=true;thres1=0.7;
 if choice==1 || choice==2 || choice ==3 % top 3; all; none; none; repeat for DC-SBM
@@ -120,7 +120,7 @@ if choice>=10 && choice <20
         case 10
            load('citeseer.mat');X=edge2adj(Edge);G1=Edge; optsE.Principal=1;n2vstr='Citeseer';
         case 11
-           load('Cora.mat');X=edge2adj(Edge);G1=Edge;n2vstr='Cora'; %ind=2;ind2=4;% 3 out of 5
+           load('Cora.mat');G1=Edge;X=edge2adj(G1);n2vstr='Cora'; %ind=2;ind2=4;% 3 out of 5
         case 12
             load('email.mat');X=Adj;G1=Edge;Label=Y; n2vstr='email';%kept 39/42 dimension
         case 13
@@ -128,23 +128,27 @@ if choice>=10 && choice <20
             %         case 17
             %             load('COIL-RAG.mat');G1=Edge;
         case 14
-            load('IMDB.mat');G1=Edge2;Label=Label2+1;n2vstr='IMDB2';
+            load('IMDB.mat');G1=Edge2;X=edge2adj(G1);Label=Label2;n2vstr='IMDB2';
         case 15
            load('LastFM.mat');X=Adj;G1=Edge;Label=Y; n2vstr='lastfm';%optsE.Principal=2;%kept 17/18 dimension
         case 16
-           load('Letter.mat');G1=Edge1;Label=Label1;n2vstr='letter1';%optsE.Principal=3; % 4/15
+           load('Letter.mat');G1=Edge1;Label=Label1;X=edge2adj(G1);n2vstr='letter1';%optsE.Principal=3; % 4/15
         case 17
             load('smartphone.mat');G1=Edge; X=edge2adj(G1); n2vstr='phone';%optsE.Principal=3;%kept 53/71 dimension
         case 18
-            load('protein.mat');Dist1='cosine';G1=Edge;n2vstr='protein';
+            load('protein.mat');Dist1='cosine';G1=Edge;X=edge2adj(G1);n2vstr='protein';
         case 19
-            load('pubmed.mat');Dist1='cosine';G1=Edge;n2vstr='pubmed';
+            load('pubmed.mat');Dist1='cosine';G1=Edge;X=edge2adj(G1);n2vstr='pubmed';
 %         case 16
 %             load('Wiki_Data.mat');G1=GFAdj; optsE.Principal=2;%kept all
 %         case 34
 %            load('anonymized_msft.mat');G1=G{1}; Label=label;
     end
+    [Z,out]=GraphEncoder(G1,Label,optsE);
     %     optsE2=optsE; optsE2.Dimension=2;
+    indEmpty=(sum(X)>0);%length(Y)-sum(ind)
+    X=X(indEmpty,indEmpty);Label=Label(indEmpty);
+
     if spectral==1
         tic
         %[Z]=UnsupGraph(X,max(Y)*5,length(Y));
@@ -166,21 +170,20 @@ if choice>=10 && choice <20
         indices = crossvalind('Kfold',Label,5);
         opts.indices=indices;optsE.indices=indices;optsE2.indices=indices;
         tmp=GraphEncoderEvaluate(X,Label,opts);Acc1(i,1)=tmp{1,ind};%Acc1(i,2)=tmp{1,ind2};Acc1(i,3)=tmp{1,ind+2};Acc1(i,4)=tmp{1,ind2+2};Time1(i,1)=tmp{4,ind};Time1(i,2)=tmp{4,ind2};Time1(i,3)=tmp{4,ind+2};Time1(i,4)=tmp{4,ind2+2};
-        tmp=GraphEncoderEvaluate(X,Label,optsE);Acc2(i,2)=tmp{1,ind};%Acc2(i,2)=tmp{1,ind2};Time2(i,1)=tmp{4,ind};Time2(i,2)=tmp{4,ind2};
+        tmp=GraphEncoderEvaluate(X,Label,optsE);Acc1(i,2)=tmp{1,ind};%Acc2(i,2)=tmp{1,ind2};Time2(i,1)=tmp{4,ind};Time2(i,2)=tmp{4,ind2};
         if spectral==1
-            tmp=AttributeEvaluate(ZASE,Y,indices); %K=6
+            tmp=AttributeEvaluate(ZASE,Label,indices); %K=6
             Acc1(i,3)=tmp(1,1);
         end
         if n2v==1
-            tmp=AttributeEvaluate(ZNV,Y,indices); %K=6
+            tmp=AttributeEvaluate(ZNV,Label,indices); %K=6
             Acc1(i,4)=tmp(1,1);
         end
 %         tmp=GraphEncoderEvaluate(G1,Label,optsE2);Acc2(i,3)=tmp{1,ind};Acc2(i,4)=tmp{1,ind2};Time2(i,3)=tmp{4,ind};Time2(i,4)=tmp{4,ind2};
     end
-    [Z,out]=GraphEncoder(G1,Label,optsE);
     save(strcat('GEEDimension',num2str(choice),'.mat'),'choice','Acc1','Acc2','Time1','Time2','out');
-    [mean(Acc1);mean(Acc2);std(Acc1);std(Acc2);mean(Time1);mean(Time2)] %GEE; ASE; PGEE; PCA
-    [sum(out.comChoice),max(Label)]
+    [sum(out.out1),length(out.out1)]
+    [mean(Acc1);std(Acc1);] %GEE; PGEE; ASE; N2V
 %     [std(Acc1);std(Acc2);std(Time1);std(Time2)]
 end
 

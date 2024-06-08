@@ -71,12 +71,12 @@ for i=1:numG
     Z{i}=tmpZ;
 end
 Z=horzcat(Z{:});
-outTransform={0,0};YVal=Y;idx=0;
+outTransform={0,0};YVal=Y;idx=0;mu=0;Std=0;
 
 if opts.Discriminant || opts.Principal>0
     % Apply a linear discriminant to identify which dimension corresponds to
     % which class
-    [Z2,outTransform]=EncoderTransform(Z,nk,indK,opts);
+    [Z2,outTransform,mu,Std]=EncoderTransform(Z,nk,indK,opts);
 end
 
 if opts.Discriminant
@@ -90,7 +90,7 @@ if opts.Principal>0
     Z=Z2;
 end
 
-output=struct('out1',outTransform{1},'out2',outTransform{2},'Y',Y,'YVal',YVal,'norm',normZ,'idx',idx,'indK',indK);
+output=struct('out1',outTransform{1},'out2',outTransform{2},'mu',mu,'Std',Std,'Y',Y,'YVal',YVal,'norm',normZ,'idx',idx,'indK',indK,'nk',nk);
 
 
 % thres=0.95;
@@ -118,7 +118,7 @@ output=struct('out1',outTransform{1},'out2',outTransform{2},'Y',Y,'YVal',YVal,'n
 % end
 
 %% LDA transform function + Principal Dimension Reduction
-function [Z,outTransform]=EncoderTransform(Z,mk,indK,opts)
+function [Z,outTransform,mu,Std]=EncoderTransform(Z,mk,indK,opts)
 m=sum(mk);
 K=length(mk);
 [~,p]=size(Z);
@@ -131,6 +131,7 @@ for j=1:K
     Std(j,:)=std(Z(tmp,:));
     Sigma=Sigma+cov(Z(tmp,:))*(mk(j)-1)/(m-K);
 end
+outTransform={0,0};
 
 % Dimension reduction via Principal Community
 if opts.Principal>0
@@ -143,8 +144,6 @@ if opts.Principal>0
         Z = normalize(Z,2,'norm');
         Z(isnan(Z))=0;
     end
-else
-    outTransform={0,0};
 end
 
 if opts.Discriminant
