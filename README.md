@@ -1,14 +1,18 @@
 # Graph Encoder Embedding
 
+This github repo provides a working code for graph encoder embedding, which is updated regularly to reflect our research progress.
 -----------------------------------------------------------------
 
 The **Main** folder contains the core GraphEncoder function in three languages:
 - MATLAB:   GraphEncoder.m
 - Python:   GraphEncoder.ipynb
 - R:        GraphEncoder.R
-plus several extension functions in MATLAB:
--- TemporalGraph.m
--- UnsupGraph.m
+
+And several extension functions for MATLAB (not yet ported to Python or R):
+-- GraphCorr.m       (Graph correlation between multiple graphs with same vertex label)
+-- TemporalGraph.m   (Temporal GEE for multiple graphs with same vertex label)
+-- UnsupGraph.m      (Unsupervised GEE for graph without vertex label)
+-- RefinedGEE.m      (Refined GEE for improved classification)
 
 The **Data** folder contains the public real data used in the reference papers. 
 
@@ -41,6 +45,10 @@ References:
 
 3. C. Shen, J. Larson, H. Trinh, X. Qin, Y. Park, and C. E. Priebe, **"Discovering Communication Pattern Shifts in Large-Scale Labeled Networks using Encoder Embedding and Vertex Dynamics"**, IEEE Transactions on Network Science and Engineering, 11(2):2100 - 2109, 2024. DOI: https://doi.org/10.1109/TNSE.2023.3337600, arXiv:2305.02381.
 
-4. C. Shen, C. E. Priebe, J. Larson, H. Trinh, **"Synergistic Graph Fusion via Encoder Embedding"**, submitted, 2023. arXiv:2303.18051
+4. C. Shen, C. E. Priebe, J. Larson, H. Trinh, **"Synergistic Graph Fusion via Encoder Embedding"**, Information Sciences, 120912, 2024. DOI: https://doi.org/10.1016/j.ins.2024.120912. arXiv:2303.18051
+
+5. C. Shen, J. Larson, H. Trinh, and C. E. Priebe, **"Refined Graph Encoder Embedding via Self-Training and Latent Community Recovery"**. arXiv:2405.12797
+
+6. C. Shen, J. Arroyo, J. Xiong, and J. T. Vogelstein, **"Graph Independence Testing via Encoder Embedding and Community Correlations"**. arXiv:1906.03661
 
 
