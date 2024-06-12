@@ -1,7 +1,7 @@
 # Graph Encoder Embedding
 
-This github repo provides a working code for graph encoder embedding, which is updated regularly to reflect our research progress.
 -----------------------------------------------------------------
+This github repo provides a working code for graph encoder embedding, which is updated regularly to reflect our research progress.
 
 The **Main** folder contains the core GraphEncoder function in three languages:
 - MATLAB:   GraphEncoder.m
@@ -36,8 +36,7 @@ where Z is the unsupervised vertex embedding, and Y is the estimated class label
 
 -------------------------------------------------------------
 
-
-References:
+**References:**
 
 1. C. Shen and Q. Wang and C. E. Priebe, **"One-Hot Graph Encoder Embedding"**, IEEE Transactions on Pattern Analysis and Machine Intelligence, 45(6):7933 - 7938, 2023. DOI: https://doi.org/10.1109/TPAMI.2022.3225073, arXiv:2109.13098
 
