@@ -9,10 +9,10 @@ The **Main** folder contains the core GraphEncoder function in three languages:
 - R:        GraphEncoder.R
 
 And several extension functions for MATLAB (not yet ported to Python or R):
--- GraphCorr.m       (Graph correlation between multiple graphs with same vertex label)
--- TemporalGraph.m   (Temporal GEE for multiple graphs with same vertex label)
--- UnsupGraph.m      (Unsupervised GEE for graph without vertex label)
--- RefinedGEE.m      (Refined GEE for improved classification)
+- GraphCorr.m       (Graph correlation between multiple graphs with same vertex label)
+- TemporalGraph.m   (Temporal GEE for multiple graphs with same vertex label)
+- UnsupGraph.m      (Unsupervised GEE for graph without vertex label)
+- RefinedGEE.m      (Refined GEE for improved classification)
 
 The **Data** folder contains the public real data used in the reference papers. 
 
