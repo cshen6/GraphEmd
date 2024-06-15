@@ -25,7 +25,11 @@ for i=1:numY
         tmpY=randi(K,n,1);
         tmpZ=GraphEncoder(G,tmpY,opts);
         for r=1:opts.MaxIter
-            tmpY1 = kmeans(tmpZ, K,'MaxIter',opts.MaxIterKMeans,'Replicates',1,'Start','plus');
+            try
+                tmpY1 = kmeans(tmpZ, K,'MaxIter',opts.MaxIterKMeans,'Replicates',1,'Start','plus');
+            catch
+                break;
+            end
             %[Y3] = kmeans(Zt*WB, K,'MaxIter',opts.MaxIterK,'Replicates',1,'Start','plus');
             %gmfit = fitgmdist(Z,k, 'CovarianceType','diagonal');%'RegularizationValue',0.00001); % Fitted GMM
             %Y3 = cluster(gmfit,Z); % Cluster index

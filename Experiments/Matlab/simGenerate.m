@@ -458,17 +458,19 @@ switch option
      case 28 % SBM with 2 classes
         fileName='SBM';
         d=4;
-        pp=[0.2,0.3,0.2,0.3];
+        pp=[0.2,0.3,0.3,0.2];
         Dis=cell(1,3);
         tt=rand([n,1]);
         Label=ones(n,1);
         thres=0;
-        theta=unifrnd(0.1,0.5,n,1);%randi(10,n,1)/10;%betarnd(1,4,n,1); %0.2*ones(n,1);%
+        % theta=unifrnd(0.1,0.2,n,1);%randi(10,n,1)/10;%betarnd(1,4,n,1); %0.2*ones(n,1);%
+        % theta=betarnd(1,4,n,1);
         for i=1:size(pp,2)
             thres=thres+pp(i);
             Label=Label+(tt>thres); %determine the block of each data
         end
         for k=1:3
+            theta=betarnd(1,4,n,1);
             Bl=0.1*ones(d,d);
             %             Bl=rand(clas,clas);
             Bl(k,k)=0.5;
@@ -2526,5 +2528,250 @@ switch option
             end
         end
         Dis=sparse(Dis);
+        X=Dis;
+    case 601 %Graph Corr: SBM total ind
+        fileName='SBM';
+        pp=1/d*ones(d,1);
+        Dis=cell(1,2);
+        for k=1:2
+            tt=rand([n,1]);
+            Label=ones(n,1);
+            thres=0;
+            for i=1:d
+                thres=thres+pp(i);
+                Label=Label+(tt>thres); %determine the block of each data
+            end
+            theta=ones(n,1);
+            %theta=betarnd(1,4,n,1);
+            Bl=0.1*ones(d,d);
+            %             Bl=rand(clas,clas);
+            Bl(boolean(eye(d)))=0.2;
+            Dis{k}=zeros(n,n);
+            for i=1:n
+                Dis{k}(i,i)=0;%diagonals are zeros
+                for j=i+1:n
+                    Dis{k}(i,j)=rand(1)<theta(i)*theta(j)*Bl(Label(i),Label(j));
+                    Dis{k}(j,i)=Dis{k}(i,j);
+                end
+            end
+            Dis{k}=sparse(Dis{k});
+        end
+        X=Dis;
+    case 602 %Graph Corr: SBM ind
+        fileName='SBM';
+        pp=1/d*ones(d,1);
+        Dis=cell(1,2);
+        tt=rand([n,1]);
+        Label=ones(n,1);
+        thres=0;
+        % theta=unifrnd(0.1,0.2,n,1);%randi(10,n,1)/10;%betarnd(1,4,n,1); %0.2*ones(n,1);%
+        % theta=betarnd(1,4,n,1);
+        for i=1:d
+            thres=thres+pp(i);
+            Label=Label+(tt>thres); %determine the block of each data
+        end
+        for k=1:2
+            theta=ones(n,1);
+            %theta=betarnd(1,4,n,1);
+            Bl=0.1*ones(d,d);
+            %             Bl=rand(clas,clas);
+            Bl(boolean(eye(d)))=0.2;
+            Dis{k}=zeros(n,n);
+            for i=1:n
+                Dis{k}(i,i)=0;%diagonals are zeros
+                for j=i+1:n
+                    Dis{k}(i,j)=rand(1)<theta(i)*theta(j)*Bl(Label(i),Label(j));
+                    Dis{k}(j,i)=Dis{k}(i,j);
+                end
+            end
+            Dis{k}=sparse(Dis{k});
+        end
+        X=Dis;
+    case 603 %Graph Corr: DC-SBM ind
+        fileName='SBM';
+        pp=1/d*ones(d,1);
+        Dis=cell(1,2);
+        tt=rand([n,1]);
+        Label=ones(n,1);
+        thres=0;
+        % theta=unifrnd(0.1,0.2,n,1);%randi(10,n,1)/10;%betarnd(1,4,n,1); %0.2*ones(n,1);%
+        % theta=betarnd(1,4,n,1);
+        for i=1:d
+            thres=thres+pp(i);
+            Label=Label+(tt>thres); %determine the block of each data
+        end
+        for k=1:2
+            % theta=ones(n,1);
+            theta=betarnd(1,2,n,1);
+            % theta=unifrnd(0.1,0.5,n,1);
+            Bl=0.1*ones(d,d);
+            %             Bl=rand(clas,clas);
+            Bl(boolean(eye(d)))=0.5;
+            Dis{k}=zeros(n,n);
+            for i=1:n
+                Dis{k}(i,i)=0;%diagonals are zeros
+                for j=i+1:n
+                    Dis{k}(i,j)=rand(1)<theta(i)*theta(j)*Bl(Label(i),Label(j));
+                    Dis{k}(j,i)=Dis{k}(i,j);
+                end
+            end
+            Dis{k}=sparse(Dis{k});
+        end
+        X=Dis;
+    case 604 %Graph Corr: SBM depend on all blocks
+        fileName='SBM';
+        rho=0.1;
+        pp=1/d*ones(d,1);
+        Dis=cell(1,2);
+        tt=rand([n,1]);
+        Label=ones(n,1);
+        thres=0;
+        % theta=unifrnd(0.1,0.2,n,1);%randi(10,n,1)/10;%betarnd(1,4,n,1); %0.2*ones(n,1);%
+        % theta=betarnd(1,4,n,1);
+        for i=1:d
+            thres=thres+pp(i);
+            Label=Label+(tt>thres); %determine the block of each data
+        end
+        for k=1:2
+            theta=ones(n,1);
+            %theta=betarnd(1,4,n,1);
+            Bl=0.1*ones(d,d);
+            %             Bl=rand(clas,clas);
+            Bl(boolean(eye(d)))=0.2;
+            Dis{k}=zeros(n,n);
+            for i=1:n
+                Dis{k}(i,i)=0;%diagonals are zeros
+                for j=i+1:n
+                    Dis{k}(i,j)=rand(1)<theta(i)*theta(j)*(Bl(Label(i),Label(j))+(k==2)*rho*Dis{1}(i,j));
+                    Dis{k}(j,i)=Dis{k}(i,j);
+                end
+            end
+            Dis{k}=sparse(Dis{k});
+        end
+        X=Dis;
+    case 605 %Graph Corr: DC-SBM depend on block
+        fileName='SBM';
+        rho=0.3;
+        pp=1/d*ones(d,1);
+        Dis=cell(1,2);
+        tt=rand([n,1]);
+        Label=ones(n,1);
+        thres=0;
+        % theta=unifrnd(0.1,0.2,n,1);%randi(10,n,1)/10;%betarnd(1,4,n,1); %0.2*ones(n,1);%
+        % theta=betarnd(1,4,n,1);
+        for i=1:d
+            thres=thres+pp(i);
+            Label=Label+(tt>thres); %determine the block of each data
+        end
+        for k=1:2
+            % theta=ones(n,1);
+            theta=betarnd(1,2,n,1);
+            % theta=unifrnd(0.1,0.5,n,1);
+            Bl=0.1*ones(d,d);
+            %             Bl=rand(clas,clas);
+            Bl(boolean(eye(d)))=0.5;
+            Dis{k}=zeros(n,n);
+            for i=1:n
+                Dis{k}(i,i)=0;%diagonals are zeros
+                for j=i+1:n
+                    Dis{k}(i,j)=rand(1)<theta(i)*theta(j)*(Bl(Label(i),Label(j))+(k==2)*rho*Dis{1}(i,j));
+                    Dis{k}(j,i)=Dis{k}(i,j);
+                end
+            end
+            Dis{k}=sparse(Dis{k});
+        end
+        X=Dis;
+    case 606 %Graph Corr: SBM depend on com 1 only
+        fileName='SBM';
+        rho=0.1;
+        pp=1/d*ones(d,1);
+        Dis=cell(1,2);
+        tt=rand([n,1]);
+        Label=ones(n,1);
+        thres=0;
+        % theta=unifrnd(0.1,0.2,n,1);%randi(10,n,1)/10;%betarnd(1,4,n,1); %0.2*ones(n,1);%
+        % theta=betarnd(1,4,n,1);
+        for i=1:d
+            thres=thres+pp(i);
+            Label=Label+(tt>thres); %determine the block of each data
+        end
+        for k=1:2
+            theta=ones(n,1);
+            %theta=betarnd(1,4,n,1);
+            Bl=0.1*ones(d,d);
+            %             Bl=rand(clas,clas);
+            Bl(boolean(eye(d)))=0.2;
+            Dis{k}=zeros(n,n);
+            for i=1:n
+                Dis{k}(i,i)=0;%diagonals are zeros
+                for j=i+1:n
+                    Dis{k}(i,j)=rand(1)<theta(i)*theta(j)*(Bl(Label(i),Label(j))+(k==2)*rho*Dis{1}(i,j)*(Label(i)==1));
+                    Dis{k}(j,i)=Dis{k}(i,j);
+                end
+            end
+            Dis{k}=sparse(Dis{k});
+        end
+        X=Dis;
+    case 607 %Graph Corr: SBM depend on com 1,2 only
+        fileName='SBM';
+        rho=0.1;
+        pp=1/d*ones(d,1);
+        Dis=cell(1,2);
+        tt=rand([n,1]);
+        Label=ones(n,1);
+        thres=0;
+        % theta=unifrnd(0.1,0.2,n,1);%randi(10,n,1)/10;%betarnd(1,4,n,1); %0.2*ones(n,1);%
+        % theta=betarnd(1,4,n,1);
+        for i=1:d
+            thres=thres+pp(i);
+            Label=Label+(tt>thres); %determine the block of each data
+        end
+        for k=1:2
+            theta=ones(n,1);
+            %theta=betarnd(1,4,n,1);
+            Bl=0.1*ones(d,d);
+            %             Bl=rand(clas,clas);
+            Bl(boolean(eye(d)))=0.2;
+            Dis{k}=zeros(n,n);
+            for i=1:n
+                Dis{k}(i,i)=0;%diagonals are zeros
+                for j=i+1:n
+                    Dis{k}(i,j)=rand(1)<theta(i)*theta(j)*(Bl(Label(i),Label(j))+(k==2)*rho*Dis{1}(i,j)*(Label(i)==1)*(Label(j)==2));
+                    Dis{k}(j,i)=Dis{k}(i,j);
+                end
+            end
+            Dis{k}=sparse(Dis{k});
+        end
+        X=Dis;
+    case 608 %Graph Corr: DC-SBM depend on degree
+        fileName='SBM';
+        pp=1/d*ones(d,1);
+        Dis=cell(1,2);
+        tt=rand([n,1]);
+        Label=ones(n,1);
+        thres=0;
+        % theta=unifrnd(0.1,0.2,n,1);%randi(10,n,1)/10;%betarnd(1,4,n,1); %0.2*ones(n,1);%
+        % theta=betarnd(1,4,n,1);
+        for i=1:d
+            thres=thres+pp(i);
+            Label=Label+(tt>thres); %determine the block of each data
+        end
+         theta=betarnd(1,2,n,1);
+        % theta=unifrnd(0.1,0.5,n,1);
+        for k=1:2
+            % theta=ones(n,1);
+            Bl=0.1*ones(d,d);
+            %             Bl=rand(clas,clas);
+            Bl(boolean(eye(d)))=0.5;
+            Dis{k}=zeros(n,n);
+            for i=1:n
+                Dis{k}(i,i)=0;%diagonals are zeros
+                for j=i+1:n
+                    Dis{k}(i,j)=rand(1)<theta(i)*theta(j)*Bl(Label(i),Label(j));
+                    Dis{k}(j,i)=Dis{k}(i,j);
+                end
+            end
+            Dis{k}=sparse(Dis{k});
+        end
         X=Dis;
 end
