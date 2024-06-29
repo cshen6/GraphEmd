@@ -12,3 +12,12 @@ end
 ind=(ind>0);
 Adj=AdjOri(ind,ind);
 Y=YOri(ind);
+
+
+% % Change integer naming to cell format
+% numVariables = 18;
+% G = cell(1, numVariables);
+% for i = 1:numVariables
+% variableName = sprintf('G%d', i);
+% G{i} = eval(variableName);  % Store the actual variable (G1, G2, ..., G32)
+% end
