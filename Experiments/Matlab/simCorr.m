@@ -127,28 +127,30 @@ end
 
 if choice==31
     load('EnronGraph.mat')
-    Y(Y>=3 & Y<=5)=3;
-    Y(Y>=6 & Y<=9)=4;
-    Y(Y==10)=5;Y(Y==11)=6;
+    % Y(Y>=3 & Y<=5)=3;
+    % Y(Y>=6 & Y<=9)=4;
+    % Y(Y==10)=5;Y(Y==11)=6;
    %load('anonymized_msft.mat');G1=edge2adj(G{1});G2=edge2adj(G{3});Y=label;
     numV=length(G);K=max(Y);
     stat1=ones(numV,numV);
     stat2=ones(numV,numV);
     pval1=zeros(numV,numV);
     pval2=zeros(numV,numV);
-    corrCom=zeros(K,K,numV,numV);
+    corrCom=zeros(K,K);
     for i=1:numV
         for j=i+1:numV
             A=(G{i}+G{i}'>0);
             B=(G{j}+G{j}'>0);
             [stat1(i,j),pval1(i,j)]=CorrGEE(A,B);
-            [stat2(i,j),pval2(i,j),corrCom(:,:,i,j)]=CorrGEE(A,B,Y);
+            [stat2(i,j),pval2(i,j),tmp]=CorrGEE(A,B,Y);
             stat1(j,i)=stat1(i,j);pval1(j,i)=pval1(i,j);stat2(j,i)=stat2(i,j);pval2(j,i)=pval2(i,j);
+            corrCom=corrCom+tmp;
         end
     end
+    corrCom=corrCom/(numV*(numV-1)/2);
     save(strcat('CorrGEESim',num2str(choice),'.mat'),'stat1','stat2','pval1','pval2','corrCom');
     fs=14;lw=3;
-        t = tiledlayout(1,3);
+        t = tiledlayout(1,2);
 
         nexttile();
         h=heatmap(round(stat1,2),'CellLabelColor','none');
@@ -177,19 +179,19 @@ if choice==31
 
         title('Max Comm Corr');
         set(gca,'FontSize',fs);
-
-        nexttile();
-        h=heatmap(abs(round(median(median(corrCom,4),3),2)));
-        clim([0, 0.1]);
-        colormap(h, 'sky');
-        % h.XDisplayLabels = group;
-        % h.YDisplayLabels = group;
-        title('Comm Corr (Median)');
-        set(gca,'FontSize',fs);
+        % 
+        % nexttile();
+        % h=heatmap(abs(corrCom));
+        % clim([0, 0.5]);
+        % colormap(h, 'sky');
+        % % h.XDisplayLabels = group;
+        % % h.YDisplayLabels = group;
+        % title('Comm Corr');
+        % set(gca,'FontSize',fs);
 
         title(t,'Enron Graph Analysis','FontSize',20);
         F.fname='GraphCorFig7'; %strcat(pre2, num2str(i));
-        F.wh=[21 7];
+        F.wh=[14 7];
     print_fig(gcf,F)
 end
 % 
@@ -238,7 +240,7 @@ end
 %     print_fig(gcf,F)
 % end
 
-if choice==33
+if choice==32
     load('MouseConnectome.mat')
    %load('anonymized_msft.mat');G1=edge2adj(G{1});G2=edge2adj(G{3});Y=label;
     numV=length(G);K=max(Y);
@@ -246,19 +248,21 @@ if choice==33
     stat2=ones(numV,numV);
     pval1=zeros(numV,numV);
     pval2=zeros(numV,numV);
-    corrCom=zeros(K,K,numV,numV);
+    corrCom=zeros(K,K);
     for i=1:numV
         for j=i+1:numV
             [stat1(i,j),pval1(i,j)]=CorrGEE(G{i},G{j});
-            [stat2(i,j),pval2(i,j),corrCom(:,:,i,j)]=CorrGEE(G{i},G{j},Y);
+            [stat2(i,j),pval2(i,j),tmp]=CorrGEE(G{i},G{j},Y);
             stat1(j,i)=stat1(i,j);pval1(j,i)=pval1(i,j);stat2(j,i)=stat2(i,j);pval2(j,i)=pval2(i,j);
+            corrCom=corrCom+tmp;
         end
     end
+    corrCom=corrCom/(numV*(numV-1)/2);
     save(strcat('CorrGEESim',num2str(choice),'.mat'),'stat1','stat2','pval1','pval2','corrCom');
     fs=13;lw=3;
     xLabels = genotype;
         % [xLabels,ind]=sort(xLabels);
-        t = tiledlayout(1,3);
+        t = tiledlayout(1,2);
 
         nexttile();
         h=heatmap(round(stat1,2),'CellLabelColor','none');
@@ -286,20 +290,20 @@ if choice==33
         colormap(h, 'parula'); % Replace 'parula' with your desired colormap
         title('Max Comm Corr');
         set(gca,'FontSize',fs);
-
-
-        nexttile();
-        h=heatmap(abs(round(median(median(corrCom,4),3),2)));
-        clim([0, 0.3]);
-        colormap(h, 'sky');
-        h.XDisplayLabels = blocks(2:15,5);
-        h.YDisplayLabels = blocks(2:15,5);
-        title('Comm Corr (Median)');
-        set(gca,'FontSize',fs);
+        % 
+        % 
+        % nexttile();
+        % h=heatmap(abs(corrCom));
+        % clim([0, 1]);
+        % colormap(h, 'sky');
+        % h.XDisplayLabels = blocks(2:15,5);
+        % h.YDisplayLabels = blocks(2:15,5);
+        % title('Comm Corr');
+        % set(gca,'FontSize',fs);
 
         title(t,'Mouse Connectome Analysis','FontSize',20);
         F.fname='GraphCorFig9'; %strcat(pre2, num2str(i));
-        F.wh=[21 7];
+        F.wh=[14 7];
     print_fig(gcf,F)
 end
 
@@ -596,7 +600,7 @@ if choice==106 % testing power and community correlation in SBM
         %title('Running Time'
         %legend('Permutation','Fast Test','Zhang Subsampling','T-Test','Location','SouthEast')
     end
-    title(t,'Community Correlations (Abs)','FontSize',23);
+    title(t,'Community Correlations','FontSize',23);
     F.fname='GraphCorFig6'; %strcat(pre2, num2str(i));
     F.wh=[12 12];
     print_fig(gcf,F)

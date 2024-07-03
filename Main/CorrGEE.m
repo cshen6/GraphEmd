@@ -26,26 +26,26 @@ Var2=out22.mu-out2.mu.*out2.mu;
 ind=(Var1<=0) | (Var2<=0);%ind=ind|ind';%denom(ind)=0;
 corrCom=covCom./sqrt(Var1.*Var2);
 corrCom(ind)=0;
-tmp=corrCom;
+% tmp=corrCom;
 if size(corrCom,1)>1
     % thresholding to exclude correlations of very sparse communities
     ind=(Var1<eps)|(Var2<eps);
     ind=ind | ind';
     ind(boolean(eye(K)))=0;
     % tmp=corrCom;
-    tmp(ind)=0;
+    corrCom(ind)=0;
     p2=sum(sum(ind));
     % p2=0;
     % directed or not
     if ~directed
-        tmp(boolean(eye(K)))=diag(corrCom);
+        corrCom(boolean(eye(K)))=diag(corrCom);
         p=K*(K+1)/2-p2/2;
     else
         p=K^2-p2;
     end
 end
 % final dependence measure and hypothesis testing
-tmp=sqrt(nk).*abs(tmp);
+tmp=sqrt(nk).*abs(corrCom);
 pvalCom=2-2*normcdf(tmp,0,std);
 stat=max(max(tmp));
 pval=1-(2*normcdf(stat,0,std)-1)^(p);
