@@ -266,7 +266,7 @@ if choice==32
 
         nexttile();
         h=heatmap(round(stat1,2),'CellLabelColor','none');
-        clim([0.5, 0.8]);
+        clim([0, 0.8]);
         h.XDisplayLabels = repmat({''}, 1, size(stat1, 2));
         h.YDisplayLabels = repmat({''}, size(stat1, 1), 1);
         colormap(h, 'turbo'); % Replace 'parula' with your desired colormap
@@ -282,7 +282,7 @@ if choice==32
 
         nexttile();
         h=heatmap(round(stat2,2),'CellLabelColor','none');
-        clim([0, 0.15]);
+        clim([0, 0.2]);
         h.XDisplayLabels = repmat({''}, 1, size(stat2, 2));
         h.YDisplayLabels = repmat({''}, size(stat2, 1), 1);
         h.YDisplayLabels = xLabels;
@@ -343,9 +343,10 @@ end
 
 if choice ==101 || choice==102%null distribution 
   %  corrChi=zeros(reps,1);
-  K=10;reps=1000;lw=3;fs=20;
-    corrNor=normrnd(0,1,reps*100,1);
-    corrNor2=normrnd(0,2,reps*100,1);
+  K=10;reps=500;lw=3;fs=16;
+    corrNor1=normrnd(0,1,reps*100,1);
+    corrNor2=normrnd(0,1.5,reps*100,1);
+    corrNor3=normrnd(0,2,reps*100,1);
 %    (chi2rnd(ones(reps,1))-1)/n*100;
  %   corrMax=(chi2rnd(ones(reps,1))-1)/n;
 
@@ -368,43 +369,53 @@ if choice ==101 || choice==102%null distribution
         % A=rand(n,1);B=rand(n,1);
         % A=squareform(pdist(A));B=squareform(pdist(B));Y=randi(K,n,1);
         % [B,~]=simGenerate(21,n,K,0);
-        corrCom=zeros(K,K,reps);
+        corrCom1=zeros(K*(K-1)/2,reps);
+        corrCom2=zeros(K,reps);
         for r=1:reps
             [Dis,Y]=simGenerate(type+(choice-101)*6,n,K,0);
             A=Dis{1}; B=Dis{2};
             try
-                [~,~,corrCom(:,:,r),~,nk]=CorrGEE(A,B,Y(:,1));
+                [~,~,tmp,~,nk]=CorrGEE(A,B,Y(:,1));
             catch
                 r=r-1;
                 continue;
             end
+                tmp=sqrt(nk).*tmp;
+                corrCom2(:,r)=diag(tmp);
+                tmp(boolean(eye(K)))=0;
+                tmp=tmp(find(triu(tmp)));
+                corrCom1(1:length(tmp),r)=tmp;
             % [stat(r)]=CorrGEE(A,B);
-            corrCom(:,:,r)=sqrt(nk).*corrCom(:,:,r);
+            % corrCom(:,:,r)=sqrt(nk).*corrCom(:,:,r);
         end
-        corrCom=reshape(corrCom,1,size(corrCom,1)*size(corrCom,2)*size(corrCom,3));
+        corrCom1=reshape(corrCom1,1,size(corrCom1,1)*size(corrCom1,2));
+        corrCom2=reshape(corrCom2,1,size(corrCom2,1)*size(corrCom2,2));
         % stat=n*stat;
 
         nexttile();
         myColor = brewermap(10,'RdYlBu');
         myColor2 = brewermap(10,'Spectral');
         hold on
-        [a,b]=ecdf(corrCom);plot(b,a,'Color', myColor(9,:),'LineStyle', '-','linewidth',lw)
+        [a,b]=ecdf(corrCom1);plot(b,a,'Color', myColor(9,:),'LineStyle', '-','linewidth',lw)
+        [a,b]=ecdf(corrCom2);plot(b,a,'Color', myColor(7,:),'LineStyle', '-','linewidth',lw)
         % if i>3
         % [a,b]=ecdf(stat);plot(b,a,'Color', myColor(7,:),'LineStyle', '-.','linewidth',lw)
         % end
-        [a,b]=ecdf(corrNor);plot(b,a,'Color', myColor2(3,:),'LineStyle','--','linewidth',lw)
-        [a,b]=ecdf(corrNor2);plot(b,a,'Color', myColor2(5,:),'LineStyle','--','linewidth',lw)
+            [a,b]=ecdf(corrNor1);plot(b,a,'Color', myColor2(1,:),'LineStyle','--','linewidth',lw)
+            [a,b]=ecdf(corrNor2);plot(b,a,'Color', myColor2(3,:),'LineStyle','--','linewidth',lw)
+        [a,b]=ecdf(corrNor3);plot(b,a,'Color', myColor2(5,:),'LineStyle','--','linewidth',lw)
         ylim([0.8,1]);
         %legend('Null CDF by Permutation','Null CDF by Fast Approximation','Location','SouthEast')
         %xlim([0,0.1]);
         %ylim([0.8,1.01]);
         yticks([0.8,0.9,1])
         if i==1
-        legend('Actual Null','Normal(0,1)','Normal(0,2)','Location','SouthEast');
+        legend('$\hat{\rho}(k,l)$ ($k \neq l$)','$\hat{\rho}(k,k)$', 'Normal(0,1)','Normal(0,$\sqrt{2}$)','Normal(0,2)','Location','SouthEast','Interpreter','latex')
         ylabel('Conditional Ind')
         end
         if i==4;
             ylabel('Unconditional Ind')
+            % legend('Corr 1','Corr 2', 'Normal(0,1)','Normal(0,2)','Location','SouthEast');
             % legend('Comm Corr','Graph Corr','Normal(0,1)','Normal(0,2)','Location','SouthEast');
         end
         if i>3
@@ -573,19 +584,23 @@ if choice==105 % testing power and community correlation in SBM
 end
 
 if choice==106 % testing power and community correlation in SBM
-    t = tiledlayout(2,2);fs=13;lw=3;
+    t = tiledlayout(2,3);fs=15;lw=3;
     myColor = brewermap(10,'RdYlBu');
     myColor2 = brewermap(10,'Spectral');
     myColor3 = brewermap(4,'PuOr');
-    for i=1:4
+    for i=1:6
         switch i
             case 1
-                type=3;n=100;tstr='All Communities Dependence';
+                type=1;n=100;tstr='Conditional Independence';
             case 2
-                type=4;n=500;tstr='Community (1,.) Dependence';
+                type=3;n=100;tstr='All Communities Dependence';
             case 3
-                type=6;n=1000;tstr='(1,2) and (5,10) Dependence';
+                type=4;n=500;tstr='Community (1,.) Dependence';
             case 4
+                type=5;n=1000;tstr='(1,2) Dependence';
+            case 5
+                type=6;n=1000;tstr='(1,2) and (5,10) Dependence';
+            case 6
                 type=9;n=1000;tstr='Degree Dependence';
         end
         nexttile();
@@ -602,6 +617,6 @@ if choice==106 % testing power and community correlation in SBM
     end
     title(t,'Community Correlations','FontSize',23);
     F.fname='GraphCorFig6'; %strcat(pre2, num2str(i));
-    F.wh=[12 12];
+    F.wh=[18 12];
     print_fig(gcf,F)
 end
