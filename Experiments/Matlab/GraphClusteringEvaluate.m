@@ -21,6 +21,7 @@ K=max(Y);
 opts.Dim = min(opts.dimGEE,K);
 
 ARI_AEE=0;t_AEE=0;ARI_LEE=0;t_LEE=0;ARI_AEE_GNN=0;t_AEE_GNN=0;ARI_ASE=0;t_ASE=0;ARI_LSE=0;t_LSE=0;
+ARI_AEE2=0;ARI_LEE2=0;t_AEE2=0;t_LEE2=0;
 minSSL=0;minSS=0;
 % tic
 % opts2=opts;opts2.deg=0;
@@ -30,7 +31,7 @@ minSSL=0;minSS=0;
 if iscell(X)
     opts.Spectral=0;
 end
-% if opts.Spectral==1
+if opts.Spectral==1
     if size(X,2)<=3
         X=X-min(min(X))+1;
         n=size(Y,1);
@@ -43,7 +44,7 @@ end
         Adj=X;
         X=adj2edge(Adj);
     end
-% end
+end
 
 if opts.Adjacency==1
     tic
@@ -52,8 +53,18 @@ if opts.Adjacency==1
     [~,ind_AEE]=UnsupGEE(X,K,n,oot);
     t_AEE=toc;
     ARI_AEE=RandIndex(Y,ind_AEE);
+
+    tic
+    [~,ind_AEE]=UnsupGEEOld(X,K,n,oot);
+    t_AEE2=toc;
+    ARI_AEE2=RandIndex(Y,ind_AEE);
     
     if opts.Spectral==1
+        % tic
+        % Z_ASE=ASE(Adj,d);
+        % ind_ASE = kmeans(Z_ASE, K,'Distance',opts.Dist);
+        % t_ASE=toc;
+        % ARI_ASE=RandIndex(Y,ind_ASE);
         ARI_ASE=zeros(d,1);t_ASE=zeros(d,1);
         tic
         [U,S,~]=svds(Adj,d);
@@ -81,8 +92,18 @@ if opts.Laplacian==1
     [~,ind_LEE]=UnsupGEE(X,K,n,opts);
     t_LEE=toc;
     ARI_LEE=RandIndex(Y,ind_LEE);
+
+    tic
+    [~,ind_LEE]=UnsupGEEOld(X,K,n,opts);
+    t_LEE2=toc;
+    ARI_LEE2=RandIndex(Y,ind_LEE);
     
     if opts.Spectral==1
+        % tic
+        % Z_LSE=ASE(Adj,d,true);
+        % ind_LSE = kmeans(Z_LSE, K,'Distance',opts.Dist);
+        % t_LSE=toc;
+        % ARI_LSE=RandIndex(Y,ind_LSE);
         ARI_LSE=zeros(d,1);t_LSE=zeros(d,1);
         tic
         D=max(sum(Adj,1),1).^(0.5);
@@ -104,11 +125,11 @@ if opts.Laplacian==1
     end
 end
 
-accN=[ARI_AEE,ARI_ASE,ARI_AEE_GNN,ARI_LEE,ARI_LSE];
-MDRI=[minSS,0,0,minSSL,0];
-time=[t_AEE,t_ASE,t_AEE_GNN,t_LEE,t_LSE];
+accN=[ARI_AEE,ARI_AEE2,ARI_ASE,ARI_AEE_GNN,ARI_LEE,ARI_LEE2,ARI_LSE];
+MDRI=[minSS,0,0,0,minSSL,0,0];
+time=[t_AEE,t_AEE2,t_ASE,t_AEE_GNN,t_LEE,t_LEE2,t_LSE];
 
-result = array2table([accN; time;MDRI], 'RowNames', {'ARI', 'time','MDRI'},'VariableNames', {'AEE','ASE','AEE_GNN','LEE','LSE'});
+result = array2table([accN; time;MDRI], 'RowNames', {'ARI', 'time','MDRI'},'VariableNames', {'AEE','AEEOld','ASE','AEE_GNN','LEE','LEEOld','LSE'});
 % result = array2table([accN; time], 'RowNames', {'ARI', 'time'},'VariableNames', {'AEE', 'AEE_Deg','AEE_NN', 'ASE','LSE'});
 
 %% Adj to Edge Function

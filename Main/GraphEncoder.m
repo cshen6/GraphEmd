@@ -77,13 +77,13 @@ for i=1:numG
     Z{i}=tmpZ;
 end
 Z=horzcat(Z{:});
-outTransform={0,0};YVal=Y;idx=0;mu=0;Std=0;
-
-if opts.Discriminant || opts.Principal>0
+% outTransform={0,0};mu=0;Std=0;
+YVal=Y;idx=0;
+% if opts.Discriminant || opts.Principal>0
     % Apply a linear discriminant to identify which dimension corresponds to
     % which class
     [Z2,outTransform,mu,Std]=EncoderTransform(Z,nk,indK,opts);
-end
+% end
 
 if opts.Discriminant
     [~,YVal]=max(Z2,[],2);

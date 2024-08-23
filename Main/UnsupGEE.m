@@ -3,54 +3,82 @@
 function [Z,YNew]=UnsupGEE(G,Y,n,opts)
 warning ('off','all');
 if nargin<4
-    opts = struct('MaxIter',30,'MaxIterKMeans',3,'Replicates',3,'Normalize',true,'Refine',0,'Principal',0,'Laplacian',false,'Discriminant',false,'Softmax',false);
+    opts = struct('MaxIter',5,'Replicates',10,'Normalize',true,'Refine',0,'Metric',0,'Principal',0,'Laplacian',false,'Discriminant',false,'SeedY',0,'Transformer',1);
 end
-if ~isfield(opts,'MaxIter'); opts.MaxIter=30; end
-if ~isfield(opts,'MaxIterKMeans'); opts.MaxIterKMeans=3; end
-if ~isfield(opts,'Replicates'); opts.Replicates=3; end
+if ~isfield(opts,'MaxIter'); opts.MaxIter=5; end
+if ~isfield(opts,'Replicates'); opts.Replicates=10; end
 if ~isfield(opts,'Normalize'); opts.Normalize=true; end
 if ~isfield(opts,'Laplacian'); opts.Laplacian=false; end
 %
+if ~isfield(opts,'Metric'); opts.Metric=0; end
 if ~isfield(opts,'Refine'); opts.Refine=0; end
 if ~isfield(opts,'Principal'); opts.Principal=0; end
 if ~isfield(opts,'Discriminant'); opts.Discriminant=false; end
-if ~isfield(opts,'Softmax'); opts.Softmax=false; end
+if ~isfield(opts,'SeedY'); opts.SeedY=0; end
+if ~isfield(opts,'Transformer'); opts.Transformer=1; end
 
 numY=length(Y);
 Score=1;
 Z=0;YNew=0;
-for i=1:numY
-    K=Y(i);
-    for rep=1:opts.Replicates
-        tmpY=randi(K,n,1);
-        tmpZ=GraphEncoder(G,tmpY,opts);
-        for r=1:opts.MaxIter
-            try
-                tmpY1 = kmeans(tmpZ, K,'MaxIter',opts.MaxIterKMeans,'Replicates',1,'Start','plus');
-            catch
-                break;
-            end
-            %[Y3] = kmeans(Zt*WB, K,'MaxIter',opts.MaxIterK,'Replicates',1,'Start','plus');
-            %gmfit = fitgmdist(Z,k, 'CovarianceType','diagonal');%'RegularizationValue',0.00001); % Fitted GMM
-            %Y3 = cluster(gmfit,Z); % Cluster index
-            if RandIndex(tmpY,tmpY1)==1
-                break;
-            else
-                tmpY=tmpY1;
-            end
-            tmpZ=GraphEncoder(G,tmpY,opts);
+if opts.Transformer
+    K=Y(1);
+    tmpY=randi(K,n,opts.Replicates);
+    for r=1:opts.MaxIter-1
+        for j=1:opts.Replicates
+            tmpZ=GraphEncoder(G,tmpY(:,j),opts);
+            % Z(:,(j-1)*K+1:j*K)=tmpZ;
+            [~,tmpY(:,j)]=max(tmpZ,[],2);
         end
-        % Compute clustering score for each replicate
-        tmpScore=ClusteringScore(tmpZ,tmpY,n,K);
-%         if tmpScore==Score
-%             Z=Z+Zt;
-%             ens=ens+1;
-%         end
-        if tmpScore<Score
-            Z=tmpZ;Score=tmpScore;YNew=tmpY;
+    end
+    Z=zeros(n,K*opts.Replicates);
+    for j=1:opts.Replicates
+        tmpZ=GraphEncoder(G,tmpY(:,j),opts);
+        Z(:,(j-1)*K+1:(j-1)*K+size(tmpZ,2))=tmpZ;
+    end
+    YNew=kmeans(Z,K);
+    Z=GraphEncoder(G,YNew,opts);
+else
+    for i=1:numY
+        K=Y(i);
+        for rep=1:opts.Replicates
+            if rep==1 && length(opts.SeedY)==n
+                tmpY=opts.SeedY;
+            else
+                tmpY=randi(K,n,1);
+            end
+            [tmpZ,out]=GraphEncoder(G,tmpY,opts);
+            % mu = normalize(out.mu,2,'norm');
+            for r=1:opts.MaxIter
+                % size(out.mu)
+                % size(tmpZ)
+                mu = normalize(out.mu,2,'norm');
+                switch opts.Metric
+                    case 0
+                        tmpZmu=tmpZ*mu';
+                    case 1
+                        tmpZmu=pdist2(tmpZ,mu,'euclidean');
+                    case 2
+                        tmpZmu=1-pdist2(tmpZ,mu,'spearman');
+                    case 3
+                        tmpZmu=1-pdist2(tmpZ,mu,'cosine');
+                end
+                [~,tmpY1]=max(tmpZmu,[],2);
+                if RandIndex(tmpY,tmpY1)==1
+                    break;
+                else
+                    tmpY=tmpY1;
+                end
+                [tmpZ,out]=GraphEncoder(G,tmpY,opts);
+            end
+            tmpScore=ClusteringScore(tmpZ,tmpY,n,K);
+            if tmpScore<Score
+                Z=tmpZ;Score=tmpScore;YNew=tmpY;
+            end
         end
     end
 end
+
+
 % % If more than one optimal solution, used the ensemble embedding for another
 % % k-means clustering
 % if ens>1

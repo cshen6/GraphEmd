@@ -133,6 +133,11 @@ if choice>=10 && choice <30
     % [~,Y2]=UnsupGEE(X,K,size(X,1));
     % ARI(2)=RandIndex(Y,Y2);
     % ARI
+
+X=Edge;Y=Label;cvf=10;
+indices=crossvalind('Kfold',Y,cvf);
+[tmp,tmp1]=RefineEvaluate(X,Y,indices);
+mean(tmp)
 end
 
 if choice>=30 && choice<=40

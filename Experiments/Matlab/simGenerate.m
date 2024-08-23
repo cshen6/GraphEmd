@@ -7,6 +7,32 @@ if nargin<4
 end
 repeat=1;
 switch option
+    case 1 % SBM with 3 classes
+        fileName='SBM';
+        d=2;
+        bd=0.2; %0.13 at n=2000;0.12 at n=5000
+        pp=[0.5,0.5];
+        Bl=zeros(d,d);
+        %             Bl=rand(clas,clas);
+        Bl(:,1)=[bd,0.1];
+        Bl(:,2)=[0.1,bd];
+        Dis=zeros(n,n);
+        tt=rand([n,1]);
+        Label=ones(n,1);
+        Label(n/2+1:n)=2;
+        % thres=0;
+        % for i=1:size(pp,2)
+        %     thres=thres+pp(i);
+        %     Label=Label+(tt>thres); %determine the block of each data
+        % end
+        for i=1:n
+            Dis(i,i)=0;%diagonals are zeros
+            for j=i+1:n
+                Dis(i,j)=rand(1)<Bl(Label(i),Label(j));
+                Dis(j,i)=Dis(i,j);
+            end
+        end
+        X=Dis;
     case 10 % SBM with 3 classes
         fileName='SBM';
         d=3;
@@ -271,7 +297,7 @@ switch option
         tt=rand([n,1]);
         Label=ones(n,1);
         thres=0;
-        theta=betarnd(1,4,n,1);
+        theta=betarnd(1,2,n,1);
         % theta=unifrnd(0.5,1.5,n,1);
 %         theta=theta;
         for i=1:d

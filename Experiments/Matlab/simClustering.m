@@ -1,5 +1,6 @@
-function simClustering
+function simClustering(choice)
 
+if choice==1
 %%% self-learning
 n=2000;K=10;
 opts = struct('Adjacency',1,'Laplacian',1,'Spectral',1,'LDA',1,'GFN',1,'GCN',0,'GNN',0,'knn',5,'dim',30,'neuron',10,'epoch',100,'training',0.8,'activation','poslin'); % default parameters
@@ -13,7 +14,9 @@ opts = struct('Laplacian',false,'maxIter',20,'Learn',true);
 [Z,Y3,W,indT,B]=GraphEncoder(Adj,Y2,opts);
 error1=error1+mean(Y3(tsn)==Y(tsn))/max(indices);
 end
+end
 
+if choice==2;
 %%%%
 n=2000;K=10;
 opts = struct('Adjacency',1,'Laplacian',1,'Spectral',1,'LDA',1,'GFN',1,'GCN',0,'GNN',0,'knn',5,'dim',30,'neuron',10,'epoch',100,'training',0.8,'activation','poslin'); % default parameters
@@ -29,8 +32,10 @@ GraphEncoderC(Adj,5,Y);
 GraphEncoderC(Adj,3,Y);
 [Adj,Y]=simGenerate(31,n,5);
 GraphEncoderC(Adj,5,Y);
-
+end
 %%% Basic Sims
+
+if choice==3
 n=2000;K=10;
 opts = struct('Adjacency',1,'Laplacian',1,'Spectral',1,'LDA',1,'GFN',1,'GCN',0,'GNN',0,'knn',5,'dim',30,'neuron',10,'epoch',100,'training',0.8,'activation','poslin'); % default parameters
 [Adj,Y]=simGenerate(10,n);
@@ -70,15 +75,16 @@ Kern=GraphEncoderSemi(Adj,Y,opts);
 % Kern1=GraphEncoderEvaluate(Adj,Y,opts2);
 [Adj,Y]=simGenerate(51,n,K);
 Kern2=GraphEncoderSemi(Adj,Y,opts);
+end
 
-
+if choice==4
 %%% Basic Sims
-n=5000;
+n=500;
 % opts = struct('ASE',1,'LSE',1,'NN',0,'Dist','cosine','maxIter',20,'normalize',0,'deg',0,'dmax',30); % default parameters
 K=10;rep=10; tt=3;
-SBM=zeros(2,5,tt);
-RDPG=zeros(2,5,tt);
-DCSBM=zeros(2,5,tt);
+SBM=zeros(3,7,tt);
+RDPG=zeros(3,7,tt);
+DCSBM=zeros(3,7,tt);
 for r=1:rep
 [Adj,Y]=simGenerate(10,n,K);
 % % Edge=Adj2Edge(Adj);
@@ -106,41 +112,42 @@ DCSBM(:,:,2)=DCSBM(:,:,2)+table2array(GraphClusteringEvaluate(Adj,Y))/rep;
 % Edge=Adj2Edge(Adj);
 DCSBM(:,:,3)=DCSBM(:,:,3)+table2array(GraphClusteringEvaluate(Adj,Y))/rep;
 end
+end
+% 
+% n=2000;K=3;
+% [Adj,Y]=simGenerate(10,n,K);
+% simClusteringReal(Adj,Y);
+% 
+% % Dist
+% opts.LSE=0;opts2.LSE=0;
+% [Adj,Y]=simGenerate(40,n);
+% Dist=GraphClusteringEvaluate(Adj,Y);
+% [Adj,Y]=simGenerate(41,n,K);
+% Dist2=GraphClusteringEvaluate(Adj,Y);
+% % Kernel
+% [Adj,Y]=simGenerate(50,n);
+% Kern=GraphClusteringEvaluate(Adj,Y);
+% [Adj,Y]=simGenerate(51,n,K);
+% Kern2=GraphClusteringEvaluate(Adj,Y);
 
-n=2000;K=3;
-[Adj,Y]=simGenerate(10,n,K);
-simClusteringReal(Adj,Y);
-
-% Dist
-opts.LSE=0;opts2.LSE=0;
-[Adj,Y]=simGenerate(40,n);
-Dist=GraphClusteringEvaluate(Adj,Y);
-[Adj,Y]=simGenerate(41,n,K);
-Dist2=GraphClusteringEvaluate(Adj,Y);
-% Kernel
-[Adj,Y]=simGenerate(50,n);
-Kern=GraphClusteringEvaluate(Adj,Y);
-[Adj,Y]=simGenerate(51,n,K);
-Kern2=GraphClusteringEvaluate(Adj,Y);
-
-
-
-
-
-n=3000;
-[Adj,Y]=simGenerate(1,n);
-Dist='sqeuclidean'; %Dist='cosine';
-[SBM_RI_AEE,SBM_RI_AEN,SBM_RI_ASE,SBM_t_AEE,SBM_t_AEN,SBM_t_ASE,SBM_ind_AEE,SBM_ind_AEN,SBM_ind_ASE]=simClusteringReal(Adj,Y,Dist);
-% Dist='cosine';
-% [SBM_RI_AEE2,~,SBM_t_AEE2,~,SBM_ind_AEE2,~]=simClusteringReal(Adj,Y,Dist);
-[Adj,Y]=simGenerate(2,n);
-Dist='sqeuclidean';%Dist='cosine';
-[DCSBM_RI_AEE,DCSBM_RI_AEN,DCSBM_RI_ASE,DCSBM_t_AEE,DCSBM_t_AEN,DCSBM_t_ASE,DCSBM_ind_AEE,DCSBM_ind_AEN,DCSBM_ind_ASE]=simClusteringReal(Adj,Y,Dist);
-% Dist='cosine';
-% [DCSBM_RI_AEE2,~,DCSBM_t_AEE2,~,DCSBM_ind_AEE2,~]=simClusteringReal(Adj,Y,Dist);
-[Adj,Y]=simGenerate(3,n);
-Dist='sqeuclidean';%Dist='cosine';
-[RDPG_RI_AEE,RDPG_RI_AEN,RDPG_RI_ASE,RDPG_t_AEE,RDPG_t_AEN,RDPG_t_ASE,RDPG_ind_AEE,RDPG_ind_AEN,RDPG_ind_ASE]=simClusteringReal(Adj,Y,Dist);
+% 
+% 
+% 
+% 
+% n=3000;
+% [Adj,Y]=simGenerate(1,n);
+% Dist='sqeuclidean'; %Dist='cosine';
+% [SBM_RI_AEE,SBM_RI_AEN,SBM_RI_ASE,SBM_t_AEE,SBM_t_AEN,SBM_t_ASE,SBM_ind_AEE,SBM_ind_AEN,SBM_ind_ASE]=simClusteringReal(Adj,Y,Dist);
+% % Dist='cosine';
+% % [SBM_RI_AEE2,~,SBM_t_AEE2,~,SBM_ind_AEE2,~]=simClusteringReal(Adj,Y,Dist);
+% [Adj,Y]=simGenerate(2,n);
+% Dist='sqeuclidean';%Dist='cosine';
+% [DCSBM_RI_AEE,DCSBM_RI_AEN,DCSBM_RI_ASE,DCSBM_t_AEE,DCSBM_t_AEN,DCSBM_t_ASE,DCSBM_ind_AEE,DCSBM_ind_AEN,DCSBM_ind_ASE]=simClusteringReal(Adj,Y,Dist);
+% % Dist='cosine';
+% % [DCSBM_RI_AEE2,~,DCSBM_t_AEE2,~,DCSBM_ind_AEE2,~]=simClusteringReal(Adj,Y,Dist);
+% [Adj,Y]=simGenerate(3,n);
+% Dist='sqeuclidean';%Dist='cosine';
+% [RDPG_RI_AEE,RDPG_RI_AEN,RDPG_RI_ASE,RDPG_t_AEE,RDPG_t_AEN,RDPG_t_ASE,RDPG_ind_AEE,RDPG_ind_AEN,RDPG_ind_ASE]=simClusteringReal(Adj,Y,Dist);
 % Dist='cosine';
 % [RDPG_RI_AEE2,~,RDPG_t_AEE2,~,RDPG_ind_AEE2,~]=simClusteringReal(Adj,Y,Dist);
 
@@ -149,6 +156,7 @@ Dist='sqeuclidean';%Dist='cosine';
 % 
 
 %%% 1. Corr better
+if choice==5
 n=3000;K=10;
 [Adj,Y]=simGenerate(10,n);opts.Dim=K;
 GraphClusteringEvaluate(Adj,Y,opts)
@@ -176,38 +184,145 @@ for i=1:r
         t=t+1/r;
     end
 end
-%
+end
 
-% [Adj,Y]=simGenerate(25,n,k);
-% GraphClusteringEvaluate(Adj,Y)
-% [Adj,Y]=simGenerate(26,n,k);
-% GraphClusteringEvaluate(Adj,Y)
-% [Adj,Y]=simGenerate(30,n);
-% GraphClusteringEvaluate(Adj,Y)
-% [Adj,Y]=simGenerate(31,n,k);
-% GraphClusteringEvaluate(Adj,Y)
+if choice==8
+    n=300;K=2; rep=5;lim=5;
+    [A,Y]=simGenerate(11,n);
+    tmpY=randi(K,n,rep);
+    Z=zeros(n,K*rep);
+    for r=1:lim
+        for i=1:rep
+            Z(:,(i-1)*K+1:i*K)=GraphEncoder(A,tmpY(:,i));
+            [~,tmpY(:,i)]=max(Z(:,(i-1)*K+1:i*K),[],2);
+        end
+    end
+    Y2=kmeans(Z,K);
+    % [~,Y2]=max(Z,[],2);
+    % Y2=mod(Y2,K)+1;
+    RandIndex(Y,Y2)
 
-load('Cora.mat') %AEL / GFN K=2
-opts.Dim=K;
-GraphClusteringEvaluate(Adj,Y,opts)
-load('email.mat') %k=42
-opts.Dim=K;
-GraphClusteringEvaluate(Adj,Y,opts)
-load('Gene.mat') %AEL / GFN K=2
-opts.Dim=K;
-GraphClusteringEvaluate(Adj,Y,opts)
-load('IIP.mat') %AEL / GFN K=3
-opts.Dim=K;
-% GraphEncoder(Adj,Y,knum); %0
-GraphClusteringEvaluate(Adj,Y,opts)
-load('lastfm.mat') %AEK K=17
-opts.Dim=K;
-GraphClusteringEvaluate(Adj,Y,opts)
-load('polblogs.mat') %k=2
-opts.Dim=K;opts.Sparse=true;
-GraphClusteringEvaluate(Adj,Y,opts)
+    [~,Y1]=UnsupGEE(A,K,n); 
+    RandIndex(Y,Y1)
+end
+
+if choice==9
+    n=1000;K=2; rep=5;
+    [A,Y]=simGenerate(1,n);
+    tmpY=randi(K,n,rep);
+    Z=zeros(n,K*rep);
+    for i=1:rep
+        Z(:,(i-1)*K+1:i*K)=GraphEncoder(A,tmpY(:,i));
+    end
+    Y2=kmeans(Z,K);
+    % [~,Y2]=max(Z,[],2);
+    % Y2=mod(Y2,K)+1;
+    RandIndex(Y,Y2)
+end
+
+if choice >=10 && choice<20
+    d=20;n=1000;K=3; type=1;
+    [A,Y]=simGenerate(type,n);
+    opts1 = struct('MaxIter',5,'Replicates',20,'Normalize',true,'Discriminant',0);% default parameter
+    opts2 = struct('MaxIter',5,'Replicates',20,'Normalize',true,'Discriminant',0,'Transformer',1);% default parameter
+    tic
+    Z=ASE(A,d);
+    Y0=kmeans(Z,max(Y));
+    t0=toc;
+    tic
+    [~,Y1]=UnsupGEE(A,max(Y),length(Y),opts1); t1=toc;tic
+    [~,Y2]=UnsupGEE(A,max(Y),length(Y),opts2);t2=toc;tic
+    [RandIndex(Y,Y1),RandIndex(Y,Y2),RandIndex(Y,Y0)]
+    [t1,t2,t0]
+end
+
+if choice >=20 && choice<30
+    opts = struct('Adjacency',1,'Laplacian',1,'Spectral',1,'NN',0,'Dist','sqeuclidean','normalize',0,'dmax',30); % default parameter
+    opts1 = struct('MaxIter',5,'Replicates',20,'Normalize',true,'Refine',0,'Metric',0,'Principal',0,'Laplacian',false,'Discriminant',0,'SeedY',0); % default parameter
+    opts2 = struct('MaxIter',5,'Replicates',20,'Normalize',true,'Refine',0,'Metric',0,'Principal',0,'Laplacian',false,'Discriminant',0,'SeedY',0,'Transformer',1);% default parameter
+    load('n2v.mat');
+    switch choice
+        case 20 %
+            load('Adjnoun.mat');A=Adj; Z=AdjNoun; %AEL / GFN K=2
+        % case 21
+        %     load('citeseer.mat');A=Edge; Y=Label; Z=Citeseer;%AEL / GFN K=2
+        case 21
+            load('Cora.mat'); A=edge2adj(Edge);ind=(sum(A)>0); Y=Label(ind);A=A(ind,ind);Z=Cora; 
+        case 22 %
+            load('email.mat');A=Adj; Z=email;%k=42
+        % case 23
+        %     load('Gene.mat');A=Adj; Z=Gene;
+        % case 23 %
+        %     load('IIP.mat');A=Adj; Z=IIP;
+        % case 24 %?
+        %     load('lastfm.mat');A=Adj;Z=lastfm;
+        case 23 %
+            load('polblogs.mat');A=Adj; Z=polblogs; %
+        % case 28 
+        %     load('pubmed.mat');A=Edge; Y=Label;%AEL / GFN K=2
+        % case 29 
+        %     load('IMDB.mat');A=Edge2; Y=Label2;%AEL / GFN K=2
+        case 24 %
+            load('karate.mat');A=G; Z=karate;
+        % case 27 %
+        %     load('web-spam-detection.mat');A=Edge; Y=Label;%Z=karate;
+        % case 28 %
+        %     load('TerroristRel.mat');A=Edge; Y=Label;%Z=karate;
+        % case 31 
+        %     load('letter.mat');A=Edge1;Y=Label1; 
+        % case 32 
+        %     load('letter.mat');A=Edge2;Y=Label2; 
+        % case 33
+        %     load('letter.mat');A=Edge3;Y=Label3;
+        % case 27
+        %     load('Wiki_Data.mat');A=GEAdj;Y=Label;Z=WikiGE;LeidenY=GELeidenY;
+        % case 28
+        %     load('Wiki_Data.mat');A=GFAdj;ind=(sum(A)>0); Y=Label(ind);A=A(ind,ind);Z=WikiGF;LeidenY=GFLeidenY;
+        % case 42
+        %     load('Wiki_Data.mat');A=GFAdj;Y=Label;Z=WikiGF;
+        % case 28
+        %     load('CElegans.mat');A=Ac;Y=vcols;Z=CElegansAc;
+        % case 29
+        %     load('CElegans.mat');A=Ag;Y=vcols;Z=CElegansAg;
+        % case 47
+        %     load('CElegans.mat');A={Ac,Ag};Y=vcols;
+    end
+    GraphClusteringEvaluate(A,Y,opts)
+    % Y2=kmeans(Z,max(Y));
+    % opts.SeedY=Y;
+    [~,Y3]=UnsupGEE(A,max(Y),length(Y),opts1);
+    tic
+    [~,Y4]=UnsupGEE(A,max(Y),length(Y),opts2);
+    toc
+    [RandIndex(Y,Y3),RandIndex(Y,Y4)]
+end
+
+
+%%% 3. No changce / similar
+% load('Adjnoun.mat') %AEL / GFN K=2
+% load('DD244.mat') %AEL / GFN K=2
+% load('pubmedAdj.mat') %k=3;
+% load('Wiki_Data.mat')
+% load('graphCElegans.mat')
+% % Simple Eval
+% tic
+% [~,Y1,~,~]=GraphEncoder(Adj,K);
+% toc
+% RandIndex(Y,Y1)
+% tic
+% [~,Y1,~,~,score]=GraphEncoder(Adj,[2:10]);
+% toc
+% RandIndex(Y,Y1)
+% % Try K choice
+% kmax=10;
+% score=zeros(kmax,1);ari=zeros(kmax,1);
+% for r=2:kmax
+%     [~,Y2,~,~,score(r)]=GraphEncoder(Adj,r);
+%     ari(r)=RandIndex(Y2,Y+1);
+% end
 
 %% fusion
+if choice==51
 n=1000;K=10;
 [Adj,Y]=simGenerate(19,n);opts.Dim=K;
 GraphClusteringEvaluate(Adj,Y)
@@ -231,44 +346,11 @@ GraphClusteringEvaluate(Ag,vcols)
 GraphClusteringEvaluate(Ac,vcols)
 GraphClusteringEvaluate({Ac,Ag},vcols)
 % [PB_RI_AEE,PB_RI_AEN,PB_RI_ASE,PB_t_AEE,PB_t_AEE2,PB_t_AEN,PB_t_ASE]=simClusteringReal(Adj,Label);
-
-%%% 3. No changce / similar
-load('Adjnoun.mat') %AEL / GFN K=2
-GraphClusteringEvaluate(Adj,Y)
-load('DD244.mat') %AEL / GFN K=2
-GraphClusteringEvaluate(Adj,Y)
-load('pubmedAdj.mat') %k=3;
-GraphClusteringEvaluate(AdjOri,YOri)
-load('Wiki_Data.mat')
-GraphClusteringEvaluate(GEAdj,Label+1)
-GraphClusteringEvaluate(GFAdj,Label+1)
-load('graphCElegans.mat')
-GraphClusteringEvaluate(Ag,vcols)
-load('adjnoun.mat')
-GraphClusteringEvaluate(Adj,Label)
-load('KKI.mat')
-GraphClusteringEvaluate(AdjOri,YOri)
-load('OHSU.mat')
-GraphClusteringEvaluate(AdjOri,YOri)
-load('Peking.mat')
-GraphClusteringEvaluate(AdjOri,YOri)
-% Simple Eval
-% tic
-% [~,Y1,~,~]=GraphEncoder(Adj,K);
-% toc
-% RandIndex(Y,Y1)
-tic
-[~,Y1,~,~,score]=GraphEncoder(Adj,[2:10]);
-toc
-RandIndex(Y,Y1)
-% Try K choice
-kmax=10;
-score=zeros(kmax,1);ari=zeros(kmax,1);
-for r=2:kmax
-    [~,Y2,~,~,score(r)]=GraphEncoder(Adj,r);
-    ari(r)=RandIndex(Y2,Y+1);
 end
+
 %% n increase and mse
+
+if choice==100
 n=100;K=5;kmax=20;nmax=50;
 score=zeros(kmax,nmax);
 ari=zeros(kmax,nmax);
@@ -303,3 +385,4 @@ title(strcat('ARI at K=',num2str(K)))
 xlim([2,kmax]);
 axis('square')
 set(gca,'FontSize',15);
+end

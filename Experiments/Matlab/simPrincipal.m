@@ -107,6 +107,36 @@ if choice==4 || choice==5 || choice==6
 %     out.DimScore
 end
 
+% if choice ==7 %time
+%     opts = struct('Normalize',true,'DiagAugment',false,'Principal',0,'Laplacian',false,'Discriminant',false);
+%     optsE = struct('Normalize',true,'DiagAugment',false,'Principal',1,'Laplacian',false,'Discriminant',false);
+%     spectral=1;
+%     lim=10;time1=zeros(lim,rep);time2=zeros(lim,rep);time3=zeros(lim,rep);numEdges=zeros(lim,rep);
+%     for i=1:lim
+%         n=3000*i
+%         % GraphEncoder(Dis{1},Label);
+%         for r=1:rep
+%             [X,Label]=simGenerate(300,n,4,0);
+%             X=sparse(X);
+%             numEdges(i,r)=sum(sum(X));
+%             tic
+%             GraphEncoder(X,Label,opts);
+%             time1(i,r)=toc;
+%             tic
+%             RefinedGEE(X,Label);
+%             time2(i,r)=toc;
+%             tic
+%             if spectral==1
+%             tic
+%             svds(X,20);
+%             time3(i,r)=toc;
+%             end
+%         end
+%     end
+%     save(strcat('GraphPrincipalTime',num2str(choice-6),'.mat'),'lim','n','time1','time2','time3','numEdges');
+% end
+
+
 % for i=30:41
 % simDimension(i,100)
 % end
@@ -169,8 +199,10 @@ if choice>=10 && choice <20
         i
         indices = crossvalind('Kfold',Label,5);
         opts.indices=indices;optsE.indices=indices;optsE2.indices=indices;
-        tmp=GraphEncoderEvaluate(X,Label,opts);Acc1(i,1)=tmp{1,ind};%Acc1(i,2)=tmp{1,ind2};Acc1(i,3)=tmp{1,ind+2};Acc1(i,4)=tmp{1,ind2+2};Time1(i,1)=tmp{4,ind};Time1(i,2)=tmp{4,ind2};Time1(i,3)=tmp{4,ind+2};Time1(i,4)=tmp{4,ind2+2};
-        tmp=GraphEncoderEvaluate(X,Label,optsE);Acc1(i,2)=tmp{1,ind};%Acc2(i,2)=tmp{1,ind2};Time2(i,1)=tmp{4,ind};Time2(i,2)=tmp{4,ind2};
+        tmp=GraphEncoderEvaluate(X,Label,opts);
+        Acc1(i,1)=tmp{1,ind};%Acc1(i,2)=tmp{1,ind2};Acc1(i,3)=tmp{1,ind+2};Acc1(i,4)=tmp{1,ind2+2};Time1(i,1)=tmp{4,ind};Time1(i,2)=tmp{4,ind2};Time1(i,3)=tmp{4,ind+2};Time1(i,4)=tmp{4,ind2+2};
+        tmp=GraphEncoderEvaluate(X,Label,optsE);
+        Acc1(i,2)=tmp{1,ind};%Acc2(i,2)=tmp{1,ind2};Time2(i,1)=tmp{4,ind};Time2(i,2)=tmp{4,ind2};
         if spectral==1
             tmp=AttributeEvaluate(ZASE,Label,indices); %K=6
             Acc1(i,3)=tmp(1,1);
@@ -189,36 +221,32 @@ end
 
 if choice>=20 && choice <30 %noise
     %30-35
-    opts = struct('Adjacency',1,'Normalize',norma,'Laplacian',0,'Spectral',0,'Discriminant',false,'Principal',1,'LDA',1,'GNN',0,'knn',0,'dim',30);
+    opts = struct('Adjacency',1,'Normalize',norma,'Laplacian',0,'Spectral',0,'Discriminant',false,'Principal',0,'LDA',1,'GNN',0,'knn',0,'dim',30);
     ind=3;ind2=1;
-    optsE = opts; optsE.Principal=3;optsE.Spectral=0;
+    optsE = opts; optsE.Principal=3;spectral=1;
     switch choice
-%        case 20
-%            load('citeseer.mat');G1=Edge; %G1=Edge+1; Label=Y; %kept 1/2 dimension
-%         case 25
-%            load('Cora.mat');Dist1='cosine';G1=Edge; 
         case 20
-            load('Gene.mat');G1=Edge;Label=Y;
-%         case 21
-%             load('IMDB.mat');G1=Edge1;Label=Label1+1;
-%         case 22
-%            load('Letter.mat');Dist1='cosine';G1=Edge1;Label=Label1;
+           load('citeseer.mat');X=edge2adj(Edge);G1=Edge; optsE.Principal=1;n2vstr='Citeseer';
         case 21
-            load('polblogs.mat');G1=Edge;Label=Y;
+           load('Cora.mat');G1=Edge;X=edge2adj(G1);n2vstr='Cora'; %ind=2;ind2=4;% 3 out of 5
         case 22
-           load('protein.mat');Dist1='cosine';G1=Edge; 
+            load('email.mat');X=Adj;G1=Edge;Label=Y; n2vstr='email';%kept 39/42 dimension
         case 23
-           load('pubmed.mat');Dist1='cosine';G1=Edge; 
-%         case 24
-%             load('Wiki_Data.mat');G1=GEAdj; %kept all
-%         case 40
-%            load('Letter');G1=Edge1;Label=Label1;
-%         case 24
-%             load('Letter.mat');G1=Edge1;Label=GraphID1;
-%         case 25
-%             load('COIL-RAG.mat');G1=Edge;Label=GraphID;
-%         case 21
-%             load('IMDB.mat');G1=Edge1;Label=GraphID1;
+            load('IIP.mat');X=double(Adj+Adj'>0);G1=Edge;Label=Y; n2vstr='IIP';
+            %         case 17
+            %             load('COIL-RAG.mat');G1=Edge;
+        case 24
+            load('IMDB.mat');G1=Edge2;X=edge2adj(G1);Label=Label2;n2vstr='IMDB2';
+        case 25
+           load('LastFM.mat');X=Adj;G1=Edge;Label=Y; n2vstr='lastfm';%optsE.Principal=2;%kept 17/18 dimension
+        case 26
+           load('Letter.mat');G1=Edge1;Label=Label1;X=edge2adj(G1);n2vstr='letter1';%optsE.Principal=3; % 4/15
+        case 27
+            load('smartphone.mat');G1=Edge; X=edge2adj(G1); n2vstr='phone';%optsE.Principal=3;%kept 53/71 dimension
+        case 28
+            load('protein.mat');Dist1='cosine';G1=Edge;X=edge2adj(G1);n2vstr='protein';
+        case 29
+            load('pubmed.mat');Dist1='cosine';G1=Edge;X=edge2adj(G1);n2vstr='pubmed';
     end
 %     optsE2=optsE; optsE2.Dimension=2;
     Acc1=zeros(rep,4);Acc2=zeros(rep,4);Time1=zeros(rep,4);Time2=zeros(rep,4);noise=randi(300,1,length(Label));K=max(Label);
@@ -227,21 +255,31 @@ if choice>=20 && choice <30 %noise
             Label(i)=noise(i)-270+K;
         end
     end
-%     if spec>0 && choice>5
-%         G1=edge2adj(G1);G2=edge2adj(G2);
-%     end
+    if spectral==1
+        tic
+        %[Z]=UnsupGraph(X,max(Y)*5,length(Y));
+        dim=30;
+        [ZASE]=ASE(X,dim);
+        tt1=toc;
+    end
     for i=1:rep
-        i
+        % i
         indices = crossvalind('Kfold',Label,5);
         opts.indices=indices;optsE.indices=indices;optsE2.indices=indices;
-        tmp=GraphEncoderEvaluate(G1,Label,opts);Acc1(i,1)=tmp{1,ind};Acc1(i,2)=tmp{1,ind2};Acc1(i,3)=tmp{1,ind+2};Acc1(i,4)=tmp{1,ind2+2};Time1(i,1)=tmp{4,ind};Time1(i,2)=tmp{4,ind2};Time1(i,3)=tmp{4,ind+2};Time1(i,4)=tmp{4,ind2+2};
-        tmp=GraphEncoderEvaluate(G1,Label,optsE);Acc2(i,1)=tmp{1,ind};Acc2(i,2)=tmp{1,ind2};Time2(i,1)=tmp{4,ind};Time2(i,2)=tmp{4,ind2};
+        tmp=GraphEncoderEvaluate(G1,Label,opts);Acc1(i,1)=tmp{1,ind};Time1(i,1)=tmp{4,ind};%Acc1(i,2)=tmp{1,ind2};Acc1(i,3)=tmp{1,ind+2};Acc1(i,4)=tmp{1,ind2+2};Time1(i,1)=tmp{4,ind};Time1(i,2)=tmp{4,ind2};Time1(i,3)=tmp{4,ind+2};Time1(i,4)=tmp{4,ind2+2};
+        tmp=GraphEncoderEvaluate(G1,Label,optsE);Acc1(i,2)=tmp{1,ind};Time1(i,2)=tmp{4,ind};%Acc2(i,2)=tmp{1,ind2};Time2(i,1)=tmp{4,ind};Time2(i,2)=tmp{4,ind2};
+        if spectral==1
+            tic
+            tmp=AttributeEvaluate(ZASE,Label,indices); %K=6
+            Acc1(i,3)=tmp(1,1);
+            Time1(i,3)=tt1+toc;
+        end
 %         tmp=GraphEncoderEvaluate(G1,Label,optsE2);Acc2(i,3)=tmp{1,ind};Acc2(i,4)=tmp{1,ind2};Time2(i,3)=tmp{4,ind};Time2(i,4)=tmp{4,ind2};
     end
     [Z,out]=GraphEncoder(G1,Label,optsE);
     save(strcat('GEEDimension',num2str(choice),'.mat'),'choice','Acc1','Acc2','Time1','Time2','out');
-    [mean(Acc1);mean(Acc2);std(Acc1);std(Acc2);mean(Time1);mean(Time2)] %GEE; ASE; PGEE; PCA
-    [sum(out.comChoice),max(Label)]
+    [mean(Acc1);std(Acc1);mean(Time1)] %GEE; ASE; PGEE; PCA
+    [sum(out.out1),length(out.out1)]
 %     [std(Acc1);std(Acc2);std(Time1);std(Time2)]
 end
 
@@ -580,6 +618,37 @@ if choice==93
         %     F.PaperPositionMode='auto';
     print_fig(gcf,F)
 end
+
+% 
+% if choice==94;%time figure
+% %         Spec=2;
+%         i=10;lw=4;F.fname='FigDimension3';str1='Running Time';loc='East';
+%         myColor2 = brewermap(10,'RdYlBu');%myColor2 = brewermap(4,'RdYlBu');myColor(10,:)=myColor2(4,:);
+% %         myColor=[myColor(2,:);myColor(3,:);myColor2(3,:)];
+%         fs=28;
+%         tl = tiledlayout(1,3);fs=36;
+%         for f=1:3
+%             nexttile(tl)
+%          hold on
+%         load(strcat('GraphPrincipalTime',num2str(j),'.mat'))
+%         time1=log10(time1);time2=log10(time2);time3=log10(time3);
+%         errorbar(1:i,mean(time1,2),1*std(time1,[],2),'Color', myColor2(7,:),'LineStyle', '-','LineWidth',lw);hold on
+%         errorbar(1:i,mean(time2,2),1*std(time2,[],2),'Color', myColor2(10,:),'LineStyle', '-','LineWidth',lw);
+%         errorbar(1:i,mean(time3,2),1*std(time3,[],2),'Color', myColor2(2,:),'LineStyle', '-','LineWidth',lw);
+%         legend('GEE','P-GEE','ASE (d=30)','Location','SouthEast');
+%         xlim([1,10]);xticks([1 5 10]);xticklabels({'0.5M','10M','50M'});
+%         ylim([-3,3]);yticks([-2 -1 0 1 2]);yticklabels({'0.01','0.1','1','10','100'});
+%         set(gca,'FontSize',fs); 
+%         ylabel('Running Time (Log Scale)','FontSize',fs)
+%         xlabel('Approximate Number of Edges','FontSize',fs)
+%         axis('square'); 
+%         end
+%         %         set(gca,'FontSize',fs);
+%         F.wh=[12 4]*2;
+%         %     F.PaperPositionMode='auto';
+%         print_fig(gcf,F)
+% end
+
 % 
 % if choice==95
 %         tl = tiledlayout(2,2);fs=36;ind=1;
