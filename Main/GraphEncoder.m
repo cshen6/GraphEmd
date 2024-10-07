@@ -229,6 +229,7 @@ for i=1:numG
         if opts.Laplacian
             D=sum(X,2);
             D=D.^-0.5;
+            D=diag(D);
             X=D'*X*D;
         end
     else % graph is edgelist input

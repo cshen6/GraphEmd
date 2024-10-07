@@ -3,7 +3,7 @@ if nargin<3
     d=10;
 end
 if nargin<4
-    edge=1;
+    edge=0;
 end
 repeat=1;
 switch option

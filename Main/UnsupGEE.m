@@ -3,9 +3,9 @@
 function [Z,YNew]=UnsupGEE(G,Y,n,opts)
 warning ('off','all');
 if nargin<4
-    opts = struct('MaxIter',5,'Replicates',10,'Normalize',true,'Refine',0,'Metric',0,'Principal',0,'Laplacian',false,'Discriminant',false,'SeedY',0,'Transformer',1);
+    opts = struct('MaxIter',10,'Replicates',10,'Normalize',true,'Refine',0,'Metric',0,'Principal',0,'Laplacian',false,'Discriminant',false,'SeedY',0,'Transformer',1);
 end
-if ~isfield(opts,'MaxIter'); opts.MaxIter=5; end
+if ~isfield(opts,'MaxIter'); opts.MaxIter=10; end
 if ~isfield(opts,'Replicates'); opts.Replicates=10; end
 if ~isfield(opts,'Normalize'); opts.Normalize=true; end
 if ~isfield(opts,'Laplacian'); opts.Laplacian=false; end
@@ -23,11 +23,18 @@ Z=0;YNew=0;
 if opts.Transformer
     K=Y(1);
     tmpY=randi(K,n,opts.Replicates);
-    for r=1:opts.MaxIter-1
-        for j=1:opts.Replicates
+    for j=1:opts.Replicates
+        for r=1:opts.MaxIter-1
             tmpZ=GraphEncoder(G,tmpY(:,j),opts);
+            % tmpY2=kmeans(tmpZ, K,'MaxIter',10,'Replicates',1,'Start','plus');
             % Z(:,(j-1)*K+1:j*K)=tmpZ;
-            [~,tmpY(:,j)]=max(tmpZ,[],2);
+            [~,tmpY2]=max(tmpZ,[],2);
+            if RandIndex(tmpY2,tmpY(:,j))==1
+                tmpY(:,j)=tmpY2;
+                break;
+            else
+                tmpY(:,j)=tmpY2;
+            end
         end
     end
     Z=zeros(n,K*opts.Replicates);

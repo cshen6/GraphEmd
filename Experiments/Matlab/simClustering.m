@@ -221,10 +221,30 @@ if choice==9
 end
 
 if choice >=10 && choice<20
-    d=20;n=1000;K=3; type=1;
+    d=20;n=3000;K=3; 
+    switch choice
+        case 10 
+            type=10;%?
+        case 11 
+            type=12;%?
+        case 12 
+            type=15;
+        case 13 
+            type=11;%?
+        case 14 
+            type=20;
+        case 15 
+            type=22;
+        case 16 
+            type=25;
+        case 17 
+            type=27;
+        case 18 
+            type=21;%?
+    end
     [A,Y]=simGenerate(type,n);
-    opts1 = struct('MaxIter',5,'Replicates',20,'Normalize',true,'Discriminant',0);% default parameter
-    opts2 = struct('MaxIter',5,'Replicates',20,'Normalize',true,'Discriminant',0,'Transformer',1);% default parameter
+    opts1 = struct('MaxIter',10,'Replicates',10,'Normalize',true,'Discriminant',0);% default parameter
+    opts2 = struct('MaxIter',10,'Replicates',10,'Normalize',true,'Discriminant',0,'Transformer',1);% default parameter
     tic
     Z=ASE(A,d);
     Y0=kmeans(Z,max(Y));
@@ -232,34 +252,35 @@ if choice >=10 && choice<20
     tic
     [~,Y1]=UnsupGEE(A,max(Y),length(Y),opts1); t1=toc;tic
     [~,Y2]=UnsupGEE(A,max(Y),length(Y),opts2);t2=toc;tic
-    [RandIndex(Y,Y1),RandIndex(Y,Y2),RandIndex(Y,Y0)]
-    [t1,t2,t0]
+    [c1,t4]=CPL(A,max(Y),Y);
+    [RandIndex(Y,Y2),RandIndex(Y,Y1),RandIndex(Y,Y0),c1]
+    [t2,t1,t0,t4]
 end
 
 if choice >=20 && choice<30
     opts = struct('Adjacency',1,'Laplacian',1,'Spectral',1,'NN',0,'Dist','sqeuclidean','normalize',0,'dmax',30); % default parameter
-    opts1 = struct('MaxIter',5,'Replicates',20,'Normalize',true,'Refine',0,'Metric',0,'Principal',0,'Laplacian',false,'Discriminant',0,'SeedY',0); % default parameter
-    opts2 = struct('MaxIter',5,'Replicates',20,'Normalize',true,'Refine',0,'Metric',0,'Principal',0,'Laplacian',false,'Discriminant',0,'SeedY',0,'Transformer',1);% default parameter
-    load('n2v.mat');
+    opts1 = struct('MaxIter',20,'Replicates',20,'Normalize',true,'Refine',0,'Metric',0,'Principal',0,'Laplacian',false,'Discriminant',0,'SeedY',0); % default parameter
+    opts2 = struct('MaxIter',20,'Replicates',20,'Normalize',true,'Refine',0,'Metric',0,'Principal',0,'Laplacian',false,'Discriminant',0,'SeedY',0,'Transformer',1);% default parameter
+    load('n2v.mat');time=zeros(1,6);skip=1;
     switch choice
-        case 20 %
+        case 21 %
             load('Adjnoun.mat');A=Adj; Z=AdjNoun; %AEL / GFN K=2
-        % case 21
-        %     load('citeseer.mat');A=Edge; Y=Label; Z=Citeseer;%AEL / GFN K=2
-        case 21
-            load('Cora.mat'); A=edge2adj(Edge);ind=(sum(A)>0); Y=Label(ind);A=A(ind,ind);Z=Cora; 
+        % case 25
+        %     load('citeseer.mat');A=edge2adj(Edge); Y=Label; Z=Citeseer;%AEL / GFN K=2
+        % case 27
+        %     load('Cora.mat'); A=edge2adj(Edge);ind=(sum(A)>0); Y=Label(ind);A=A(ind,ind);Z=Cora; 
         case 22 %
             load('email.mat');A=Adj; Z=email;%k=42
-        % case 23
+        % case 25
         %     load('Gene.mat');A=Adj; Z=Gene;
-        % case 23 %
+        % case 25 %
         %     load('IIP.mat');A=Adj; Z=IIP;
-        % case 24 %?
-        %     load('lastfm.mat');A=Adj;Z=lastfm;
+        case 25 %?
+            load('lastfm.mat');A=Adj;Z=lastfm;
         case 23 %
             load('polblogs.mat');A=Adj; Z=polblogs; %
-        % case 28 
-        %     load('pubmed.mat');A=Edge; Y=Label;%AEL / GFN K=2
+        % case 29 
+        %     load('pubmed.mat');A=edge2adj(Edge); Y=Label;%AEL / GFN K=2
         % case 29 
         %     load('IMDB.mat');A=Edge2; Y=Label2;%AEL / GFN K=2
         case 24 %
@@ -267,8 +288,8 @@ if choice >=20 && choice<30
         % case 27 %
         %     load('web-spam-detection.mat');A=Edge; Y=Label;%Z=karate;
         % case 28 %
-        %     load('TerroristRel.mat');A=Edge; Y=Label;%Z=karate;
-        % case 31 
+        %     load('TerroristRel.mat');A=edge2adj(Edge); Y=Label;%Z=karate;
+        % case 29 
         %     load('letter.mat');A=Edge1;Y=Label1; 
         % case 32 
         %     load('letter.mat');A=Edge2;Y=Label2; 
@@ -287,14 +308,29 @@ if choice >=20 && choice<30
         % case 47
         %     load('CElegans.mat');A={Ac,Ag};Y=vcols;
     end
-    GraphClusteringEvaluate(A,Y,opts)
-    % Y2=kmeans(Z,max(Y));
+    if skip==0
+    result=GraphClusteringEvaluate(A,Y,opts);
+    time(4)=table2array(result(2,3));
+    time(3)=table2array(result(2,2));
+    Y2=kmeans(Z,max(Y));
     % opts.SeedY=Y;
+    tic
     [~,Y3]=UnsupGEE(A,max(Y),length(Y),opts1);
+    time(2)=toc;
     tic
     [~,Y4]=UnsupGEE(A,max(Y),length(Y),opts2);
-    toc
-    [RandIndex(Y,Y3),RandIndex(Y,Y4)]
+    time(1)=toc;
+    [c1,time(6)]=CPL(A,max(Y),Y);
+    [RandIndex(Y,Y4),RandIndex(Y,Y3),table2array(result(1,2)),table2array(result(1,3)),RandIndex(Y,Y2),RandIndex(Y,LeidenY),c1]
+    time
+    else
+        tic
+        [~,Y4]=UnsupGEE(A,max(Y),length(Y),opts2); 
+        t4=toc;
+        [c1,t]=CPL(A,max(Y),Y);
+        [RandIndex(Y,Y4),c1]
+        [t4,t]
+    end
 end
 
 
@@ -386,3 +422,23 @@ xlim([2,kmax]);
 axis('square')
 set(gca,'FontSize',15);
 end
+
+function [c1,t1]=CPL(A,K,Y);
+
+% scp method
+compErr = @(c,e) compMuI(compCM(c,e,K));    % use mutual info as a measure of error/sim.
+
+tic
+init_opts = struct('verbose',false);
+[e] = initLabel5b(A, K, 'scp', init_opts);
+% t1=toc;
+% c1 = compErr(Y, e);
+
+% CPL method
+T = 20;
+% tic
+cpl_opts = struct('verbose',false,'delta_max',0.000000001,'itr_num',T,'em_max',500,'track_err',true);
+[c1] = cpl4c(A, K, e, Y, 'cpl', cpl_opts);
+t1=toc;
+% fprintf('%3.5fs\n',RT_cpl)
+c1 = RandIndex(Y,c1); %compErr(Y, c1);
